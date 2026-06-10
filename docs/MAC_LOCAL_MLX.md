@@ -185,9 +185,9 @@ Things that may hurt quality:
 
 - Pushing 1080p beyond 5 seconds.
 - Using `Turbo` for final output.
-- Local Mac image-to-video is disabled in this milestone because the current
-  MLX Q4 image-conditioning path produces tiled artifacts. Use the LTX API path
-  for image-to-video.
+- Local Mac image-to-video uses a deterministic still-motion fallback. It avoids
+  the MLX Q4 distilled I2V tiled-artifact failure, but it is not true generative
+  motion. Use the LTX API path for generative image-to-video.
 - Raising duration before the prompt/camera motion is stable.
 
 ## Environment Variables

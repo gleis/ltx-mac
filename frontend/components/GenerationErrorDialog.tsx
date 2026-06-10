@@ -13,9 +13,6 @@ function assertNever(value: never): never {
 
 function getGenericHumanMessage(message: string): string {
   const lower = message.toLowerCase()
-  if (lower.includes('local mac mlx image-to-video') || lower.includes('local_mac_mlx_i2v_unsupported')) {
-    return 'Local Mac image-to-video is disabled in this milestone because it produces tiled artifacts. Enable LTX API video generation for image-to-video, or remove the image and generate text-to-video locally.'
-  }
   if (lower.includes('409') || lower.includes('already')) {
     return 'A generation is already in progress. Please wait for it to finish or cancel it.'
   }

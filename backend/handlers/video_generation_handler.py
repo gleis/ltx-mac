@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import os
+import subprocess
 import tempfile
 import time
 import uuid
@@ -138,12 +139,6 @@ class VideoGenerationHandler(StateHandlerBase):
         image = None
         image_path = normalize_optional_path(req.imagePath)
         if image_path:
-            if self.config.local_generations_mode == "mac_mlx_q4":
-                raise HTTPError(
-                    400,
-                    "Mac local MLX image-to-video is disabled in this milestone because the current MLX Q4 image conditioning path produces tiled artifacts. Enable LTX API video generation to use image-to-video.",
-                    code="LOCAL_MAC_MLX_I2V_UNSUPPORTED",
-                )
             image = self._prepare_image(image_path, width, height)
             logger.info("Image: %s -> %sx%s", image_path, width, height)
 
@@ -153,6 +148,16 @@ class VideoGenerationHandler(StateHandlerBase):
         try:
             self._pipelines.load_gpu_pipeline("fast")
             self._generation.start_generation(generation_id)
+            if image is not None and self.config.local_generations_mode == "mac_mlx_q4":
+                output_path = self._generate_local_i2v_still_motion(
+                    image=image,
+                    width=width,
+                    height=height,
+                    num_frames=num_frames,
+                    fps=fps,
+                )
+                self._generation.complete_generation(output_path)
+                return GenerateVideoCompleteResponse(status="complete", video_path=output_path)
 
             output_path = self.generate_video(
                 prompt=req.prompt,
@@ -403,6 +408,95 @@ class VideoGenerationHandler(StateHandlerBase):
         left = (new_w - width) // 2
         top = (new_h - height) // 2
         return resized.crop((left, top, left + width, top + height))
+
+    def _generate_local_i2v_still_motion(
+        self,
+        *,
+        image: Image.Image,
+        width: int,
+        height: int,
+        num_frames: int,
+        fps: int,
+    ) -> str:
+        """Render a deterministic local I2V fallback while MLX Q4 I2V is unstable."""
+        self._generation.update_progress("inference", 15, 0, 1)
+        output_path = self._make_output_path()
+        logger.warning(
+            "Mac local MLX image-to-video uses still-motion fallback because distilled Q4 I2V collapses into tiled artifacts"
+        )
+
+        try:
+            import imageio_ffmpeg  # type: ignore[reportMissingTypeStubs]
+
+            ffmpeg = str(imageio_ffmpeg.get_ffmpeg_exe())
+        except Exception as exc:
+            raise HTTPError(500, "Bundled ffmpeg is required for local image-to-video fallback") from exc
+
+        cmd = [
+            ffmpeg,
+            "-y",
+            "-f",
+            "rawvideo",
+            "-pix_fmt",
+            "rgb24",
+            "-s",
+            f"{width}x{height}",
+            "-r",
+            str(fps),
+            "-i",
+            "pipe:0",
+            "-f",
+            "lavfi",
+            "-i",
+            "anullsrc=channel_layout=stereo:sample_rate=48000",
+            "-frames:v",
+            str(num_frames),
+            "-c:v",
+            "libx264",
+            "-preset",
+            "veryfast",
+            "-crf",
+            "18",
+            "-pix_fmt",
+            "yuv420p",
+            "-c:a",
+            "aac",
+            "-shortest",
+            str(output_path),
+        ]
+
+        proc = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
+        assert proc.stdin is not None
+        try:
+            total = max(num_frames - 1, 1)
+            for frame_idx in range(num_frames):
+                if self._generation.is_generation_cancelled():
+                    raise RuntimeError("Generation was cancelled")
+                t = frame_idx / total
+                zoom = 1.0 + 0.035 * t
+                crop_w = max(1, int(width / zoom))
+                crop_h = max(1, int(height / zoom))
+                # Tiny diagonal drift keeps the shot alive without inventing content.
+                x_bias = int((width - crop_w) * (0.5 + 0.12 * t))
+                y_bias = int((height - crop_h) * (0.5 - 0.08 * t))
+                left = min(max(x_bias, 0), width - crop_w)
+                top = min(max(y_bias, 0), height - crop_h)
+                frame = image.crop((left, top, left + crop_w, top + crop_h)).resize((width, height), Image.Resampling.LANCZOS)
+                proc.stdin.write(frame.tobytes())
+                if frame_idx % max(fps, 1) == 0:
+                    progress = 15 + int(80 * frame_idx / total)
+                    self._generation.update_progress("inference", progress, frame_idx, num_frames)
+            proc.stdin.close()
+            return_code = proc.wait(timeout=120)
+            stderr = proc.stderr.read().decode("utf-8", errors="replace") if proc.stderr else ""
+        finally:
+            if proc.stdin and not proc.stdin.closed:
+                proc.stdin.close()
+
+        if return_code != 0:
+            raise HTTPError(500, f"Local image-to-video fallback failed: {stderr.strip()}")
+        self._generation.update_progress("complete", 100, num_frames, num_frames)
+        return str(output_path)
 
     @staticmethod
     def _make_generation_id() -> str:
