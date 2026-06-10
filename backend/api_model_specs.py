@@ -124,8 +124,10 @@ def _pairs_to_items(
     ]
 
 
-def get_local_video_generation_model_specs() -> list[LTXVideoGenerationModelSpecItem]:
-    local_model_spec = get_ltx_model_spec(get_latest_ltx_model_id())
+def get_local_video_generation_model_specs(
+    local_generations_mode: str | None = None,
+) -> list[LTXVideoGenerationModelSpecItem]:
+    local_model_spec = get_ltx_model_spec(get_latest_ltx_model_id(local_generations_mode))
     return _pairs_to_items(local_model_spec.supported_pipelines)
 
 
@@ -133,9 +135,11 @@ def get_api_video_generation_model_specs() -> list[LTXVideoGenerationModelSpecIt
     return _pairs_to_items(ltx_api_model_specs)
 
 
-def build_generate_video_model_specs_response() -> GenerateVideoModelsSpecsResponse:
+def build_generate_video_model_specs_response(
+    local_generations_mode: str | None = None,
+) -> GenerateVideoModelsSpecsResponse:
     return GenerateVideoModelsSpecsResponse(
-        local_models=get_local_video_generation_model_specs(),
+        local_models=get_local_video_generation_model_specs(local_generations_mode),
         api_models=get_api_video_generation_model_specs(),
     )
 
@@ -165,8 +169,13 @@ def validate_generate_video_request(
     req: GenerateVideoRequest,
     *,
     use_api_specs: bool,
+    local_generations_mode: str | None = None,
 ) -> str | None:
-    items = get_api_video_generation_model_specs() if use_api_specs else get_local_video_generation_model_specs()
+    items = (
+        get_api_video_generation_model_specs()
+        if use_api_specs
+        else get_local_video_generation_model_specs(local_generations_mode)
+    )
     item = next((candidate for candidate in items if candidate.pipeline == req.model), None)
     generation_backend = "api" if use_api_specs else "local"
     generation_mode = "audio-to-video" if req.audioPath is not None else "image-to-video" if req.imagePath is not None else "text-to-video"

@@ -26,6 +26,22 @@
             ],
             "title": "Geminiapikey"
           },
+          "localMlxSpeedMode": {
+            "anyOf": [
+              {
+                "enum": [
+                  "quality",
+                  "boost",
+                  "turbo"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Localmlxspeedmode"
+          },
           "lockedSeed": {
             "anyOf": [
               {
@@ -179,12 +195,14 @@
             "items": {
               "enum": [
                 "ltx-2.3-22b-distilled",
+                "ltx-2.3-mlx-q4",
                 "ltx-2.3-spatial-upscaler-x2-1.0",
                 "ltx-2.3-22b-ic-lora-union-control-ref0.5",
                 "dpt-hybrid-midas",
                 "yolox-l-torchscript",
                 "dw-ll-ucoco-384-bs5",
                 "gemma-3-12b-it-qat-q4_0-unquantized",
+                "gemma-3-12b-it-4bit",
                 "z-image-turbo"
               ],
               "type": "string"
@@ -256,12 +274,14 @@
             "items": {
               "enum": [
                 "ltx-2.3-22b-distilled",
+                "ltx-2.3-mlx-q4",
                 "ltx-2.3-spatial-upscaler-x2-1.0",
                 "ltx-2.3-22b-ic-lora-union-control-ref0.5",
                 "dpt-hybrid-midas",
                 "yolox-l-torchscript",
                 "dw-ll-ucoco-384-bs5",
                 "gemma-3-12b-it-qat-q4_0-unquantized",
+                "gemma-3-12b-it-4bit",
                 "z-image-turbo"
               ],
               "type": "string"
@@ -274,12 +294,14 @@
             "items": {
               "enum": [
                 "ltx-2.3-22b-distilled",
+                "ltx-2.3-mlx-q4",
                 "ltx-2.3-spatial-upscaler-x2-1.0",
                 "ltx-2.3-22b-ic-lora-union-control-ref0.5",
                 "dpt-hybrid-midas",
                 "yolox-l-torchscript",
                 "dw-ll-ucoco-384-bs5",
                 "gemma-3-12b-it-qat-q4_0-unquantized",
+                "gemma-3-12b-it-4bit",
                 "z-image-turbo"
               ],
               "type": "string"
@@ -293,12 +315,14 @@
               {
                 "enum": [
                   "ltx-2.3-22b-distilled",
+                  "ltx-2.3-mlx-q4",
                   "ltx-2.3-spatial-upscaler-x2-1.0",
                   "ltx-2.3-22b-ic-lora-union-control-ref0.5",
                   "dpt-hybrid-midas",
                   "yolox-l-torchscript",
                   "dw-ll-ucoco-384-bs5",
                   "gemma-3-12b-it-qat-q4_0-unquantized",
+                  "gemma-3-12b-it-4bit",
                   "z-image-turbo"
                 ],
                 "type": "string"
@@ -1044,12 +1068,14 @@
               {
                 "enum": [
                   "ltx-2.3-22b-distilled",
+                  "ltx-2.3-mlx-q4",
                   "ltx-2.3-spatial-upscaler-x2-1.0",
                   "ltx-2.3-22b-ic-lora-union-control-ref0.5",
                   "dpt-hybrid-midas",
                   "yolox-l-torchscript",
                   "dw-ll-ucoco-384-bs5",
                   "gemma-3-12b-it-qat-q4_0-unquantized",
+                  "gemma-3-12b-it-4bit",
                   "z-image-turbo"
                 ],
                 "type": "string"
@@ -1177,12 +1203,14 @@
             "items": {
               "enum": [
                 "ltx-2.3-22b-distilled",
+                "ltx-2.3-mlx-q4",
                 "ltx-2.3-spatial-upscaler-x2-1.0",
                 "ltx-2.3-22b-ic-lora-union-control-ref0.5",
                 "dpt-hybrid-midas",
                 "yolox-l-torchscript",
                 "dw-ll-ucoco-384-bs5",
                 "gemma-3-12b-it-qat-q4_0-unquantized",
+                "gemma-3-12b-it-4bit",
                 "z-image-turbo"
               ],
               "type": "string"
@@ -1209,12 +1237,14 @@
             "items": {
               "enum": [
                 "ltx-2.3-22b-distilled",
+                "ltx-2.3-mlx-q4",
                 "ltx-2.3-spatial-upscaler-x2-1.0",
                 "ltx-2.3-22b-ic-lora-union-control-ref0.5",
                 "dpt-hybrid-midas",
                 "yolox-l-torchscript",
                 "dw-ll-ucoco-384-bs5",
                 "gemma-3-12b-it-qat-q4_0-unquantized",
+                "gemma-3-12b-it-4bit",
                 "z-image-turbo"
               ],
               "type": "string"
@@ -1268,12 +1298,14 @@
             "items": {
               "enum": [
                 "ltx-2.3-22b-distilled",
+                "ltx-2.3-mlx-q4",
                 "ltx-2.3-spatial-upscaler-x2-1.0",
                 "ltx-2.3-22b-ic-lora-union-control-ref0.5",
                 "dpt-hybrid-midas",
                 "yolox-l-torchscript",
                 "dw-ll-ucoco-384-bs5",
                 "gemma-3-12b-it-qat-q4_0-unquantized",
+                "gemma-3-12b-it-4bit",
                 "z-image-turbo"
               ],
               "type": "string"
@@ -1285,12 +1317,14 @@
             "items": {
               "enum": [
                 "ltx-2.3-22b-distilled",
+                "ltx-2.3-mlx-q4",
                 "ltx-2.3-spatial-upscaler-x2-1.0",
                 "ltx-2.3-22b-ic-lora-union-control-ref0.5",
                 "dpt-hybrid-midas",
                 "yolox-l-torchscript",
                 "dw-ll-ucoco-384-bs5",
                 "gemma-3-12b-it-qat-q4_0-unquantized",
+                "gemma-3-12b-it-4bit",
                 "z-image-turbo"
               ],
               "type": "string"
@@ -1299,7 +1333,10 @@
             "type": "array"
           },
           "ltx_model_id": {
-            "const": "ltx-2.3-22b-distilled",
+            "enum": [
+              "ltx-2.3-22b-distilled",
+              "ltx-2.3-mlx-q4"
+            ],
             "title": "Ltx Model Id",
             "type": "string"
           },
@@ -1335,12 +1372,14 @@
             "items": {
               "enum": [
                 "ltx-2.3-22b-distilled",
+                "ltx-2.3-mlx-q4",
                 "ltx-2.3-spatial-upscaler-x2-1.0",
                 "ltx-2.3-22b-ic-lora-union-control-ref0.5",
                 "dpt-hybrid-midas",
                 "yolox-l-torchscript",
                 "dw-ll-ucoco-384-bs5",
                 "gemma-3-12b-it-qat-q4_0-unquantized",
+                "gemma-3-12b-it-4bit",
                 "z-image-turbo"
               ],
               "type": "string"
@@ -1359,12 +1398,14 @@
             "items": {
               "enum": [
                 "ltx-2.3-22b-distilled",
+                "ltx-2.3-mlx-q4",
                 "ltx-2.3-spatial-upscaler-x2-1.0",
                 "ltx-2.3-22b-ic-lora-union-control-ref0.5",
                 "dpt-hybrid-midas",
                 "yolox-l-torchscript",
                 "dw-ll-ucoco-384-bs5",
                 "gemma-3-12b-it-qat-q4_0-unquantized",
+                "gemma-3-12b-it-4bit",
                 "z-image-turbo"
               ],
               "type": "string"
@@ -1559,6 +1600,16 @@
             "title": "Hasltxapikey",
             "type": "boolean"
           },
+          "localMlxSpeedMode": {
+            "default": "quality",
+            "enum": [
+              "quality",
+              "boost",
+              "turbo"
+            ],
+            "title": "Localmlxspeedmode",
+            "type": "string"
+          },
           "lockedSeed": {
             "default": 42,
             "title": "Lockedseed",
@@ -1711,12 +1762,14 @@
               {
                 "enum": [
                   "ltx-2.3-22b-distilled",
+                  "ltx-2.3-mlx-q4",
                   "ltx-2.3-spatial-upscaler-x2-1.0",
                   "ltx-2.3-22b-ic-lora-union-control-ref0.5",
                   "dpt-hybrid-midas",
                   "yolox-l-torchscript",
                   "dw-ll-ucoco-384-bs5",
                   "gemma-3-12b-it-qat-q4_0-unquantized",
+                  "gemma-3-12b-it-4bit",
                   "z-image-turbo"
                 ],
                 "type": "string"

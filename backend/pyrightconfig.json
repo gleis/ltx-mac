@@ -13,7 +13,9 @@
     "tmp",
     "scripts",
     "profile_results",
-    "services/patches"
+    "services/patches",
+    "services/fast_video_pipeline/mlx_warm_helper.py",
+    "services/fast_video_pipeline/patch_ltx_codec.py"
   ],
   "reportMissingImports": "warning",
   "reportMissingTypeStubs": false,

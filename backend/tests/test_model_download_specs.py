@@ -38,6 +38,15 @@ def test_latest_ltx_model_is_relevant():
     assert spec.model_cp in get_ltx_cps()
 
 
+def test_mac_mlx_q4_exposes_extended_generation_options():
+    spec = get_ltx_model_spec("ltx-2.3-mlx-q4")
+    fast_spec = dict(spec.supported_pipelines)["fast"]
+
+    assert fast_spec.supported_resolutions_durations["540p"].fps_to_durations[24] == [5, 6, 8, 10, 12, 14, 16, 18, 20]
+    assert fast_spec.supported_resolutions_durations["720p"].fps_to_durations[24] == [5, 6, 8, 10, 12, 14, 16, 18, 20]
+    assert fast_spec.supported_resolutions_durations["1080p"].fps_to_durations[24] == [5]
+
+
 def test_ic_lora_cp_ids_are_deduped():
     spec = get_ltx_model_spec(get_latest_ltx_model_id())
     assert get_ic_loras_cp_ids(spec.ic_loras_spec) == ("ltx-2.3-22b-ic-lora-union-control-ref0.5",)

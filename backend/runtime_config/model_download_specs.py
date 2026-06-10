@@ -31,6 +31,7 @@ class ModelCheckpointSpec:
     is_folder: bool
     repo_id: str
     description: str
+    snapshot_allow_patterns: tuple[str, ...] | None = None
 
     @property
     def name(self) -> str:
@@ -95,6 +96,23 @@ def get_model_cp_spec(cp_id: ModelCheckpointID) -> ModelCheckpointSpec:
                 repo_id="Lightricks/LTX-2.3",
                 description="Main transformer model",
             )
+        case "ltx-2.3-mlx-q4":
+            return ModelCheckpointSpec(
+                relative_path=Path("ltx-2.3-mlx-q4"),
+                expected_size_bytes=20_000_000_000,
+                is_folder=True,
+                repo_id="dgrauet/ltx-2.3-mlx-q4",
+                description="Mac MLX Q4 base model",
+                snapshot_allow_patterns=(
+                    "*.json",
+                    "transformer-distilled.safetensors",
+                    "connector.safetensors",
+                    "vae_decoder.safetensors",
+                    "vae_encoder.safetensors",
+                    "audio_vae.safetensors",
+                    "vocoder.safetensors",
+                ),
+            )
         case "ltx-2.3-spatial-upscaler-x2-1.0":
             return ModelCheckpointSpec(
                 relative_path=Path("ltx-2.3-spatial-upscaler-x2-1.0.safetensors"),
@@ -142,6 +160,14 @@ def get_model_cp_spec(cp_id: ModelCheckpointID) -> ModelCheckpointSpec:
                 is_folder=True,
                 repo_id="Lightricks/gemma-3-12b-it-qat-q4_0-unquantized",
                 description="Gemma text encoder (bfloat16)",
+            )
+        case "gemma-3-12b-it-4bit":
+            return ModelCheckpointSpec(
+                relative_path=Path("gemma-3-12b-it-4bit"),
+                expected_size_bytes=6_000_000_000,
+                is_folder=True,
+                repo_id="mlx-community/gemma-3-12b-it-4bit",
+                description="Gemma text encoder (MLX 4-bit)",
             )
         case "z-image-turbo":
             return ModelCheckpointSpec(
@@ -194,6 +220,47 @@ def get_ltx_model_spec(model_id: LTXLocalModelId) -> LTXLocalModelSpec:
                     ),
                 ),
             )
+        case "ltx-2.3-mlx-q4":
+            return LTXLocalModelSpec(
+                model_cp="ltx-2.3-mlx-q4",
+                upscale_cp="ltx-2.3-mlx-q4",
+                text_encoder_cp="gemma-3-12b-it-4bit",
+                ic_loras_spec=LtxIcLorasSpec(
+                    depth_cp="ltx-2.3-22b-ic-lora-union-control-ref0.5",
+                    canny_cp="ltx-2.3-22b-ic-lora-union-control-ref0.5",
+                    pose_cp="ltx-2.3-22b-ic-lora-union-control-ref0.5",
+                ),
+                relevance=LTXLocalModelRelevant(
+                    upgrade_messages={
+                        "ltx-2.3-22b-distilled": "Switches this Mac to the compact MLX Q4 model for local Apple Silicon generation.",
+                    }
+                ),
+                supported_pipelines=(
+                    (
+                        "fast",
+                        LTXVideoGenerationSpec(
+                            display_name="LTX 2.3 MLX Q4",
+                            supported_resolutions_durations={
+                                "540p": _local_resolution_spec(
+                                    fps_to_durations={
+                                        24: (5, 6, 8, 10, 12, 14, 16, 18, 20),
+                                    },
+                                ),
+                                "720p": _local_resolution_spec(
+                                    fps_to_durations={
+                                        24: (5, 6, 8, 10, 12, 14, 16, 18, 20),
+                                    },
+                                ),
+                                "1080p": _local_resolution_spec(
+                                    fps_to_durations={
+                                        24: (5,),
+                                    },
+                                ),
+                            },
+                        ),
+                    ),
+                ),
+            )
         case _:
             assert_never(model_id)
 
@@ -205,13 +272,18 @@ def get_ltx_cps() -> set[ModelCheckpointID]:
     return cp_ids
 
 
-def get_latest_ltx_model_id() -> LTXLocalModelId:
+def get_latest_ltx_model_id(local_generations_mode: str | None = None) -> LTXLocalModelId:
+    if local_generations_mode == "mac_mlx_q4":
+        return "ltx-2.3-mlx-q4"
+    if local_generations_mode is not None:
+        return "ltx-2.3-22b-distilled"
+
     relevant: list[LTXLocalModelId] = []
     for model_id in ALL_LTX_LOCAL_MODEL_IDS:
         if isinstance(get_ltx_model_spec(model_id).relevance, LTXLocalModelRelevant):
             relevant.append(model_id)
-    if len(relevant) != 1:
-        raise RuntimeError(f"Expected exactly one relevant LTX model, found {len(relevant)}")
+    if not relevant:
+        raise RuntimeError("Expected at least one relevant LTX model, found 0")
     return relevant[0]
 
 

@@ -10,15 +10,17 @@ from pydantic import BaseModel, ConfigDict, Field, StringConstraints, model_vali
 NonEmptyPrompt = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
 ModelCheckpointID = Literal[
     "ltx-2.3-22b-distilled",
+    "ltx-2.3-mlx-q4",
     "ltx-2.3-spatial-upscaler-x2-1.0",
     "ltx-2.3-22b-ic-lora-union-control-ref0.5",
     "dpt-hybrid-midas",
     "yolox-l-torchscript",
     "dw-ll-ucoco-384-bs5",
     "gemma-3-12b-it-qat-q4_0-unquantized",
+    "gemma-3-12b-it-4bit",
     "z-image-turbo",
 ]
-LTXLocalModelId = Literal["ltx-2.3-22b-distilled"]
+LTXLocalModelId = Literal["ltx-2.3-22b-distilled", "ltx-2.3-mlx-q4"]
 
 
 class ImageConditioningInput(NamedTuple):

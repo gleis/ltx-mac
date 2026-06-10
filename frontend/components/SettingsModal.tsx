@@ -169,6 +169,13 @@ export function SettingsModal({ isOpen, onClose, initialTab }: SettingsModalProp
     })
   }
 
+  const handleLocalMlxSpeedModeChange = (mode: AppSettings['localMlxSpeedMode']) => {
+    onSettingsChange({
+      ...settings,
+      localMlxSpeedMode: mode,
+    })
+  }
+
   const openApiKeysAndFocusLtxInput = () => {
     setActiveTab('apiKeys')
     setFocusLtxApiKeyInputOnTabChange(true)
@@ -545,6 +552,67 @@ export function SettingsModal({ isOpen, onClose, initialTab }: SettingsModalProp
                   )}
                 </div>
               </div>
+              )}
+
+              {/* Mac MLX Speed Mode */}
+              {!forceApiGenerations && (
+                <div className="space-y-3 pt-4 border-t border-zinc-800">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Zap className="h-4 w-4 text-sky-400" />
+                        <label className="text-sm font-medium text-white">
+                          Mac MLX Speed
+                        </label>
+                      </div>
+                      <p className="text-xs text-zinc-500 leading-relaxed">
+                        Controls the local MLX sampler. Boost skips stable middle denoise steps for faster renders; Turbo is more aggressive and may add artifacts.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-2">
+                    {([
+                      { value: 'quality', label: 'Quality', note: 'Exact' },
+                      { value: 'boost', label: 'Boost', note: 'Faster' },
+                      { value: 'turbo', label: 'Turbo', note: 'Risky' },
+                    ] as const).map((option) => (
+                      <button
+                        key={option.value}
+                        onClick={() => handleLocalMlxSpeedModeChange(option.value)}
+                        className={`rounded-lg border px-3 py-2 text-left transition-colors ${
+                          settings.localMlxSpeedMode === option.value
+                            ? 'border-sky-500 bg-sky-500/10 text-white'
+                            : 'border-zinc-700 bg-zinc-800/50 text-zinc-400 hover:border-zinc-600 hover:text-zinc-200'
+                        }`}
+                      >
+                        <span className="block text-xs font-semibold">{option.label}</span>
+                        <span className="block text-[10px] text-zinc-500 mt-0.5">{option.note}</span>
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className={`text-xs px-2 py-1 rounded inline-flex items-center gap-1.5 ${
+                    settings.localMlxSpeedMode === 'quality'
+                      ? 'bg-zinc-800 text-zinc-500'
+                      : settings.localMlxSpeedMode === 'boost'
+                        ? 'bg-sky-500/10 text-sky-400'
+                        : 'bg-amber-500/10 text-amber-400'
+                  }`}>
+                    <div className={`w-1.5 h-1.5 rounded-full ${
+                      settings.localMlxSpeedMode === 'quality'
+                        ? 'bg-zinc-600'
+                        : settings.localMlxSpeedMode === 'boost'
+                          ? 'bg-sky-400'
+                          : 'bg-amber-400'
+                    }`} />
+                    {settings.localMlxSpeedMode === 'quality'
+                      ? 'Quality mode uses the exact sampler'
+                      : settings.localMlxSpeedMode === 'boost'
+                        ? 'Boost mode skips stable middle steps'
+                        : 'Turbo mode is experimental'}
+                  </div>
+                </div>
               )}
 
               {/* Torch Compile Setting */}
@@ -957,33 +1025,23 @@ export function SettingsModal({ isOpen, onClose, initialTab }: SettingsModalProp
                 </div>
 
                 <p className="text-xs text-zinc-500 leading-relaxed">
-                  Automatically enhances your prompts via the LTX API with rich visual details, sound descriptions,
-                  and motion cues to help generate higher quality videos. Control independently for each generation type.
+                  Automatically enhances your prompts with rich visual details, sound descriptions, and motion cues to help
+                  generate higher quality videos. API text encoding uses the LTX API enhancer; local Mac MLX generation uses
+                  the downloaded Gemma helper.
                 </p>
 
                 {!settings.hasLtxApiKey ? (
-                  <div className="space-y-4 mt-2">
-                    <div className="bg-amber-500/5 border border-amber-500/20 rounded-lg p-4 space-y-3">
-                      <div className="flex items-start gap-2.5">
-                        <AlertCircle className="h-4 w-4 text-amber-400 mt-0.5 flex-shrink-0" />
-                        <div className="space-y-2">
-                          <p className="text-sm text-amber-300 font-medium">LTX API key required</p>
-                          <p className="text-xs text-zinc-400 leading-relaxed">
-                            Prompt enhancement runs server-side on the LTX API. To use this feature, you need to configure
-                            an API key in the API Keys tab.
-                          </p>
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => setActiveTab('apiKeys')}
-                        className="w-full mt-1 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium rounded-lg transition-colors"
-                      >
-                        Set API Key
-                      </button>
+                  <div className="bg-amber-500/5 border border-amber-500/20 rounded-lg p-4">
+                    <div className="flex items-start gap-2.5">
+                      <AlertCircle className="h-4 w-4 text-amber-400 mt-0.5 flex-shrink-0" />
+                      <p className="text-xs text-zinc-400 leading-relaxed">
+                        Add an LTX API key for API-backed prompt enhancement. Local Mac MLX generation can still use the
+                        downloaded Gemma helper when the toggles below are enabled.
+                      </p>
                     </div>
                   </div>
-                ) : (
-                  <>
+                ) : null}
+
                     {/* T2V Toggle */}
                     <div
                       className="flex items-center justify-between bg-zinc-800/50 rounded-lg px-4 py-3 border border-zinc-700/50 cursor-pointer"
@@ -1029,8 +1087,6 @@ export function SettingsModal({ isOpen, onClose, initialTab }: SettingsModalProp
                         }`} />
                       </div>
                     </div>
-                  </>
-                )}
               </div>
             </>
           )}

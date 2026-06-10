@@ -28,6 +28,7 @@ class TestGetSettings:
         assert data["hasGeminiApiKey"] is False
         assert data["seedLocked"] is False
         assert data["lockedSeed"] == 42
+        assert data["localMlxSpeedMode"] == "quality"
         # When no custom path is set, the response surfaces the runtime default
         # so the first-run UI can show the install location.
         assert data["modelsDir"] == str(test_state.config.default_models_dir)
@@ -76,6 +77,11 @@ class TestPostSettings:
         r = client.post("/api/settings", json={"lockedSeed": 9_999_999_999})
         assert r.status_code == 200
         assert test_state.state.app_settings.locked_seed == 2_147_483_647
+
+    def test_update_local_mlx_speed_mode(self, client, test_state):
+        r = client.post("/api/settings", json={"localMlxSpeedMode": "boost"})
+        assert r.status_code == 200
+        assert test_state.state.app_settings.local_mlx_speed_mode == "boost"
 
     def test_prompt_cache_shrinks_cache(self, client, test_state):
         te = test_state.state.text_encoder

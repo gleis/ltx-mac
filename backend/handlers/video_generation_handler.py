@@ -78,14 +78,18 @@ class VideoGenerationHandler(StateHandlerBase):
         self._ltx_api_client = ltx_api_client
 
     def get_model_specs(self) -> GenerateVideoModelsSpecsResponse:
-        return build_generate_video_model_specs_response()
+        return build_generate_video_model_specs_response(self.config.local_generations_mode)
 
     def generate(self, req: GenerateVideoRequest) -> GenerateVideoResponse:
         use_api_specs = should_video_generate_with_ltx_api(
             force_api_generations=self.config.force_api_generations,
             settings=self.state.app_settings,
         )
-        validation_error = validate_generate_video_request(req, use_api_specs=use_api_specs)
+        validation_error = validate_generate_video_request(
+            req,
+            use_api_specs=use_api_specs,
+            local_generations_mode=self.config.local_generations_mode,
+        )
         if validation_error is not None:
             raise HTTPError(422, validation_error, code="INVALID_VIDEO_GENERATION_SPEC")
 
@@ -101,6 +105,8 @@ class VideoGenerationHandler(StateHandlerBase):
 
         audio_path = normalize_optional_path(req.audioPath)
         if audio_path:
+            if self.config.local_generations_mode == "mac_mlx_q4":
+                raise HTTPError(400, "LOCAL_MAC_MLX_A2V_NOT_SUPPORTED_IN_FIRST_MILESTONE")
             return self._generate_a2v(req, duration, fps, audio_path=audio_path)
 
         logger.info("Resolution %s - using fast pipeline", resolution)
@@ -195,8 +201,6 @@ class VideoGenerationHandler(StateHandlerBase):
         t_load_end = time.perf_counter()
         logger.info("[%s] Pipeline load: %.2fs", gen_mode, t_load_end - t_load_start)
 
-        self._generation.update_progress("encoding_text", 10, 0, total_steps)
-
         enhanced_prompt = prompt + self.config.camera_motion_prompts.get(camera_motion, "")
 
         images: list[ImageConditioningInput] = []
@@ -212,11 +216,24 @@ class VideoGenerationHandler(StateHandlerBase):
             settings = self.state.app_settings
             use_api_encoding = not self._text.should_use_local_encoding()
             if image is not None:
-                enhance = use_api_encoding and settings.prompt_enhancer_enabled_i2v
+                prompt_enhancer_enabled = settings.prompt_enhancer_enabled_i2v
             else:
-                enhance = use_api_encoding and settings.prompt_enhancer_enabled_t2v
+                prompt_enhancer_enabled = settings.prompt_enhancer_enabled_t2v
+
+            if (
+                self.config.local_generations_mode == "mac_mlx_q4"
+                and prompt_enhancer_enabled
+            ):
+                self._generation.update_progress("enhancing_prompt", 8, 0, total_steps)
+                t_enhance_start = time.perf_counter()
+                enhanced_prompt = pipeline_state.pipeline.enhance_prompt(enhanced_prompt, mode=gen_mode, seed=seed)
+                t_enhance_end = time.perf_counter()
+                logger.info("[%s] Prompt enhancement (local MLX): %.2fs", gen_mode, t_enhance_end - t_enhance_start)
+
+            enhance = use_api_encoding and prompt_enhancer_enabled
 
             encoding_method = "api" if use_api_encoding else "local"
+            self._generation.update_progress("encoding_text", 10, 0, total_steps)
             t_text_start = time.perf_counter()
             self._text.prepare_text_encoding(enhanced_prompt, enhance_prompt=enhance)
             t_text_end = time.perf_counter()
@@ -237,6 +254,7 @@ class VideoGenerationHandler(StateHandlerBase):
                 frame_rate=fps,
                 images=images,
                 output_path=str(output_path),
+                speed_mode=settings.local_mlx_speed_mode if self.config.local_generations_mode == "mac_mlx_q4" else "quality",
             )
             t_inference_end = time.perf_counter()
             logger.info("[%s] Inference: %.2fs", gen_mode, t_inference_end - t_inference_start)

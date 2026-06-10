@@ -14,6 +14,7 @@ export interface AppSettings {
   promptEnhancerEnabledI2V: boolean
   seedLocked: boolean
   lockedSeed: number
+  localMlxSpeedMode: 'quality' | 'boost' | 'turbo'
   modelsDir: string
 }
 
@@ -29,6 +30,7 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
   promptEnhancerEnabledI2V: false,
   seedLocked: false,
   lockedSeed: 42,
+  localMlxSpeedMode: 'quality',
   modelsDir: '',
 }
 
@@ -74,6 +76,7 @@ function normalizeAppSettings(data: Partial<AppSettings>): AppSettings {
     promptEnhancerEnabledI2V: data.promptEnhancerEnabledI2V ?? DEFAULT_APP_SETTINGS.promptEnhancerEnabledI2V,
     seedLocked: data.seedLocked ?? DEFAULT_APP_SETTINGS.seedLocked,
     lockedSeed: data.lockedSeed ?? DEFAULT_APP_SETTINGS.lockedSeed,
+    localMlxSpeedMode: data.localMlxSpeedMode ?? DEFAULT_APP_SETTINGS.localMlxSpeedMode,
     modelsDir: data.modelsDir ?? DEFAULT_APP_SETTINGS.modelsDir,
   }
 }

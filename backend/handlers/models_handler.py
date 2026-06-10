@@ -67,6 +67,14 @@ class ModelsHandler(StateHandlerBase):
     def _current_downloaded_ltx_model_id(self) -> LTXLocalModelId | None:
         return get_downloaded_ltx_model_id(self.models_dir)
 
+    def _latest_ltx_model_id(self) -> LTXLocalModelId:
+        try:
+            return get_latest_ltx_model_id(self.config.local_generations_mode)
+        except TypeError:
+            # Some tests monkeypatch the imported helper with the previous
+            # zero-argument shape.
+            return get_latest_ltx_model_id()
+
     def _has_api_key(self) -> bool:
         return bool(self.state.app_settings.ltx_api_key.strip())
 
@@ -149,7 +157,7 @@ class ModelsHandler(StateHandlerBase):
         self._ensure_local_model_mode()
 
         current_model_id = self._current_downloaded_ltx_model_id()
-        latest_model_id = get_latest_ltx_model_id()
+        latest_model_id = self._latest_ltx_model_id()
 
         if current_model_id is None:
             cps_to_download = self._ordered_cp_ids(
@@ -217,7 +225,7 @@ class ModelsHandler(StateHandlerBase):
         if current_model_id is None:
             raise HTTPError(409, "NO_DOWNLOADED_LTX_MODEL")
 
-        latest_model_id = get_latest_ltx_model_id()
+        latest_model_id = self._latest_ltx_model_id()
         if current_model_id == latest_model_id:
             raise HTTPError(409, "ALREADY_ON_LATEST_LTX_MODEL")
 

@@ -10,8 +10,13 @@ from runtime_config.runtime_policy import (
 )
 
 
-def test_darwin_always_unsupported() -> None:
-    assert decide_local_generation_mode(system="Darwin", cuda_available=True, vram_gb=64) == "unsupported"
+def test_darwin_with_32gb_or_more_uses_mac_mlx_q4() -> None:
+    assert decide_local_generation_mode(system="Darwin", cuda_available=True, vram_gb=64) == "mac_mlx_q4"
+    assert decide_local_generation_mode(system="Darwin", cuda_available=False, vram_gb=36) == "mac_mlx_q4"
+
+
+def test_darwin_below_32gb_unsupported() -> None:
+    assert decide_local_generation_mode(system="Darwin", cuda_available=False, vram_gb=31) == "unsupported"
     assert decide_local_generation_mode(system="Darwin", cuda_available=False, vram_gb=None) == "unsupported"
 
 
@@ -69,6 +74,10 @@ def test_streaming_prefetch_count_for_full_loading_is_none() -> None:
 
 def test_streaming_prefetch_count_for_streaming_mode_is_two() -> None:
     assert streaming_prefetch_count_for_mode("streaming_models_loading") == 2
+
+
+def test_streaming_prefetch_count_for_mac_mlx_q4_is_none() -> None:
+    assert streaming_prefetch_count_for_mode("mac_mlx_q4") is None
 
 
 def test_streaming_prefetch_count_for_unsupported_asserts() -> None:

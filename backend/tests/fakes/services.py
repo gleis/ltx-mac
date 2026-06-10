@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, ClassVar
+from typing import Any, ClassVar, Literal
 
 from PIL import Image
 from api_types import ImageConditioningInput, VideoCameraMotion
@@ -327,6 +327,7 @@ class FakeModelDownloader:
         local_dir: str,
         token: str | None,
         on_progress: Callable[[int], None] | None = None,
+        allow_patterns: tuple[str, ...] | None = None,
     ) -> Path:
         self._raise_if_needed()
         self.calls.append(
@@ -335,6 +336,7 @@ class FakeModelDownloader:
                 "repo_id": repo_id,
                 "local_dir": local_dir,
                 "on_progress": on_progress,
+                "allow_patterns": allow_patterns,
             }
         )
 
@@ -455,6 +457,8 @@ class _FakeVideoPipelineBase:
     def __init__(self) -> None:
         self.generate_calls: list[dict[str, Any]] = []
         self.warmup_calls: list[dict[str, Any]] = []
+        self.enhance_prompt_calls: list[dict[str, Any]] = []
+        self.enhance_prompt_response: str | None = None
         self.compile_calls = 0
         self.raise_on_generate: Exception | None = None
 
@@ -476,6 +480,10 @@ class _FakeVideoPipelineBase:
 
     def compile_transformer(self) -> None:
         self.compile_calls += 1
+
+    def enhance_prompt(self, prompt: str, *, mode: Literal["t2v", "i2v"], seed: int) -> str:
+        self.enhance_prompt_calls.append({"prompt": prompt, "mode": mode, "seed": seed})
+        return self.enhance_prompt_response or prompt
 
 
 class FakeFastVideoPipeline(_FakeVideoPipelineBase):
@@ -510,6 +518,7 @@ class FakeFastVideoPipeline(_FakeVideoPipelineBase):
         frame_rate: float,
         images: list[ImageConditioningInput],
         output_path: str,
+        speed_mode: Literal["quality", "boost", "turbo"] = "quality",
     ) -> None:
         self._record_generate(
             {
@@ -521,6 +530,7 @@ class FakeFastVideoPipeline(_FakeVideoPipelineBase):
                 "frame_rate": frame_rate,
                 "images": images,
                 "output_path": output_path,
+                "speed_mode": speed_mode,
             }
         )
 

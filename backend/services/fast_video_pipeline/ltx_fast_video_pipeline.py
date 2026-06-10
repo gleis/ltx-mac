@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 import os
-from typing import Final, cast
+from typing import Final, Literal, cast
 
 import torch
 
@@ -95,7 +95,9 @@ class LTXFastVideoPipeline:
         frame_rate: float,
         images: list[ImageConditioningInput],
         output_path: str,
+        speed_mode: Literal["quality", "boost", "turbo"] = "quality",
     ) -> None:
+        del speed_mode
         tiling_config = default_tiling_config()
         video, audio = self._run_inference(
             prompt=prompt,
@@ -131,6 +133,10 @@ class LTXFastVideoPipeline:
         finally:
             if os.path.exists(output_path):
                 os.unlink(output_path)
+
+    def enhance_prompt(self, prompt: str, *, mode: Literal["t2v", "i2v"], seed: int) -> str:
+        del mode, seed
+        return prompt
 
     def compile_transformer(self) -> None:
         from ltx_pipelines.distilled import DistilledPipeline

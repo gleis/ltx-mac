@@ -12,6 +12,7 @@ release/
 
 # Python
 backend/.venv/
+backend/.venv-corrupt-*/
 backend/__pycache__/
 backend/**/__pycache__/
 *.pyc
@@ -54,6 +55,8 @@ yarn-error.log*
 .env
 .env.local
 .env.*.local
+.ltx-data/
+.venv-tools/
 
 # Testing
 coverage/

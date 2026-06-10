@@ -1355,3 +1355,49 @@ class TestEnhancePromptFlag:
         assert r.status_code == 200
 
         assert len(fake_services.text_encoder.encode_calls) == 0
+
+    def test_mac_mlx_local_encoding_uses_local_prompt_enhancer(self, client, test_state, fake_services, create_fake_model_files):
+        create_fake_model_files()
+        test_state.config.local_generations_mode = "mac_mlx_q4"
+        test_state.state.app_settings.ltx_api_key = "test-key"
+        test_state.state.app_settings.use_local_text_encoder = True
+        test_state.state.app_settings.prompt_enhancer_enabled_t2v = True
+        fake_services.fast_video_pipeline.enhance_prompt_response = "enhanced local prompt"
+
+        r = client.post("/api/generate", json={**_T2V_JSON, "cameraMotion": "none"})
+        assert r.status_code == 200
+
+        assert fake_services.text_encoder.encode_calls == []
+        assert len(fake_services.fast_video_pipeline.enhance_prompt_calls) == 1
+        enhance_call = fake_services.fast_video_pipeline.enhance_prompt_calls[0]
+        assert enhance_call["prompt"] == "test"
+        assert enhance_call["mode"] == "t2v"
+        assert isinstance(enhance_call["seed"], int)
+        assert fake_services.fast_video_pipeline.generate_calls[0]["prompt"] == "enhanced local prompt"
+
+    def test_mac_mlx_local_encoding_skips_local_prompt_enhancer_when_disabled(self, client, test_state, fake_services, create_fake_model_files):
+        create_fake_model_files()
+        test_state.config.local_generations_mode = "mac_mlx_q4"
+        test_state.state.app_settings.ltx_api_key = "test-key"
+        test_state.state.app_settings.use_local_text_encoder = True
+        test_state.state.app_settings.prompt_enhancer_enabled_t2v = False
+        fake_services.fast_video_pipeline.enhance_prompt_response = "enhanced local prompt"
+
+        r = client.post("/api/generate", json={**_T2V_JSON, "cameraMotion": "none"})
+        assert r.status_code == 200
+
+        assert fake_services.text_encoder.encode_calls == []
+        assert fake_services.fast_video_pipeline.enhance_prompt_calls == []
+        assert fake_services.fast_video_pipeline.generate_calls[0]["prompt"] == "test"
+
+    def test_mac_mlx_speed_mode_is_passed_to_pipeline(self, client, test_state, fake_services, create_fake_model_files):
+        create_fake_model_files()
+        test_state.config.local_generations_mode = "mac_mlx_q4"
+        test_state.state.app_settings.use_local_text_encoder = True
+        test_state.state.app_settings.prompt_enhancer_enabled_t2v = False
+        test_state.state.app_settings.local_mlx_speed_mode = "boost"
+
+        r = client.post("/api/generate", json={**_T2V_JSON, "cameraMotion": "none"})
+        assert r.status_code == 200
+
+        assert fake_services.fast_video_pipeline.generate_calls[0]["speed_mode"] == "boost"

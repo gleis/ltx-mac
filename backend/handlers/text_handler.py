@@ -72,6 +72,9 @@ class TextHandler(StateHandlerBase):
             else is_cp_downloaded(self.models_dir, get_ltx_model_spec(model_id).text_encoder_cp)
         )
 
+        if self.config.local_generations_mode == "mac_mlx_q4":
+            return local_available
+
         if api_available and local_available:
             return settings.use_local_text_encoder  # setting is tiebreaker
         return local_available  # use whichever is available

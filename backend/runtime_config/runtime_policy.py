@@ -7,6 +7,7 @@ from typing import Literal
 LocalGenerationMode = Literal[
     "full_models_loading",
     "streaming_models_loading",
+    "mac_mlx_q4",
     "unsupported",
 ]
 
@@ -17,12 +18,15 @@ def decide_local_generation_mode(
     """Pick the local-generation mode for this runtime.
 
     - "unsupported": local generation is not viable; caller must route to the API.
+    - "mac_mlx_q4": Apple Silicon local generation via the compact MLX Q4 path.
     - "streaming_models_loading": enough VRAM to run, but model weights must be
       streamed from pinned host RAM (15-30 GB range).
     - "full_models_loading": enough VRAM to hold the whole model resident (>=31 GB),
       so streaming is skipped to avoid unnecessary host-RAM pressure.
     """
     if system == "Darwin":
+        if vram_gb is not None and vram_gb >= 32:
+            return "mac_mlx_q4"
         return "unsupported"
 
     if system in ("Windows", "Linux"):
@@ -51,7 +55,7 @@ def streaming_prefetch_count_for_mode(mode: LocalGenerationMode) -> int | None:
             "streaming_prefetch_count_for_mode called with 'unsupported' mode; "
             "callers must route to the API instead of constructing a local pipeline."
         )
-    if mode == "full_models_loading":
+    if mode in ("full_models_loading", "mac_mlx_q4"):
         return None
     if mode == "streaming_models_loading":
         return 2

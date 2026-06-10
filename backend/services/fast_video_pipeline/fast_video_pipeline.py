@@ -33,10 +33,14 @@ class FastVideoPipeline(Protocol):
         frame_rate: float,
         images: list[ImageConditioningInput],
         output_path: str,
+        speed_mode: Literal["quality", "boost", "turbo"] = "quality",
     ) -> None:
         ...
 
     def warmup(self, output_path: str) -> None:
+        ...
+
+    def enhance_prompt(self, prompt: str, *, mode: Literal["t2v", "i2v"], seed: int) -> str:
         ...
 
     def compile_transformer(self) -> None:

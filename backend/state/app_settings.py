@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, TypeGuard, TypeVar, cast, get_args
+from typing import Any, Literal, TypeGuard, TypeVar, cast, get_args
 
 from pydantic import BaseModel, ConfigDict, Field, create_model, field_validator
 
@@ -57,6 +57,7 @@ class AppSettings(SettingsBaseModel):
     gemini_api_key: str = ""
     seed_locked: bool = False
     locked_seed: int = 42
+    local_mlx_speed_mode: Literal["quality", "boost", "turbo"] = "quality"
     models_dir: str = ""
 
     @field_validator("prompt_cache_size", mode="before")
@@ -126,6 +127,7 @@ class SettingsResponse(SettingsBaseModel):
     has_gemini_api_key: bool = False
     seed_locked: bool = False
     locked_seed: int = 42
+    local_mlx_speed_mode: Literal["quality", "boost", "turbo"] = "quality"
     models_dir: str = ""
 
 

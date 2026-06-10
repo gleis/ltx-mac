@@ -215,6 +215,7 @@ class DownloadHandler(StateHandlerBase):
                 local_dir=str(resolve_downloading_path(self.models_dir, cp_id)),
                 on_progress=progress_cb,
                 token=hf_token,
+                allow_patterns=spec.snapshot_allow_patterns,
             )
         else:
             self._model_downloader.download_file(

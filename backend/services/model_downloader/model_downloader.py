@@ -23,4 +23,5 @@ class ModelDownloader(Protocol):
         local_dir: str,
         token: str | None,
         on_progress: Callable[[int], None] | None = None,
+        allow_patterns: tuple[str, ...] | None = None,
     ) -> Path: ...

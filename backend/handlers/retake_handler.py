@@ -73,6 +73,9 @@ class RetakeHandler(StateHandlerBase):
                 mode=mode,
             )
 
+        if self.config.local_generations_mode == "mac_mlx_q4":
+            raise HTTPError(400, "LOCAL_MAC_MLX_RETAKE_NOT_SUPPORTED_IN_FIRST_MILESTONE")
+
         return self._run_local_retake(
             video_file=video_file,
             start_time=start_time,

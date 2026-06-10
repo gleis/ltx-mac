@@ -4,12 +4,13 @@ import fs from 'fs'
 import { checkGPU } from '../gpu'
 import { isPythonReady, downloadPythonEmbed } from '../python-setup'
 import { getBackendHealthStatus, getBackendUrl, getAuthToken, getAdminToken, startPythonBackend } from '../python-backend'
+import { getAppDataDir } from '../app-paths'
 import { getMainWindow } from '../window'
 import { getAnalyticsState, setAnalyticsEnabled, sendAnalyticsEvent } from '../analytics'
 import { handle } from './typed-handle'
 
 function getModelsPath(): string {
-  const modelsPath = path.join(app.getPath('userData'), 'models')
+  const modelsPath = path.join(getAppDataDir(), 'models')
   if (!fs.existsSync(modelsPath)) {
     fs.mkdirSync(modelsPath, { recursive: true })
   }
@@ -85,7 +86,7 @@ export function registerAppHandlers(): void {
       version: app.getVersion(),
       isPackaged: app.isPackaged,
       modelsPath: getModelsPath(),
-      userDataPath: app.getPath('userData'),
+      userDataPath: getAppDataDir(),
     }
   })
 
@@ -94,18 +95,18 @@ export function registerAppHandlers(): void {
   })
 
   handle('checkFirstRun', () => {
-    const settingsPath = path.join(app.getPath('userData'), 'app_state.json')
+    const settingsPath = path.join(getAppDataDir(), 'app_state.json')
     return getSetupStatus(settingsPath)
   })
 
   handle('acceptLicense', () => {
-    const settingsPath = path.join(app.getPath('userData'), 'app_state.json')
+    const settingsPath = path.join(getAppDataDir(), 'app_state.json')
     markLicenseAccepted(settingsPath)
     return true
   })
 
   handle('completeSetup', () => {
-    const settingsPath = path.join(app.getPath('userData'), 'app_state.json')
+    const settingsPath = path.join(getAppDataDir(), 'app_state.json')
     markSetupComplete(settingsPath)
     return true
   })
