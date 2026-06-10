@@ -245,6 +245,10 @@ class VideoGenerationHandler(StateHandlerBase):
             width = round(width / 64) * 64
 
             t_inference_start = time.perf_counter()
+            speed_mode = "quality"
+            if self.config.local_generations_mode == "mac_mlx_q4" and gen_mode == "t2v":
+                speed_mode = settings.local_mlx_speed_mode
+
             pipeline_state.pipeline.generate(
                 prompt=enhanced_prompt,
                 seed=seed,
@@ -254,7 +258,7 @@ class VideoGenerationHandler(StateHandlerBase):
                 frame_rate=fps,
                 images=images,
                 output_path=str(output_path),
-                speed_mode=settings.local_mlx_speed_mode if self.config.local_generations_mode == "mac_mlx_q4" else "quality",
+                speed_mode=speed_mode,
             )
             t_inference_end = time.perf_counter()
             logger.info("[%s] Inference: %.2fs", gen_mode, t_inference_end - t_inference_start)

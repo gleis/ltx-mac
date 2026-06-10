@@ -20,8 +20,8 @@ compact Q4 LTX 2.3 model. It is intended to run locally on a Mac with about
 - Prompt Enhancer visibility without requiring an LTX API key.
 - A Mac MLX speed control in Settings:
   - `Quality`: exact/default sampler.
-  - `Boost`: skips stable middle denoise steps for faster renders.
-  - `Turbo`: more aggressive, may add artifacts.
+  - `Boost`: skips stable middle denoise steps for faster text-to-video renders.
+  - `Turbo`: more aggressive, text-to-video only, may add artifacts.
 - A setup script: `scripts/setup-mac-mlx.sh`.
 
 ## Supported Local Mac Envelope
@@ -195,8 +195,8 @@ Key fork files:
 
 - 1080p 10-second local Mac renders can complete, but the current usable output
   quality is only trusted for 5 seconds.
-- `Boost` and `Turbo` are performance/quality tradeoffs; use `Quality` when
-  comparing final output.
+- `Boost` and `Turbo` are text-to-video performance/quality tradeoffs. Local
+  Mac image-to-video always uses `Quality` to avoid conditioning artifacts.
 - The MLX path currently relies on an external `ltx-2-mlx` checkout at version
   `v0.14.0` prepared by `scripts/setup-mac-mlx.sh`.
 - The local setup downloads large model/runtime assets that are intentionally

@@ -566,7 +566,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: SettingsModalProp
                         </label>
                       </div>
                       <p className="text-xs text-zinc-500 leading-relaxed">
-                        Controls the local MLX sampler. Boost skips stable middle denoise steps for faster renders; Turbo is more aggressive and may add artifacts.
+                        Controls the local MLX sampler for text-to-video. Image-to-video uses Quality mode to avoid conditioning artifacts.
                       </p>
                     </div>
                   </div>
@@ -609,8 +609,8 @@ export function SettingsModal({ isOpen, onClose, initialTab }: SettingsModalProp
                     {settings.localMlxSpeedMode === 'quality'
                       ? 'Quality mode uses the exact sampler'
                       : settings.localMlxSpeedMode === 'boost'
-                        ? 'Boost mode skips stable middle steps'
-                        : 'Turbo mode is experimental'}
+                        ? 'Boost skips stable middle steps for T2V'
+                        : 'Turbo is experimental and T2V-only'}
                   </div>
                 </div>
               )}

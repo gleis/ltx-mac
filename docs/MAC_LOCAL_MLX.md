@@ -130,11 +130,13 @@ Recommended local Mac settings:
   before local encoding/rendering.
 - Mac MLX Speed:
   - `Quality`: default, exact sampler.
-  - `Boost`: faster, skips stable middle denoise steps.
-  - `Turbo`: fastest/aggressive, more likely to show artifacts.
+  - `Boost`: faster text-to-video, skips stable middle denoise steps.
+  - `Turbo`: fastest/aggressive text-to-video, more likely to show artifacts.
 
 Start with `Quality` for comparisons. Try `Boost` for ordinary iteration once
-you have a prompt that works. Treat `Turbo` as experimental.
+you have a text-to-video prompt that works. Treat `Turbo` as experimental.
+Image-to-video always uses `Quality` in this fork because accelerated I2V can
+produce tiled conditioning artifacts.
 
 ## Recommended Generation Settings
 
@@ -175,7 +177,7 @@ Things that usually help:
 
 - Iterate at 540p or 720p before trying 1080p.
 - Use 5-second clips for prompt testing.
-- Use `Boost` after a prompt works in `Quality`.
+- Use `Boost` after a text-to-video prompt works in `Quality`.
 - Keep other GPU-heavy apps closed while rendering.
 - Keep `.ltx-data` on a fast external SSD if the main drive is low on space.
 
@@ -183,6 +185,7 @@ Things that may hurt quality:
 
 - Pushing 1080p beyond 5 seconds.
 - Using `Turbo` for final output.
+- Applying accelerated sampler modes to image-to-video.
 - Raising duration before the prompt/camera motion is stable.
 
 ## Environment Variables
@@ -274,7 +277,7 @@ Use 1080p for 5-second clips only. For 10-20 seconds, use 720p or 540p.
 That is expected for local MLX video generation. Try:
 
 - `720p`, `5` or `10` seconds while iterating.
-- `Boost` speed mode.
+- `Boost` speed mode for text-to-video. Image-to-video remains on `Quality`.
 - Closing GPU-heavy apps.
 - Keeping the project data folder on a fast external SSD.
 

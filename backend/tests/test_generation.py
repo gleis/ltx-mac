@@ -1401,3 +1401,22 @@ class TestEnhancePromptFlag:
         assert r.status_code == 200
 
         assert fake_services.fast_video_pipeline.generate_calls[0]["speed_mode"] == "boost"
+
+    def test_mac_mlx_i2v_forces_quality_speed_mode(
+        self, client, test_state, fake_services, create_fake_model_files, make_test_image, tmp_path
+    ):
+        create_fake_model_files()
+        test_state.config.local_generations_mode = "mac_mlx_q4"
+        test_state.state.app_settings.use_local_text_encoder = True
+        test_state.state.app_settings.prompt_enhancer_enabled_i2v = False
+        test_state.state.app_settings.local_mlx_speed_mode = "boost"
+        image_path = tmp_path / "input.png"
+        image_path.write_bytes(make_test_image().getvalue())
+
+        r = client.post(
+            "/api/generate",
+            json={**_T2V_JSON, "imagePath": str(image_path), "cameraMotion": "none"},
+        )
+        assert r.status_code == 200
+
+        assert fake_services.fast_video_pipeline.generate_calls[0]["speed_mode"] == "quality"
