@@ -1,202 +1,210 @@
-# LTX Desktop
+# LTX Desktop Mac Local Fork
 
-LTX Desktop is an open-source desktop app for generating videos with LTX models — locally on supported Windows/Linux NVIDIA GPUs, with an API mode for unsupported hardware and macOS.
+This fork of [Lightricks/LTX-Desktop](https://github.com/Lightricks/LTX-Desktop)
+adds a first working Apple Silicon local-generation path using MLX and the
+compact Q4 LTX 2.3 model. It is intended to run locally on a Mac with about
+36 GB of unified memory while keeping the original LTX API mode available.
 
-> **Status: Beta.** Expect breaking changes.
-> Frontend architecture is under active refactor; large UI PRs may be declined for now (see [`CONTRIBUTING.md`](docs/CONTRIBUTING.md)).
+> Status: working first milestone. Text-to-video and image-to-video local Mac
+> generation work through the MLX Q4 path. The quality/runtime envelope is still
+> being tuned, so the UI intentionally advertises conservative settings.
 
-<p align="center">
-  <img src="images/gen-space.png" alt="Gen Space" width="70%">
-</p>
+## What This Fork Adds
 
-<p align="center">
-  <img src="images/video-editor.png" alt="Video Editor" width="70%">
-</p>
+- Local Apple Silicon generation mode: `mac_mlx_q4`.
+- Project-local development storage in `.ltx-data/` so model/runtime downloads
+  can stay on the external project drive.
+- MLX Q4 model support from `dgrauet/ltx-2.3-mlx-q4`.
+- MLX 4-bit Gemma text encoder and local prompt enhancement from
+  `mlx-community/gemma-3-12b-it-4bit`.
+- Prompt Enhancer visibility without requiring an LTX API key.
+- A Mac MLX speed control in Settings:
+  - `Quality`: exact/default sampler.
+  - `Boost`: skips stable middle denoise steps for faster renders.
+  - `Turbo`: more aggressive, may add artifacts.
+- A setup script: `scripts/setup-mac-mlx.sh`.
 
-<p align="center">
-  <img src="images/timeline-gap-fill.png" alt="Timeline gap fill" width="70%">
-</p>
+## Supported Local Mac Envelope
 
-## Features
+Validated target machine: Apple Silicon Mac with 36 GB unified memory.
 
-- Text-to-video generation
-- Image-to-video generation
-- Audio-to-video generation
-- Video edit generation (Retake)
-- Video Editor Interface
-- Video Editing Projects
-
-## Local vs API mode
-
-| Platform / hardware | Generation mode | Notes |
+| Resolution | Local MLX Q4 durations exposed in UI | Current recommendation |
 | --- | --- | --- |
-| Windows + CUDA GPU with **≥16GB VRAM** | Local generation | Downloads model weights locally |
-| Windows (no CUDA, <16GB VRAM, or unknown VRAM) | API-only | **LTX API key required** |
-| Linux + CUDA GPU with **≥16GB VRAM** | Local generation | Downloads model weights locally |
-| Linux (no CUDA, <16GB VRAM, or unknown VRAM) | API-only | **LTX API key required** |
-| macOS (Apple Silicon builds) | API-only | **LTX API key required** |
+| 540p | 5-20 seconds at 24 fps | Good for longer tests |
+| 720p | 5-20 seconds at 24 fps | Best default for usable longer clips |
+| 1080p | 5 seconds at 24 fps | 10 seconds can complete, but only the first 5 seconds has been usable so far |
 
-In API-only mode, available resolutions/durations may be limited to what the API supports.
+The app may be able to render beyond these limits if edited manually, but this
+fork treats actual viewable quality as the release gate.
 
-## System requirements
+## Quick Start On Apple Silicon
 
-### Windows (local generation)
+Prerequisites:
 
-- Windows 10/11 (x64)
-- NVIDIA GPU with CUDA support and **≥16GB VRAM** (more is better)
-- 16GB+ RAM (32GB recommended)
-- **160GB+ free disk space** (for model weights, Python environment, and outputs)
-
-### Linux (local generation)
-
-- Ubuntu 22.04+ or similar distro (x64 or arm64)
-- NVIDIA GPU with CUDA support and **≥16GB VRAM** (more is better)
-- NVIDIA driver installed (PyTorch bundles the CUDA runtime)
-- 16GB+ RAM (32GB recommended)
-- Plenty of free disk space for model weights and outputs
-
-### macOS (API-only)
-
-- Apple Silicon (arm64)
-- macOS 13+ (Ventura)
-- Stable internet connection
-
-## Install
-
-1. Download the latest installer from GitHub Releases: [Releases](../../releases)
-2. Install and launch **LTX Desktop**
-3. Complete first-run setup
-
-## First run & data locations
-
-LTX Desktop stores app data (settings, models, logs) in:
-
-- **Windows:** `%LOCALAPPDATA%\LTXDesktop\`
-- **macOS:** `~/Library/Application Support/LTXDesktop/`
-- **Linux:** `$XDG_DATA_HOME/LTXDesktop/` (default: `~/.local/share/LTXDesktop/`)
-
-Model weights are downloaded into the `models/` subfolder (this can be large and may take time).
-
-On first launch you may be prompted to review/accept model license terms (license text is fetched from Hugging Face; requires internet).
-
-Text encoding: to generate videos you must configure text encoding:
-
-- **LTX API key** (cloud text encoding) — **text encoding via the API is completely FREE** and highly recommended to speed up inference and save memory. Generate a free API key at the [LTX Console](https://console.ltx.video/). [Read more](https://ltx.io/model/model-blog/ltx-2-better-control-for-real-workflows).
-- **Local Text Encoder** (extra download; enables fully-local operation on supported Windows hardware) — if you don't wish to generate an API key, you can encode text locally via the settings menu.
-
-## API keys, cost, and privacy
-
-### LTX API key
-
-The LTX API is used for:
-
-- **Cloud text encoding and prompt enhancement** — **FREE**; text encoding is highly recommended to speed up inference and save memory
-- API-based video generations (required on macOS and on unsupported Windows hardware) — paid
-- Retake — paid
-
-An LTX API key is required in API-only mode, but optional on Windows/Linux local mode if you enable the Local Text Encoder.
-
-Generate a FREE API key at the [LTX Console](https://console.ltx.video/). Text encoding is free; video generation API usage is paid. [Read more](https://ltx.io/model/model-blog/ltx-2-better-control-for-real-workflows).
-
-When you use API-backed features, prompts and media inputs are sent to the API service. Your API key is stored locally in your app data folder — treat it like a secret.
-
-### fal API key (optional)
-
-Used for Z Image Turbo text-to-image generation in API mode. When enabled, image generation requests are sent to fal.ai.
-
-Create an API key in the [fal dashboard](https://fal.ai/dashboard/keys).
-
-### Gemini API key (optional)
-
-Used for AI prompt suggestions. When enabled, prompt context and frames may be sent to Google Gemini.
-
-## Architecture
-
-LTX Desktop is split into three main layers:
-
-- **Renderer (`frontend/`)**: TypeScript + React UI.
-  - Calls the local backend over HTTP at `http://localhost:8000`.
-  - Talks to Electron via the preload bridge (`window.electronAPI`).
-- **Electron (`electron/`)**: TypeScript main process + preload.
-  - Owns app lifecycle and OS integration (file dialogs, native export via ffmpeg, starting/managing the Python backend).
-  - Security: renderer is sandboxed (`contextIsolation: true`, `nodeIntegration: false`).
-- **Backend (`backend/`)**: Python + FastAPI local server.
-  - Orchestrates generation, model downloads, and GPU execution.
-  - Calls external APIs only when API-backed features are used.
-
-```mermaid
-graph TD
-  UI["Renderer (React + TS)"] -->|HTTP: localhost:8000| BE["Backend (FastAPI + Python)"]
-  UI -->|IPC via preload: window.electronAPI| EL["Electron main (TS)"]
-  EL --> OS["OS integration (files, dialogs, ffmpeg, process mgmt)"]
-  BE --> GPU["Local models + GPU (when supported)"]
-  BE --> EXT["External APIs (only for API-backed features)"]
-  EL --> DATA["App data folder (settings/models/logs)"]
-  BE --> DATA
-```
-
-## Development (quickstart)
-
-Prereqs:
-
-- Node.js
-- `uv` (Python package manager)
-- Python 3.12+
+- macOS on Apple Silicon (`arm64`)
 - Git
+- Node.js and Corepack
+- `pnpm`
+- `uv`
+- Plenty of free space on the project drive. The local data folder can exceed
+  50 GB once the MLX runtime, models, caches, and outputs are present.
 
-Setup:
+From the project root:
 
 ```bash
-pnpm setup:dev
+corepack enable
+pnpm install
+scripts/setup-mac-mlx.sh
+pnpm dev
 ```
 
-Run:
+The setup script keeps its downloads under `.ltx-data/` by default:
+
+```text
+.ltx-data/
+  ltx-2-mlx/              # MLX runtime checkout and Python 3.11 env
+  models/
+    ltx-2.3-mlx-q4/
+    gemma-3-12b-it-4bit/
+  uv-cache/
+  hf-home/
+  cache/
+  outputs/
+```
+
+For more detail, see [docs/MAC_LOCAL_MLX.md](docs/MAC_LOCAL_MLX.md).
+
+## Running The App
+
+Development:
 
 ```bash
 pnpm dev
 ```
 
-Debug:
+TypeScript check:
 
 ```bash
-pnpm dev:debug
+pnpm typecheck:ts
 ```
 
-`dev:debug` starts Electron with inspector enabled and starts the Python backend with `debugpy`.
+Focused backend tests used for this fork:
 
-Typecheck:
+```bash
+cd backend
+UV_CACHE_DIR=../.ltx-data/uv-cache ../.venv-tools/bin/uv run --extra test python -m pytest \
+  tests/test_settings.py \
+  tests/test_generation.py::TestEnhancePromptFlag \
+  tests/test_model_download_specs.py \
+  tests/test_runtime_policy_decision.py \
+  tests/test_models.py \
+  -q
+```
+
+Full upstream checks remain:
 
 ```bash
 pnpm typecheck
+pnpm backend:test
+pnpm build:frontend
 ```
 
-Backend tests:
+## Data Locations
+
+In development, this fork defaults Electron `userData` to:
+
+```text
+<repo>/.ltx-data
+```
+
+You can override it:
 
 ```bash
-pnpm backend:test
+export LTX_APP_DATA_DIR="/Volumes/X10Pro4T/projects/ltx-mac/.ltx-data"
 ```
 
-Building installers:
-- See [`INSTALLER.md`](docs/INSTALLER.md)
+Packaged app defaults are still OS-standard unless `LTX_APP_DATA_DIR` is set:
 
-## Telemetry
+- macOS: `~/Library/Application Support/LTXDesktop/`
+- Windows: `%LOCALAPPDATA%\LTXDesktop\`
+- Linux: `$XDG_DATA_HOME/LTXDesktop/` or `~/.local/share/LTXDesktop/`
 
-LTX Desktop collects minimal, anonymous usage analytics (app version, platform, and a random installation ID) to help prioritize development. No personal information or generated content is collected. Analytics is enabled by default and can be disabled in **Settings > General > Anonymous Analytics**. See [`TELEMETRY.md`](docs/TELEMETRY.md) for details.
+## API Keys
 
-## Docs
+Local Mac generation does not require the LTX video-generation API.
 
-- [`INSTALLER.md`](docs/INSTALLER.md) — building installers
-- [`TELEMETRY.md`](docs/TELEMETRY.md) — telemetry and privacy
-- [`backend/architecture.md`](backend/architecture.md) — backend architecture
+An LTX API key can still be useful for:
 
-## Contributing
+- API video generation.
+- API-backed cloud text encoding on supported flows.
+- API-backed prompt enhancement where configured.
+- Retake/API features.
 
-See [`CONTRIBUTING.md`](docs/CONTRIBUTING.md).
+The local Mac MLX flow can use the downloaded Gemma helper for prompt
+enhancement without an LTX API key.
+
+Optional keys:
+
+- fal API key: Z Image Turbo text-to-image generation in API mode.
+- Gemini API key: AI prompt suggestions.
+
+## Architecture
+
+LTX Desktop has three main layers:
+
+- `frontend/`: React 18 + TypeScript + Tailwind renderer.
+- `electron/`: Electron main/preload process, app lifecycle, IPC, Python backend
+  process management, and ffmpeg export.
+- `backend/`: Python FastAPI server for ML orchestration, model downloads, API
+  clients, and local generation services.
+
+```mermaid
+graph TD
+  UI["Renderer (React + TypeScript)"] -->|backendFetch HTTP| BE["Backend (FastAPI)"]
+  UI -->|window.electronAPI IPC| EL["Electron main"]
+  EL --> DATA["App data: .ltx-data in dev"]
+  BE --> DATA
+  BE --> MLX["Mac MLX helper process"]
+  MLX --> MODELS["MLX Q4 model + Gemma 4-bit"]
+  BE --> API["External APIs when explicitly used"]
+```
+
+Key fork files:
+
+- `backend/runtime_config/runtime_policy.py`: selects `mac_mlx_q4` on Apple
+  Silicon with enough memory.
+- `backend/runtime_config/model_download_specs.py`: source of truth for exposed
+  local model/resolution/duration options.
+- `backend/services/fast_video_pipeline/mlx_fast_video_pipeline.py`: backend
+  wrapper around the MLX helper process.
+- `backend/services/fast_video_pipeline/mlx_warm_helper.py`: long-lived MLX
+  helper used for prompt enhancement, text encoding, and rendering.
+- `scripts/setup-mac-mlx.sh`: project-local MLX runtime/model setup.
+- `frontend/components/SettingsModal.tsx`: prompt enhancer and Mac MLX speed UI.
+- `electron/app-paths.ts`: development `.ltx-data` user-data location.
+
+## Documentation
+
+- [Mac Local MLX Runbook](docs/MAC_LOCAL_MLX.md)
+- [Installer Build Guide](docs/INSTALLER.md)
+- [Telemetry](docs/TELEMETRY.md)
+- [Contributing](docs/CONTRIBUTING.md)
+- [Backend Architecture](backend/architecture.md)
+
+## Known Limitations
+
+- 1080p 10-second local Mac renders can complete, but the current usable output
+  quality is only trusted for 5 seconds.
+- `Boost` and `Turbo` are performance/quality tradeoffs; use `Quality` when
+  comparing final output.
+- The MLX path currently relies on an external `ltx-2-mlx` checkout at version
+  `v0.14.0` prepared by `scripts/setup-mac-mlx.sh`.
+- The local setup downloads large model/runtime assets that are intentionally
+  ignored by Git.
 
 ## License
 
-Apache-2.0 — see [`LICENSE.txt`](LICENSE.txt).
+Application code is Apache-2.0; see [LICENSE.txt](LICENSE.txt).
 
-Third-party notices (including model licenses/terms): [`NOTICES.md`](NOTICES.md).
-
-Model weights are downloaded separately and may be governed by additional licenses/terms.
+Third-party notices and model terms may apply; see [NOTICES.md](NOTICES.md) and
+the model repositories downloaded during setup.

@@ -19,6 +19,10 @@ App data folder locations:
 - **macOS:** `~/Library/Application Support/LTXDesktop/`
 - **Linux:** `$XDG_DATA_HOME/LTXDesktop/` (default: `~/.local/share/LTXDesktop/`)
 
+In this Mac-local fork, development runs default app data to `<repo>/.ltx-data/`
+unless `LTX_APP_DATA_DIR` is set. Packaged builds keep the OS-standard folders
+above unless launched with `LTX_APP_DATA_DIR`.
+
 Your preference is respected immediately — no restart required.
 
 ## Implementation
