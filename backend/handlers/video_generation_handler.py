@@ -138,6 +138,12 @@ class VideoGenerationHandler(StateHandlerBase):
         image = None
         image_path = normalize_optional_path(req.imagePath)
         if image_path:
+            if self.config.local_generations_mode == "mac_mlx_q4":
+                raise HTTPError(
+                    400,
+                    "Mac local MLX image-to-video is disabled in this milestone because the current MLX Q4 image conditioning path produces tiled artifacts. Enable LTX API video generation to use image-to-video.",
+                    code="LOCAL_MAC_MLX_I2V_UNSUPPORTED",
+                )
             image = self._prepare_image(image_path, width, height)
             logger.info("Image: %s -> %sx%s", image_path, width, height)
 

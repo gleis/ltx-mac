@@ -5,9 +5,9 @@ adds a first working Apple Silicon local-generation path using MLX and the
 compact Q4 LTX 2.3 model. It is intended to run locally on a Mac with about
 36 GB of unified memory while keeping the original LTX API mode available.
 
-> Status: working first milestone. Text-to-video and image-to-video local Mac
-> generation work through the MLX Q4 path. The quality/runtime envelope is still
-> being tuned, so the UI intentionally advertises conservative settings.
+> Status: working first milestone. Text-to-video runs locally through the MLX Q4
+> path. Image-to-video remains available through the LTX API, but the local Mac
+> MLX I2V path is disabled because it currently produces tiled artifacts.
 
 ## What This Fork Adds
 
@@ -195,8 +195,10 @@ Key fork files:
 
 - 1080p 10-second local Mac renders can complete, but the current usable output
   quality is only trusted for 5 seconds.
-- `Boost` and `Turbo` are text-to-video performance/quality tradeoffs. Local
-  Mac image-to-video always uses `Quality` to avoid conditioning artifacts.
+- `Boost` and `Turbo` are text-to-video performance/quality tradeoffs.
+- Local Mac image-to-video is disabled for this milestone because the current
+  MLX Q4 image-conditioning path produces tiled artifacts. Use the LTX API path
+  for image-to-video.
 - The MLX path currently relies on an external `ltx-2-mlx` checkout at version
   `v0.14.0` prepared by `scripts/setup-mac-mlx.sh`.
 - The local setup downloads large model/runtime assets that are intentionally

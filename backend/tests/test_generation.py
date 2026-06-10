@@ -1402,7 +1402,7 @@ class TestEnhancePromptFlag:
 
         assert fake_services.fast_video_pipeline.generate_calls[0]["speed_mode"] == "boost"
 
-    def test_mac_mlx_i2v_forces_quality_speed_mode(
+    def test_mac_mlx_i2v_is_rejected_before_generation(
         self, client, test_state, fake_services, create_fake_model_files, make_test_image, tmp_path
     ):
         create_fake_model_files()
@@ -1417,6 +1417,7 @@ class TestEnhancePromptFlag:
             "/api/generate",
             json={**_T2V_JSON, "imagePath": str(image_path), "cameraMotion": "none"},
         )
-        assert r.status_code == 200
+        assert r.status_code == 400
+        assert r.json()["code"] == "LOCAL_MAC_MLX_I2V_UNSUPPORTED"
 
-        assert fake_services.fast_video_pipeline.generate_calls[0]["speed_mode"] == "quality"
+        assert fake_services.fast_video_pipeline.generate_calls == []

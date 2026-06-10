@@ -382,6 +382,7 @@ function PromptBar({
   onSettingsChange,
   videoModelSpecs,
   videoSettingsMessage,
+  generationNotice,
   canGenerate,
   buttonLabel,
   buttonIcon,
@@ -417,6 +418,7 @@ function PromptBar({
   onSettingsChange: (settings: any) => void
   videoModelSpecs: VideoGenerationModelSpecItem[]
   videoSettingsMessage?: string | null
+  generationNotice?: string | null
   icLoraCondType?: ICLoraConditioningType
   onIcLoraCondTypeChange?: (type: ICLoraConditioningType) => void
   icLoraStrength?: number
@@ -601,6 +603,12 @@ function PromptBar({
         </div>
 
       </div>
+
+      {generationNotice && (
+        <div className="px-3 pb-2 text-[11px] leading-4 text-amber-300">
+          {generationNotice}
+        </div>
+      )}
       
       {/* Bottom row: Mode selector + Settings */}
       <div className="flex items-center gap-0.5 px-1.5 py-1.5 border-t border-zinc-800/60 text-xs text-zinc-400">
@@ -1410,10 +1418,9 @@ export function GenSpace() {
 
     if (!prompt.trim()) return
 
-    // Save the prompt before generation starts
-    setLastPrompt(prompt)
-
     if (mode === 'image') {
+      // Save the prompt before generation starts
+      setLastPrompt(prompt)
       generateImage(
         prompt,
         {
@@ -1433,6 +1440,14 @@ export function GenSpace() {
       // Generate video (t2v if no image/audio, i2v if image, a2v if audio)
       const imagePath = inputImage || null
       const audioPath = inputAudio || null
+      if (imagePath && !shouldVideoGenerateWithLtxApi) {
+        setLocalError(createLocalGenerationError(
+          'Local Mac image-to-video is disabled in this milestone because it produces tiled artifacts. Enable LTX API video generation for image-to-video, or remove the image and generate text-to-video locally.',
+        ))
+        return
+      }
+      // Save the prompt before generation starts
+      setLastPrompt(prompt)
       const videoSettings = sanitizeVideoSettings(settings)
 
       generate(
@@ -1495,6 +1510,10 @@ export function GenSpace() {
 
   const isRetakeMode = mode === 'retake'
   const isIcLoraMode = mode === 'ic-lora'
+  const localI2vUnsupported = mode === 'video' && Boolean(inputImage) && !shouldVideoGenerateWithLtxApi
+  const localI2vNotice = localI2vUnsupported
+    ? 'Local Mac image-to-video is disabled in this milestone. Enable LTX API video generation for I2V, or remove the image for local text-to-video.'
+    : null
   const hasCompatibleVideoSettings = mode !== 'video' || (
     !isLoadingVideoGenerationModelSpecs
     && videoModelSpecs.length > 0
@@ -1509,6 +1528,7 @@ export function GenSpace() {
     : isIcLoraMode
       ? !!prompt.trim() && icLoraInput.ready && !!icLoraInput.videoPath && !isIcLoraGenerating
       : !!prompt.trim() && hasCompatibleVideoSettings
+        && !localI2vUnsupported
   const promptButtonLabel = isRetakeMode ? 'Retake' : isIcLoraMode ? 'Generate' : 'Generate'
   const promptButtonIcon = isRetakeMode
     ? <Scissors className="h-3.5 w-3.5" />
@@ -1754,6 +1774,7 @@ export function GenSpace() {
           onSettingsChange={(nextSettings) => setSettings(sanitizeVideoSettings(nextSettings))}
           videoModelSpecs={videoModelSpecs}
           videoSettingsMessage={videoSettingsMessage}
+          generationNotice={localI2vNotice}
           icLoraCondType={icLoraCondType}
           onIcLoraCondTypeChange={setIcLoraCondType}
           icLoraStrength={icLoraStrength}
