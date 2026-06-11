@@ -5,6 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
+from api_types import ImageConditioningInput
+from services.fast_video_pipeline.mlx_fast_video_pipeline import MLXFastVideoPipeline
 from services.ltx_api_client.ltx_api_client import LTXAPIClientError
 from state.app_state_types import GpuSlot, VideoPipelineState
 from tests.http_error_assertions import assert_http_error
@@ -17,6 +19,20 @@ class _FakeEncodingResult:
 
     video_context: object = "fake_tensor"
     audio_context: object = None
+
+
+class _CapturingMLXFastVideoPipeline(MLXFastVideoPipeline):
+    """Captures helper jobs without starting the MLX helper."""
+
+    def __init__(self, *, output_path: Path) -> None:
+        super().__init__(model_dir=Path("/unused/model"), gemma_dir=Path("/unused/gemma"))
+        self.output_path = output_path
+        self.job: dict[str, object] | None = None
+
+    def _run(self, job: dict[str, object]) -> dict[str, object]:
+        self.job = job
+        self.output_path.write_bytes(b"fake mp4")
+        return {"event": "done", "output": str(self.output_path)}
 
 _T2V_JSON = {
     "prompt": "test",
@@ -1469,3 +1485,37 @@ class TestEnhancePromptFlag:
         assert len(call["video_conditioning"]) == 1
         assert Path(call["video_conditioning"][0][0]).exists() is False
         assert test_state.video_generation._reference_control_frame_count(call["num_frames"]) == 121
+
+    def test_mlx_reference_i2v_forwards_image_anchors(self, tmp_path):
+        output_path = tmp_path / "out.mp4"
+        pipeline = _CapturingMLXFastVideoPipeline(output_path=output_path)
+        first = tmp_path / "first.png"
+        second = tmp_path / "second.png"
+        control = tmp_path / "control.mp4"
+        lora = tmp_path / "union.safetensors"
+
+        pipeline.generate_reference_i2v(
+            prompt="test",
+            seed=123,
+            height=704,
+            width=1280,
+            num_frames=121,
+            frame_rate=24.0,
+            images=[
+                ImageConditioningInput(path=str(first), frame_idx=0, strength=1.0),
+                ImageConditioningInput(path=str(second), frame_idx=120, strength=0.75),
+            ],
+            video_conditioning=[(str(control), 1.0)],
+            lora_path=str(lora),
+            output_path=str(output_path),
+        )
+
+        assert pipeline.job is not None
+        params = pipeline.job["params"]
+        assert isinstance(params, dict)
+        assert params["images"] == [
+            {"path": str(first), "frame_idx": 0, "strength": 1.0},
+            {"path": str(second), "frame_idx": 120, "strength": 0.75},
+        ]
+        assert params["video_conditioning"] == [(str(control), 1.0)]
+        assert params["skip_stage_2"] is True

@@ -359,10 +359,10 @@ class MLXFastVideoPipeline:
                 "stage2_steps": 0,
                 "loras": [{"path": lora_path, "strength": 1.0}],
                 "video_conditioning": video_conditioning,
-                # The control video already carries the local multi-image
-                # references. Direct MLX image anchors currently hit a reshape
-                # bug in combined_image_conditionings for this Q4 IC-LoRA path.
-                "images": [],
+                "images": [
+                    {"path": image.path, "frame_idx": image.frame_idx, "strength": image.strength}
+                    for image in images
+                ],
                 "conditioning_attention_strength": 1.0,
                 "skip_stage_2": True,
             },
