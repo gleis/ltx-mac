@@ -11,10 +11,12 @@ import { useAppSettings } from '../contexts/AppSettingsContext'
 import { useGeneration } from '../hooks/use-generation'
 import { useVideoGenerationModelSpecs } from '../hooks/use-video-generation-model-specs'
 import { createLocalGenerationError, type GenerationError } from '../lib/generation-errors'
+import { ApiClient } from '../lib/api-client'
 import { useRetake } from '../hooks/use-retake'
 import { useIcLora } from '../hooks/use-ic-lora'
 import type { ICLoraConditioningType } from '../components/ICLoraPanel'
 import type { Asset } from '../types/project-model'
+import type { components } from '../generated/backend-openapi'
 import { GenerationErrorDialog } from '../components/GenerationErrorDialog'
 import { addVisualAssetToProject } from '../lib/asset-copy'
 import { pathToFileUrl } from '../lib/file-url'
@@ -29,6 +31,12 @@ import { logger } from '../lib/logger'
 import { RetakePanel } from '../components/RetakePanel'
 import { ICLoraPanel, CONDITIONING_TYPES } from '../components/ICLoraPanel'
 import { FreeApiKeyBubble } from '../components/FreeApiKeyBubble'
+
+type ModelCheckpointID = components['schemas']['ModelDownloadRequest']['cp_ids'] extends (infer T)[] | undefined ? T : never
+type DownloadProgress =
+  | components['schemas']['DownloadProgressRunningResponse']
+  | components['schemas']['DownloadProgressCompleteResponse']
+  | components['schemas']['DownloadProgressErrorResponse']
 
 // Asset card with hover overlays
 function AssetCard({
@@ -383,6 +391,7 @@ function PromptBar({
   onSettingsChange,
   videoModelSpecs,
   videoSettingsMessage,
+  referenceModelMessage,
   canGenerate,
   buttonLabel,
   buttonIcon,
@@ -419,6 +428,7 @@ function PromptBar({
   onSettingsChange: (settings: any) => void
   videoModelSpecs: VideoGenerationModelSpecItem[]
   videoSettingsMessage?: string | null
+  referenceModelMessage?: string | null
   icLoraCondType?: ICLoraConditioningType
   onIcLoraCondTypeChange?: (type: ICLoraConditioningType) => void
   icLoraStrength?: number
@@ -756,6 +766,11 @@ function PromptBar({
           </>
         ) : (
           <>
+            {referenceModelMessage && (
+              <div className="px-2 py-1.5 rounded-md bg-zinc-800/60 text-zinc-400 text-xs truncate max-w-[220px]">
+                {referenceModelMessage}
+              </div>
+            )}
             {resolvedVideoOptions && resolvedVideoOptions.hasCompatibleOptions ? (
               <>
                 <SettingsDropdown
@@ -959,6 +974,11 @@ export function GenSpace() {
   const [inputImage, setInputImage] = useState<string | null>(null)
   const [referenceImages, setReferenceImages] = useState<string[]>([])
   const [inputAudio, setInputAudio] = useState<string | null>(null)
+  const [requiredReferenceCpIds, setRequiredReferenceCpIds] = useState<ModelCheckpointID[]>([])
+  const [isCheckingReferenceModels, setIsCheckingReferenceModels] = useState(false)
+  const [isDownloadingReferenceModels, setIsDownloadingReferenceModels] = useState(false)
+  const [referenceDownloadProgress, setReferenceDownloadProgress] = useState<DownloadProgress | null>(null)
+  const [referenceDownloadSessionId, setReferenceDownloadSessionId] = useState<string | null>(null)
   const [localError, setLocalError] = useState<GenerationError | null>(null)
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null)
   const [copiedPrompt, setCopiedPrompt] = useState(false)
@@ -1122,6 +1142,83 @@ export function GenSpace() {
       setMode('video')
     }
   }, [forceApiGenerations, mode])
+
+  const shouldUseLocalReferenceModels = mode === 'video' && !forceApiGenerations && referenceImages.length > 1
+
+  const checkReferenceModelAvailability = useCallback(async () => {
+    if (!shouldUseLocalReferenceModels) {
+      setRequiredReferenceCpIds([])
+      setReferenceDownloadProgress(null)
+      setReferenceDownloadSessionId(null)
+      setIsDownloadingReferenceModels(false)
+      return
+    }
+    setIsCheckingReferenceModels(true)
+    const result = await ApiClient.getLtxIcLoraRecommendation()
+    if (!result.ok) {
+      logger.warn(`Failed to fetch multi-reference model status: ${result.error.message}`)
+      setLocalError(createLocalGenerationError(result.error.message))
+      setIsCheckingReferenceModels(false)
+      return
+    }
+    setRequiredReferenceCpIds(result.data.cps_to_download)
+    if (result.data.cps_to_download.length === 0) {
+      setReferenceDownloadProgress(null)
+      setReferenceDownloadSessionId(null)
+      setIsDownloadingReferenceModels(false)
+    }
+    setIsCheckingReferenceModels(false)
+  }, [shouldUseLocalReferenceModels])
+
+  useEffect(() => {
+    void checkReferenceModelAvailability()
+  }, [checkReferenceModelAvailability])
+
+  useEffect(() => {
+    if (!isDownloadingReferenceModels || !referenceDownloadSessionId || requiredReferenceCpIds.length === 0) return
+
+    const pollProgress = async () => {
+      const result = await ApiClient.getModelDownloadProgress({ sessionId: referenceDownloadSessionId })
+      if (!result.ok) {
+        logger.warn(`Failed polling multi-reference model download: ${result.error.message}`)
+        return
+      }
+      const progressPayload = result.data
+      setReferenceDownloadProgress(progressPayload)
+      if (progressPayload.status === 'error') {
+        setIsDownloadingReferenceModels(false)
+        setLocalError(createLocalGenerationError(progressPayload.error || 'Model download failed'))
+        return
+      }
+      if (progressPayload.status === 'complete') {
+        setIsDownloadingReferenceModels(false)
+        await checkReferenceModelAvailability()
+      }
+    }
+
+    void pollProgress()
+    const interval = setInterval(() => { void pollProgress() }, 1000)
+    return () => clearInterval(interval)
+  }, [checkReferenceModelAvailability, isDownloadingReferenceModels, referenceDownloadSessionId, requiredReferenceCpIds.length])
+
+  const downloadReferenceModels = useCallback(async () => {
+    if (requiredReferenceCpIds.length === 0 || isDownloadingReferenceModels) return
+    const result = await ApiClient.startModelDownload({
+      type: 'download',
+      cp_ids: requiredReferenceCpIds,
+    })
+    if (!result.ok) {
+      logger.warn(`Failed to start multi-reference model download: ${result.error.message}`)
+      setLocalError(createLocalGenerationError(result.error.message))
+      return
+    }
+    if (result.data.status === 'started') {
+      setReferenceDownloadSessionId(result.data.sessionId)
+      setIsDownloadingReferenceModels(true)
+      return
+    }
+    setLocalError(createLocalGenerationError('Unexpected response while starting model download.'))
+  }, [isDownloadingReferenceModels, requiredReferenceCpIds])
 
   useEffect(() => {
     if (mode !== 'video' || videoModelSpecs.length === 0) return
@@ -1480,6 +1577,13 @@ export function GenSpace() {
       const videoReferences = referenceImages.length > 0 ? referenceImages : (inputImage ? [inputImage] : [])
       const imagePath = videoReferences[0] || null
       const audioPath = inputAudio || null
+      if (videoReferences.length > 1 && requiredReferenceCpIds.length > 0) {
+        await downloadReferenceModels()
+        return
+      }
+      if (videoReferences.length > 1 && (isCheckingReferenceModels || isDownloadingReferenceModels)) {
+        return
+      }
       // Save the prompt before generation starts
       setLastPrompt(prompt)
       const videoSettings = sanitizeVideoSettings(settings)
@@ -1546,6 +1650,19 @@ export function GenSpace() {
 
   const isRetakeMode = mode === 'retake'
   const isIcLoraMode = mode === 'ic-lora'
+  const needsReferenceModelDownload = shouldUseLocalReferenceModels && requiredReferenceCpIds.length > 0
+  const referenceDownloadPercent = referenceDownloadProgress?.status === 'downloading'
+    ? Math.round(referenceDownloadProgress.total_progress)
+    : 0
+  const referenceModelMessage = shouldUseLocalReferenceModels
+    ? isDownloadingReferenceModels
+      ? `Downloading reference model ${referenceDownloadPercent}%`
+      : isCheckingReferenceModels
+        ? 'Checking reference model...'
+        : needsReferenceModelDownload
+          ? 'Reference model required'
+          : 'Reference model ready'
+    : null
   const hasCompatibleVideoSettings = mode !== 'video' || (
     !isLoadingVideoGenerationModelSpecs
     && videoModelSpecs.length > 0
@@ -1559,8 +1676,18 @@ export function GenSpace() {
     ? retakeInput.ready && !!retakeInput.videoPath && !isRetaking
     : isIcLoraMode
       ? !!prompt.trim() && icLoraInput.ready && !!icLoraInput.videoPath && !isIcLoraGenerating
-      : !!prompt.trim() && hasCompatibleVideoSettings
-  const promptButtonLabel = isRetakeMode ? 'Retake' : isIcLoraMode ? 'Generate' : 'Generate'
+      : !!prompt.trim() && hasCompatibleVideoSettings && !isCheckingReferenceModels && !isDownloadingReferenceModels
+  const promptButtonLabel = isRetakeMode
+    ? 'Retake'
+    : isIcLoraMode
+      ? 'Generate'
+      : isCheckingReferenceModels
+        ? 'Checking'
+        : isDownloadingReferenceModels
+          ? `Downloading ${referenceDownloadPercent}%`
+          : needsReferenceModelDownload
+            ? 'Download model'
+            : 'Generate'
   const promptButtonIcon = isRetakeMode
     ? <Scissors className="h-3.5 w-3.5" />
     : isIcLoraMode
@@ -1806,6 +1933,7 @@ export function GenSpace() {
           onSettingsChange={(nextSettings) => setSettings(sanitizeVideoSettings(nextSettings))}
           videoModelSpecs={videoModelSpecs}
           videoSettingsMessage={videoSettingsMessage}
+          referenceModelMessage={referenceModelMessage}
           icLoraCondType={icLoraCondType}
           onIcLoraCondTypeChange={setIcLoraCondType}
           icLoraStrength={icLoraStrength}
