@@ -10,6 +10,8 @@ compact Q4 LTX 2.3 model. It is intended to run locally on a Mac with about
 > the current MLX Q4 distilled I2V path collapses into tiled artifacts after the
 > first frame. The LTX API path remains available for true generative I2V.
 
+<img width="1394" height="896" alt="Screenshot 2026-06-10 at 8 12 44 PM" src="https://github.com/user-attachments/assets/f797cfca-11a3-4f37-be76-5c11a93f312e" />
+
 ## What This Fork Adds
 
 - Local Apple Silicon generation mode: `mac_mlx_q4`.
