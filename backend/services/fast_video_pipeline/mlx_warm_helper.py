@@ -2565,7 +2565,6 @@ for line in sys.__stdin__:
                 lora_paths=resolved_loras,
                 gemma_model_id=GEMMA_PATH,
                 low_memory=LOW_MEMORY,
-                low_ram_streaming=LOW_RAM_STREAMING,
             )
             emit({"event": "log",
                   "line": f"step:generate_ic_lora {p['width']}x{p['height']} "
