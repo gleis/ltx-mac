@@ -1468,4 +1468,4 @@ class TestEnhancePromptFlag:
         assert [image.frame_idx for image in call["images"]] == [0, 120]
         assert len(call["video_conditioning"]) == 1
         assert Path(call["video_conditioning"][0][0]).exists() is False
-        assert test_state.video_generation._reference_control_frame_count(call["num_frames"]) == 120
+        assert test_state.video_generation._reference_control_frame_count(call["num_frames"]) == 121

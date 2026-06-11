@@ -28,6 +28,7 @@ import time
 import traceback
 from contextlib import contextmanager
 from pathlib import Path
+from types import MethodType
 
 # ---- MLX lazy-eval defaults — MUST RUN BEFORE LTX IMPORTS ===================
 # Upstream ltx_core_mlx reads `LTX2_DIT_EVAL_EVERY` (default 8) and
@@ -84,6 +85,29 @@ GEMMA_PATH = os.environ.get("LTX_GEMMA", "mlx-community/gemma-3-12b-it-4bit")
 IDLE_TIMEOUT = int(os.environ.get("LTX_IDLE_TIMEOUT", "1800"))
 LOW_MEMORY = os.environ.get("LTX_LOW_MEMORY", "true").lower() in ("true", "1", "yes")
 MODEL_UPSCALE_ENABLED = os.environ.get("LTX_ENABLE_MODEL_UPSCALE", "").lower() in ("1", "true", "yes", "on")
+
+
+def install_ic_lora_skip_stage2_load_patch(pipe):
+    """Avoid loading the spatial upsampler for IC-LoRA jobs that skip Stage 2."""
+
+    def load_without_upsampler(self):
+        if self._loaded:
+            return
+        model_dir = self.model_dir
+        if self.dit is None:
+            transformer_path = model_dir / "transformer.safetensors"
+            if not transformer_path.exists():
+                transformer_path = model_dir / "transformer-distilled.safetensors"
+            self.dit = self._load_transformer_with_optional_streaming(transformer_path)
+        self._load_vae_encoder()
+        try:
+            from ltx_core_mlx.utils.memory import aggressive_cleanup as _ac
+            _ac()
+        except Exception:
+            pass
+        self._loaded = True
+
+    pipe.load = MethodType(load_without_upsampler, pipe)
 
 # Y1.037 — VAE temporal-streaming decision.
 #
@@ -2531,6 +2555,8 @@ for line in sys.__stdin__:
         try:
             t0 = time.time()
             configure_acceleration("off")
+            _install_video_decoder_patch()
+            _install_a2v_frame_rate_patch()
             from ltx_pipelines_mlx.ic_lora import ICLoraPipeline
 
             loras = p.get("loras") or []
@@ -2552,8 +2578,6 @@ for line in sys.__stdin__:
                 (str(item[0]), float(item[1]))
                 for item in (p.get("video_conditioning") or [])
             ]
-            if not images:
-                raise RuntimeError("IC-LoRA reference job requires image anchors")
             if not video_conditioning:
                 raise RuntimeError("IC-LoRA reference job requires video conditioning")
 
@@ -2566,12 +2590,16 @@ for line in sys.__stdin__:
                 gemma_model_id=GEMMA_PATH,
                 low_memory=LOW_MEMORY,
             )
+            skip_stage_2 = bool(p.get("skip_stage_2", False))
+            if skip_stage_2:
+                install_ic_lora_skip_stage2_load_patch(pipe)
             emit({"event": "log",
                   "line": f"step:generate_ic_lora {p['width']}x{p['height']} "
                           f"{num_frames}f @{float(p.get('frame_rate', 24.0)):.1f}fps "
                           f"stage1={int(p.get('stage1_steps', 8))} "
                           f"stage2={int(p.get('stage2_steps', 3))} "
-                          f"refs={len(images)} controls={len(video_conditioning)}"})
+                          f"refs={len(images)} controls={len(video_conditioning)} "
+                          f"skip_stage_2={skip_stage_2}"})
             kwargs = dict(
                 prompt=p["prompt"],
                 output_path=p["output_path"],
@@ -2585,7 +2613,7 @@ for line in sys.__stdin__:
                 stage2_steps=int(p.get("stage2_steps", 3)),
                 images=images,
                 conditioning_attention_strength=float(p.get("conditioning_attention_strength", 1.0)),
-                skip_stage_2=bool(p.get("skip_stage_2", False)),
+                skip_stage_2=skip_stage_2,
             )
             kwargs = _filter_unsupported_kwargs(pipe.generate_and_save, kwargs)
             out_path = pipe.generate_and_save(**kwargs)
