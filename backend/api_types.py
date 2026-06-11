@@ -318,6 +318,7 @@ class GenerateVideoRequest(BaseModel):
     fps: LTXVideoGenFps = 24
     audio: bool = False
     imagePath: str | None = None
+    referenceImagePaths: list[str] = Field(default_factory=list)
     audioPath: str | None = None
     aspectRatio: Literal["16:9", "9:16"] = "16:9"
 

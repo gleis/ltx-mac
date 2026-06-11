@@ -374,8 +374,9 @@ function PromptBar({
   onPromptChange,
   onGenerate,
   isGenerating,
-  inputImage,
   onInputImageChange,
+  referenceImages,
+  onReferenceImagesChange,
   inputAudio,
   onInputAudioChange,
   settings,
@@ -400,8 +401,9 @@ function PromptBar({
   canGenerate: boolean
   buttonLabel: string
   buttonIcon: React.ReactNode
-  inputImage: string | null
   onInputImageChange: (path: string | null) => void
+  referenceImages: string[]
+  onReferenceImagesChange: (paths: string[]) => void
   inputAudio: string | null
   onInputAudioChange: (path: string | null) => void
   settings: {
@@ -441,6 +443,21 @@ function PromptBar({
     && resolvedVideoOptions.fpsOptions.length > 1,
   )
 
+  const addReferenceImages = useCallback((paths: string[]) => {
+    const next = [...referenceImages]
+    for (const path of paths) {
+      if (!next.includes(path)) next.push(path)
+    }
+    onReferenceImagesChange(next)
+    onInputImageChange(next[0] ?? null)
+  }, [onInputImageChange, onReferenceImagesChange, referenceImages])
+
+  const removeReferenceImage = useCallback((path: string) => {
+    const next = referenceImages.filter((item) => item !== path)
+    onReferenceImagesChange(next)
+    onInputImageChange(next[0] ?? null)
+  }, [onInputImageChange, onReferenceImagesChange, referenceImages])
+
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault()
     setIsDragOver(false)
@@ -449,8 +466,16 @@ function PromptBar({
     if (assetData) {
       const asset = JSON.parse(assetData) as Asset
       if (asset.type === 'image') {
-        onInputImageChange(asset.path)
+        addReferenceImages([asset.path])
       }
+    }
+
+    const files = Array.from(e.dataTransfer.files || []).filter((file) => file.type.startsWith('image/'))
+    if (files.length > 0) {
+      const paths = files
+        .map((file) => window.electronAPI?.getPathForFile(file) || URL.createObjectURL(file))
+        .filter(Boolean)
+      addReferenceImages(paths)
     }
   }
 
@@ -490,16 +515,12 @@ function PromptBar({
   }
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file && file.type.startsWith('image/')) {
-      const filePath = window.electronAPI?.getPathForFile(file)
-      if (filePath) {
-        onInputImageChange(filePath)
-      } else {
-        const url = URL.createObjectURL(file)
-        onInputImageChange(url)
-      }
+    const files = Array.from(e.target.files || []).filter((file) => file.type.startsWith('image/'))
+    if (files.length > 0) {
+      const paths = files.map((file) => window.electronAPI?.getPathForFile(file) || URL.createObjectURL(file))
+      addReferenceImages(paths)
     }
+    e.target.value = ''
   }
   
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -524,11 +545,16 @@ function PromptBar({
             onDrop={handleDrop}
             onClick={() => inputRef.current?.click()}
           >
-            {inputImage ? (
+            {referenceImages.length > 0 ? (
               <>
-                <img src={pathToFileUrl(inputImage)} alt="" className="w-full h-full object-cover rounded-md" />
+                <img src={pathToFileUrl(referenceImages[0])} alt="" className="w-full h-full object-cover rounded-md" />
+                {referenceImages.length > 1 && (
+                  <span className="absolute -bottom-1 -right-1 min-w-4 h-4 px-1 rounded-full bg-blue-500 text-white text-[10px] leading-4 text-center font-semibold">
+                    {referenceImages.length}
+                  </span>
+                )}
                 <button
-                  onClick={(e) => { e.stopPropagation(); onInputImageChange(null) }}
+                  onClick={(e) => { e.stopPropagation(); onReferenceImagesChange([]); onInputImageChange(null) }}
                   className="absolute -top-1 -right-1 p-0.5 rounded-full bg-zinc-800 text-zinc-400 hover:text-white z-10"
                 >
                   <X className="h-3 w-3" />
@@ -541,6 +567,7 @@ function PromptBar({
               ref={inputRef}
               type="file"
               accept="image/*"
+              multiple
               onChange={handleFileSelect}
               className="hidden"
             />
@@ -584,6 +611,24 @@ function PromptBar({
 
         {/* Prompt input - fills remaining width */}
         <div className="flex-1 min-w-0 py-1">
+          {mode === 'video' && referenceImages.length > 1 && (
+            <div className="flex items-center gap-1.5 px-2 pt-1 overflow-x-auto">
+              {referenceImages.map((path, index) => (
+                <button
+                  key={path}
+                  type="button"
+                  onClick={() => removeReferenceImage(path)}
+                  className="group relative h-8 w-8 flex-shrink-0 rounded-md overflow-hidden border border-zinc-700 hover:border-zinc-500"
+                  title={`Remove reference ${index + 1}`}
+                >
+                  <img src={pathToFileUrl(path)} alt="" className="h-full w-full object-cover" />
+                  <span className="absolute inset-0 hidden group-hover:flex items-center justify-center bg-black/55 text-white">
+                    <X className="h-3 w-3" />
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
           <textarea
             value={prompt}
             onChange={(e) => onPromptChange(e.target.value)}
@@ -912,6 +957,7 @@ export function GenSpace() {
   const [mode, setMode] = useState<'image' | 'video' | 'retake' | 'ic-lora'>('video')
   const [prompt, setPrompt] = useState('')
   const [inputImage, setInputImage] = useState<string | null>(null)
+  const [referenceImages, setReferenceImages] = useState<string[]>([])
   const [inputAudio, setInputAudio] = useState<string | null>(null)
   const [localError, setLocalError] = useState<GenerationError | null>(null)
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null)
@@ -1022,6 +1068,7 @@ export function GenSpace() {
     if (genSpaceEditImagePath) {
       setMode('video')
       setInputImage(genSpaceEditImagePath)
+      setReferenceImages([genSpaceEditImagePath])
       setPrompt('')
       setGenSpaceEditImagePath(null)
       setGenSpaceEditMode(null)
@@ -1110,7 +1157,7 @@ export function GenSpace() {
 
     const genMode = inputAudio
       ? 'audio-to-video'
-      : inputImage ? 'image-to-video' : 'text-to-video'
+      : referenceImages.length > 0 ? 'image-to-video' : 'text-to-video'
     const savedVideoSettings = sanitizeVideoSettings(settings)
 
     ;(async () => {
@@ -1138,7 +1185,7 @@ export function GenSpace() {
             cameraMotion: 'none',
             imageAspectRatio: savedVideoSettings.aspectRatio,
             imageSteps: 4,
-            inputImageUrl: inputImage || undefined,
+            inputImageUrl: referenceImages[0] || inputImage || undefined,
             inputAudioUrl: inputAudio || undefined,
           },
           takes: [{
@@ -1157,7 +1204,7 @@ export function GenSpace() {
         logger.error(`Failed to persist generated video asset: ${err}`)
       }
     })()
-  }, [videoPath, currentProjectId, isGenerating, sanitizeVideoSettings, settings, inputImage, inputAudio, lastPrompt, addAsset, reset])
+  }, [videoPath, currentProjectId, isGenerating, sanitizeVideoSettings, settings, inputImage, referenceImages, inputAudio, lastPrompt, addAsset, reset])
 
   // When retake completes, add as take or new asset
   useEffect(() => {
@@ -1430,7 +1477,8 @@ export function GenSpace() {
       )
     } else {
       // Generate video (t2v if no image/audio, i2v if image, a2v if audio)
-      const imagePath = inputImage || null
+      const videoReferences = referenceImages.length > 0 ? referenceImages : (inputImage ? [inputImage] : [])
+      const imagePath = videoReferences[0] || null
       const audioPath = inputAudio || null
       // Save the prompt before generation starts
       setLastPrompt(prompt)
@@ -1452,6 +1500,7 @@ export function GenSpace() {
           imageSteps: 4,
         },
         audioPath,
+        videoReferences,
       )
     }
   }
@@ -1471,6 +1520,7 @@ export function GenSpace() {
   const handleCreateVideo = (imageAsset: Asset) => {
     setMode('video')
     setInputImage(imageAsset.path)
+    setReferenceImages([imageAsset.path])
     setPrompt(`${imageAsset.prompt || 'The scene comes to life...'}`)
   }
 
@@ -1747,8 +1797,9 @@ export function GenSpace() {
           canGenerate={canSubmit}
           buttonLabel={promptButtonLabel}
           buttonIcon={promptButtonIcon}
-          inputImage={inputImage}
           onInputImageChange={setInputImage}
+          referenceImages={referenceImages}
+          onReferenceImagesChange={setReferenceImages}
           inputAudio={inputAudio}
           onInputAudioChange={setInputAudio}
           settings={settings}

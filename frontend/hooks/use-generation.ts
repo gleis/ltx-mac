@@ -18,7 +18,13 @@ type GenerateVideoRequest = ApiRequestBodyOf<'generateVideo'>
 type GenerateImageRequest = ApiRequestBodyOf<'generateImage'>
 
 interface UseGenerationReturn extends GenerationState {
-  generate: (prompt: string, imagePath: string | null, settings: GenerationSettings, audioPath?: string | null) => Promise<void>
+  generate: (
+    prompt: string,
+    imagePath: string | null,
+    settings: GenerationSettings,
+    audioPath?: string | null,
+    referenceImagePaths?: string[],
+  ) => Promise<void>
   generateImage: (prompt: string, settings: GenerationSettings) => Promise<void>
   cancel: () => void
   reset: () => void
@@ -69,6 +75,10 @@ function getPhaseMessage(phase: string): string {
       return 'Loading model...'
     case 'encoding_text':
       return 'Encoding prompt...'
+    case 'enhancing_prompt':
+      return 'Enhancing prompt...'
+    case 'preparing_references':
+      return 'Preparing references...'
     case 'inference':
       return 'Generating...'
     case 'downloading_output':
@@ -101,6 +111,7 @@ export function useGeneration(): UseGenerationReturn {
     imagePath: string | null,
     settings: GenerationSettings,
     audioPath?: string | null,
+    referenceImagePaths: string[] = [],
   ) => {
     const statusMsg = settings.model === 'pro'
       ? 'Loading Pro model & generating...'
@@ -135,6 +146,9 @@ export function useGeneration(): UseGenerationReturn {
       }
       if (imagePath) {
         body.imagePath = imagePath
+      }
+      if (referenceImagePaths.length > 0) {
+        body.referenceImagePaths = referenceImagePaths
       }
       if (audioPath) {
         body.audioPath = audioPath

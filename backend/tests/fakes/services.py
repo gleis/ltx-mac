@@ -534,6 +534,35 @@ class FakeFastVideoPipeline(_FakeVideoPipelineBase):
             }
         )
 
+    def generate_reference_i2v(
+        self,
+        prompt: str,
+        seed: int,
+        height: int,
+        width: int,
+        num_frames: int,
+        frame_rate: float,
+        images: list[ImageConditioningInput],
+        video_conditioning: list[tuple[str, float]],
+        lora_path: str,
+        output_path: str,
+    ) -> None:
+        self._record_generate(
+            {
+                "prompt": prompt,
+                "seed": seed,
+                "height": height,
+                "width": width,
+                "num_frames": num_frames,
+                "frame_rate": frame_rate,
+                "images": images,
+                "video_conditioning": video_conditioning,
+                "lora_path": lora_path,
+                "output_path": output_path,
+                "speed_mode": "reference_i2v",
+            }
+        )
+
 
 class FakeZitOutput:
     def __init__(self, color: str = "red") -> None:

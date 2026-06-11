@@ -589,6 +589,14 @@
             ],
             "title": "Imagepath"
           },
+          "referenceImagePaths": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Referenceimagepaths",
+            "type": "array"
+          },
           "model": {
             "default": "fast",
             "enum": [

@@ -327,6 +327,47 @@ class MLXFastVideoPipeline:
         if output is None or not Path(str(output)).exists():
             raise RuntimeError(f"MLX helper completed but output was not found: {output}")
 
+    def generate_reference_i2v(
+        self,
+        prompt: str,
+        seed: int,
+        height: int,
+        width: int,
+        num_frames: int,
+        frame_rate: float,
+        images: list[ImageConditioningInput],
+        video_conditioning: list[tuple[str, float]],
+        lora_path: str,
+        output_path: str,
+    ) -> None:
+        job: dict[str, Any] = {
+            "action": "generate_ic_lora",
+            "id": uuid.uuid4().hex[:8],
+            "params": {
+                "prompt": prompt,
+                "output_path": output_path,
+                "height": int(height),
+                "width": int(width),
+                "frames": int(num_frames),
+                "frame_rate": float(frame_rate),
+                "seed": int(seed),
+                "stage1_steps": 8,
+                "stage2_steps": 3,
+                "loras": [{"path": lora_path, "strength": 1.0}],
+                "video_conditioning": video_conditioning,
+                "images": [
+                    {"path": image.path, "frame_idx": image.frame_idx, "strength": image.strength}
+                    for image in images
+                ],
+                "conditioning_attention_strength": 1.0,
+                "skip_stage_2": False,
+            },
+        }
+        result = self._run(job)
+        output = result.get("output")
+        if output is None or not Path(str(output)).exists():
+            raise RuntimeError(f"MLX helper completed but output was not found: {output}")
+
     def enhance_prompt(self, prompt: str, *, mode: Literal["t2v", "i2v"], seed: int) -> str:
         job: dict[str, Any] = {
             "action": "enhance_prompt",

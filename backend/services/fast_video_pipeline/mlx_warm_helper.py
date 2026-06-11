@@ -2520,6 +2520,96 @@ for line in sys.__stdin__:
             _is_busy = False
         continue
 
+    if action == "generate_ic_lora":
+        job_id = msg.get("id", "?")
+        p = msg.get("params", {}) or {}
+        model_dir = p.get("model_dir") or MODEL_ID
+        seed = int(p.get("seed", -1))
+        if seed == -1:
+            seed = random.randint(0, 2**31 - 1)
+        _is_busy = True
+        try:
+            t0 = time.time()
+            configure_acceleration("off")
+            from ltx_pipelines_mlx.ic_lora import ICLoraPipeline
+
+            loras = p.get("loras") or []
+            if not loras:
+                raise RuntimeError("IC-LoRA reference job requires at least one LoRA")
+            resolved_loras = [
+                (_resolve_lora_path(str(l["path"])), float(l.get("strength", 1.0)))
+                for l in loras
+            ]
+            images = [
+                (
+                    str(image["path"]),
+                    int(image.get("frame_idx", 0)),
+                    float(image.get("strength", 1.0)),
+                )
+                for image in (p.get("images") or [])
+            ]
+            video_conditioning = [
+                (str(item[0]), float(item[1]))
+                for item in (p.get("video_conditioning") or [])
+            ]
+            if not images:
+                raise RuntimeError("IC-LoRA reference job requires image anchors")
+            if not video_conditioning:
+                raise RuntimeError("IC-LoRA reference job requires video conditioning")
+
+            num_frames = int(p["frames"])
+            _apply_vae_streaming_decision(num_frames)
+            release_pipelines("ic-lora reference render incoming")
+            pipe = ICLoraPipeline(
+                model_dir=str(model_dir),
+                lora_paths=resolved_loras,
+                gemma_model_id=GEMMA_PATH,
+                low_memory=LOW_MEMORY,
+                low_ram_streaming=LOW_RAM_STREAMING,
+            )
+            emit({"event": "log",
+                  "line": f"step:generate_ic_lora {p['width']}x{p['height']} "
+                          f"{num_frames}f @{float(p.get('frame_rate', 24.0)):.1f}fps "
+                          f"stage1={int(p.get('stage1_steps', 8))} "
+                          f"stage2={int(p.get('stage2_steps', 3))} "
+                          f"refs={len(images)} controls={len(video_conditioning)}"})
+            kwargs = dict(
+                prompt=p["prompt"],
+                output_path=p["output_path"],
+                video_conditioning=video_conditioning,
+                height=int(p["height"]),
+                width=int(p["width"]),
+                num_frames=num_frames,
+                frame_rate=float(p.get("frame_rate", 24.0)),
+                seed=seed,
+                stage1_steps=int(p.get("stage1_steps", 8)),
+                stage2_steps=int(p.get("stage2_steps", 3)),
+                images=images,
+                conditioning_attention_strength=float(p.get("conditioning_attention_strength", 1.0)),
+                skip_stage_2=bool(p.get("skip_stage_2", False)),
+            )
+            kwargs = _filter_unsupported_kwargs(pipe.generate_and_save, kwargs)
+            out_path = pipe.generate_and_save(**kwargs)
+            try:
+                pipe = None
+                from ltx_core_mlx.utils.memory import aggressive_cleanup as _ac
+                _ac()
+            except Exception:
+                pass
+            elapsed = round(time.time() - t0, 2)
+            _last_activity = time.time()
+            emit({
+                "event": "done", "id": job_id,
+                "output": str(out_path), "elapsed_sec": elapsed,
+                "seed_used": seed,
+            })
+        except Exception as exc:
+            _last_activity = time.time()
+            emit({"event": "error", "id": job_id, "error": str(exc), "trace": traceback.format_exc()})
+        finally:
+            _is_busy = False
+        continue
+
     if action == "enhance_prompt":
         # Gemma-driven prompt rewriting. Same model file as the pipeline's
         # text encoder, but loaded as a `GemmaLanguageModel` (the wrapper

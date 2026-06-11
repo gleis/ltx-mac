@@ -37,6 +37,21 @@ class FastVideoPipeline(Protocol):
     ) -> None:
         ...
 
+    def generate_reference_i2v(
+        self,
+        prompt: str,
+        seed: int,
+        height: int,
+        width: int,
+        num_frames: int,
+        frame_rate: float,
+        images: list[ImageConditioningInput],
+        video_conditioning: list[tuple[str, float]],
+        lora_path: str,
+        output_path: str,
+    ) -> None:
+        ...
+
     def warmup(self, output_path: str) -> None:
         ...
 

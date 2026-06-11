@@ -112,6 +112,22 @@ class LTXFastVideoPipeline:
         chunks = video_chunks_number(num_frames, tiling_config)
         encode_video_output(video=video, audio=audio, fps=int(frame_rate), output_path=output_path, video_chunks_number_value=chunks)
 
+    def generate_reference_i2v(
+        self,
+        prompt: str,
+        seed: int,
+        height: int,
+        width: int,
+        num_frames: int,
+        frame_rate: float,
+        images: list[ImageConditioningInput],
+        video_conditioning: list[tuple[str, float]],
+        lora_path: str,
+        output_path: str,
+    ) -> None:
+        del prompt, seed, height, width, num_frames, frame_rate, images, video_conditioning, lora_path, output_path
+        raise RuntimeError("Multi-reference local generation is only supported by the Mac MLX pipeline")
+
     @torch.inference_mode()
     def warmup(self, output_path: str) -> None:
         warmup_frames = 9

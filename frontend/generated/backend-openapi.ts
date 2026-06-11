@@ -673,6 +673,11 @@ export interface components {
             /** Imagepath */
             imagePath?: string | null;
             /**
+             * Referenceimagepaths
+             * @default []
+             */
+            referenceImagePaths: string[];
+            /**
              * Model
              * @default fast
              * @enum {string}

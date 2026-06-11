@@ -38,6 +38,7 @@ from server_utils.media_validation import (
     validate_audio_file,
     validate_image_file,
 )
+from runtime_config.model_download_specs import get_existing_cp_path
 from services.interfaces import LTXAPIClient
 from services.ltx_api_client.ltx_api_client import LTXAPIClientError
 from state.app_state_types import AppState
@@ -59,6 +60,7 @@ FORCED_API_RESOLUTION_MAP: dict[str, dict[str, str]] = {
 }
 FORCED_API_ALLOWED_ASPECT_RATIOS = {"16:9", "9:16"}
 _LTX_INSUFFICIENT_FUNDS_MESSAGE = "Your LTX API credits are insufficient for this generation. Buy more credits and try again."
+_IC_LORA_UNION_CONTROL_CP_ID = "ltx-2.3-22b-ic-lora-union-control-ref0.5"
 
 
 class VideoGenerationHandler(StateHandlerBase):
@@ -141,6 +143,11 @@ class VideoGenerationHandler(StateHandlerBase):
         if image_path:
             image = self._prepare_image(image_path, width, height)
             logger.info("Image: %s -> %sx%s", image_path, width, height)
+        reference_image_paths = [
+            str(validate_image_file(path))
+            for path in req.referenceImagePaths
+            if normalize_optional_path(path) is not None
+        ]
 
         generation_id = self._make_generation_id()
         seed = self._resolve_seed()
@@ -148,6 +155,22 @@ class VideoGenerationHandler(StateHandlerBase):
         try:
             self._pipelines.load_gpu_pipeline("fast")
             self._generation.start_generation(generation_id)
+            if len(reference_image_paths) > 1:
+                if self.config.local_generations_mode != "mac_mlx_q4":
+                    raise HTTPError(400, "LOCAL_REFERENCE_I2V_REQUIRES_MAC_MLX_Q4")
+                output_path = self._generate_local_reference_i2v(
+                    prompt=req.prompt,
+                    reference_image_paths=reference_image_paths,
+                    width=width,
+                    height=height,
+                    num_frames=num_frames,
+                    fps=fps,
+                    seed=seed,
+                    camera_motion=req.cameraMotion,
+                )
+                self._generation.complete_generation(output_path)
+                return GenerateVideoCompleteResponse(status="complete", video_path=output_path)
+
             if image is not None and self.config.local_generations_mode == "mac_mlx_q4":
                 output_path = self._generate_local_i2v_still_motion(
                     image=image,
@@ -497,6 +520,177 @@ class VideoGenerationHandler(StateHandlerBase):
             raise HTTPError(500, f"Local image-to-video fallback failed: {stderr.strip()}")
         self._generation.update_progress("complete", 100, num_frames, num_frames)
         return str(output_path)
+
+    def _generate_local_reference_i2v(
+        self,
+        *,
+        prompt: str,
+        reference_image_paths: list[str],
+        width: int,
+        height: int,
+        num_frames: int,
+        fps: int,
+        seed: int,
+        camera_motion: VideoCameraMotion,
+    ) -> str:
+        self._generation.update_progress("loading_model", 5, 0, 12)
+        try:
+            lora_path = get_existing_cp_path(
+                self.models_dir,
+                _IC_LORA_UNION_CONTROL_CP_ID,
+            )
+        except FileNotFoundError as exc:
+            raise HTTPError(
+                409,
+                "Local multi-reference generation requires the IC-LoRA Union Control model. Download it from Settings > Models, then try again.",
+                code="LOCAL_REFERENCE_I2V_MODEL_MISSING",
+            ) from exc
+
+        prepared_paths: list[str] = []
+        control_path: str | None = None
+        try:
+            prepared_images: list[Image.Image] = [
+                self._prepare_image(path, width, height)
+                for path in reference_image_paths
+            ]
+            frame_indices = self._reference_frame_indices(len(prepared_images), num_frames)
+            for image in prepared_images:
+                tmp = tempfile.NamedTemporaryFile(suffix=".png", delete=False)
+                tmp.close()
+                image.save(tmp.name)
+                prepared_paths.append(tmp.name)
+
+            self._generation.update_progress("encoding_text", 10, 0, 12)
+            pipeline_state = self._pipelines.load_gpu_pipeline("fast")
+            enhanced_prompt = prompt + self.config.camera_motion_prompts.get(camera_motion, "")
+            if self.state.app_settings.prompt_enhancer_enabled_i2v:
+                self._generation.update_progress("enhancing_prompt", 12, 0, 12)
+                enhanced_prompt = pipeline_state.pipeline.enhance_prompt(enhanced_prompt, mode="i2v", seed=seed)
+
+            self._generation.update_progress("preparing_references", 14, 0, 12)
+            control_path = self._make_reference_control_video(
+                prepared_images=prepared_images,
+                width=width,
+                height=height,
+                num_frames=num_frames,
+                fps=fps,
+            )
+            anchors = [
+                ImageConditioningInput(path=path, frame_idx=frame_idx, strength=1.0)
+                for path, frame_idx in zip(prepared_paths, frame_indices, strict=True)
+            ]
+
+            output_path = self._make_output_path()
+            self._generation.update_progress("inference", 15, 0, 12)
+            pipeline_state.pipeline.generate_reference_i2v(
+                prompt=enhanced_prompt,
+                seed=seed,
+                height=height,
+                width=width,
+                num_frames=num_frames,
+                frame_rate=fps,
+                images=anchors,
+                video_conditioning=[(control_path, 1.0)],
+                lora_path=str(lora_path),
+                output_path=str(output_path),
+            )
+            if self._generation.is_generation_cancelled():
+                if output_path.exists():
+                    output_path.unlink()
+                raise RuntimeError("Generation was cancelled")
+            self._generation.update_progress("complete", 100, 12, 12)
+            return str(output_path)
+        finally:
+            for path in prepared_paths:
+                if os.path.exists(path):
+                    os.unlink(path)
+            if control_path and os.path.exists(control_path):
+                os.unlink(control_path)
+
+    @staticmethod
+    def _reference_frame_indices(reference_count: int, num_frames: int) -> list[int]:
+        if reference_count <= 1:
+            return [0]
+        last = max(num_frames - 1, 0)
+        return [
+            round(last * index / (reference_count - 1))
+            for index in range(reference_count)
+        ]
+
+    def _make_reference_control_video(
+        self,
+        *,
+        prepared_images: list[Image.Image],
+        width: int,
+        height: int,
+        num_frames: int,
+        fps: int,
+    ) -> str:
+        try:
+            import cv2
+            import imageio_ffmpeg  # type: ignore[reportMissingTypeStubs]
+            import numpy as np
+
+            ffmpeg = str(imageio_ffmpeg.get_ffmpeg_exe())
+        except Exception as exc:
+            raise HTTPError(500, "Local multi-reference generation requires OpenCV and bundled ffmpeg") from exc
+
+        tmp = tempfile.NamedTemporaryFile(suffix=".mp4", delete=False)
+        tmp.close()
+        output_path = tmp.name
+        cmd = [
+            ffmpeg,
+            "-y",
+            "-f",
+            "rawvideo",
+            "-pix_fmt",
+            "rgb24",
+            "-s",
+            f"{width}x{height}",
+            "-r",
+            str(fps),
+            "-i",
+            "pipe:0",
+            "-frames:v",
+            str(num_frames),
+            "-an",
+            "-c:v",
+            "libx264",
+            "-preset",
+            "veryfast",
+            "-crf",
+            "18",
+            "-pix_fmt",
+            "yuv420p",
+            output_path,
+        ]
+        proc = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
+        assert proc.stdin is not None
+        try:
+            total = max(num_frames - 1, 1)
+            for frame_idx in range(num_frames):
+                if self._generation.is_generation_cancelled():
+                    raise RuntimeError("Generation was cancelled")
+                ref_index = round((len(prepared_images) - 1) * frame_idx / total)
+                rgb = np.asarray(prepared_images[ref_index].resize((width, height), Image.Resampling.LANCZOS))
+                gray = cv2.cvtColor(rgb, cv2.COLOR_RGB2GRAY)
+                edges = cv2.Canny(gray, 100, 200)
+                edge_rgb = cv2.cvtColor(edges, cv2.COLOR_GRAY2RGB)
+                proc.stdin.write(edge_rgb.tobytes())
+                if frame_idx % max(fps, 1) == 0:
+                    progress = 14 + int(1 * frame_idx / total)
+                    self._generation.update_progress("preparing_references", progress, frame_idx, num_frames)
+            proc.stdin.close()
+            return_code = proc.wait(timeout=120)
+            stderr = proc.stderr.read().decode("utf-8", errors="replace") if proc.stderr else ""
+        finally:
+            if proc.stdin and not proc.stdin.closed:
+                proc.stdin.close()
+
+        if return_code != 0:
+            Path(output_path).unlink(missing_ok=True)
+            raise HTTPError(500, f"Reference control video creation failed: {stderr.strip()}")
+        return output_path
 
     @staticmethod
     def _make_generation_id() -> str:
