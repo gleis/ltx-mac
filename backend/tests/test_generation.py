@@ -1486,6 +1486,47 @@ class TestEnhancePromptFlag:
         assert Path(call["video_conditioning"][0][0]).exists() is False
         assert test_state.video_generation._reference_control_frame_count(call["num_frames"]) == 121
 
+    def test_mac_mlx_reference_roles_do_not_anchor_non_keyframes(
+        self,
+        client,
+        test_state,
+        fake_services,
+        create_fake_model_files,
+        create_fake_ic_lora_files,
+        make_test_image,
+        tmp_path,
+    ):
+        create_fake_model_files()
+        create_fake_ic_lora_files(include_depth=False)
+        test_state.config.local_generations_mode = "mac_mlx_q4"
+        test_state.state.app_settings.use_local_text_encoder = True
+        test_state.state.app_settings.prompt_enhancer_enabled_i2v = False
+        location_path = tmp_path / "location.png"
+        character_path = tmp_path / "character.png"
+        location_path.write_bytes(make_test_image(color="blue").getvalue())
+        character_path.write_bytes(make_test_image(color="red").getvalue())
+
+        r = client.post(
+            "/api/generate",
+            json={
+                **_T2V_JSON,
+                "imagePath": str(location_path),
+                "referenceImages": [
+                    {"path": str(location_path), "role": "location"},
+                    {"path": str(character_path), "role": "character"},
+                ],
+                "cameraMotion": "none",
+            },
+        )
+
+        assert r.status_code == 200
+        calls = fake_services.fast_video_pipeline.generate_calls
+        assert len(calls) == 1
+        call = calls[0]
+        assert call["speed_mode"] == "reference_i2v"
+        assert call["images"] == []
+        assert len(call["video_conditioning"]) == 1
+
     def test_mlx_reference_i2v_forwards_image_anchors(self, tmp_path):
         output_path = tmp_path / "out.mp4"
         pipeline = _CapturingMLXFastVideoPipeline(output_path=output_path)

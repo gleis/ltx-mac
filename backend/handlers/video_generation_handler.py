@@ -11,7 +11,7 @@ import uuid
 from datetime import datetime
 from pathlib import Path
 from threading import RLock
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from PIL import Image
 
@@ -22,6 +22,8 @@ from api_types import (
     GenerateVideoRequest,
     GenerateVideoResponse,
     ImageConditioningInput,
+    ReferenceImageInput,
+    ReferenceImageRole,
     VideoCameraMotion,
 )
 from _routes._errors import HTTPError
@@ -143,11 +145,7 @@ class VideoGenerationHandler(StateHandlerBase):
         if image_path:
             image = self._prepare_image(image_path, width, height)
             logger.info("Image: %s -> %sx%s", image_path, width, height)
-        reference_image_paths = [
-            str(validate_image_file(path))
-            for path in req.referenceImagePaths
-            if normalize_optional_path(path) is not None
-        ]
+        reference_images = self._resolve_reference_images(req)
 
         generation_id = self._make_generation_id()
         seed = self._resolve_seed()
@@ -155,12 +153,12 @@ class VideoGenerationHandler(StateHandlerBase):
         try:
             self._pipelines.load_gpu_pipeline("fast")
             self._generation.start_generation(generation_id)
-            if len(reference_image_paths) > 1:
+            if len(reference_images) > 1:
                 if self.config.local_generations_mode != "mac_mlx_q4":
                     raise HTTPError(400, "LOCAL_REFERENCE_I2V_REQUIRES_MAC_MLX_Q4")
                 output_path = self._generate_local_reference_i2v(
                     prompt=req.prompt,
-                    reference_image_paths=reference_image_paths,
+                    reference_images=reference_images,
                     width=width,
                     height=height,
                     num_frames=num_frames,
@@ -207,6 +205,20 @@ class VideoGenerationHandler(StateHandlerBase):
                 return GenerateVideoCancelledResponse(status="cancelled")
 
             raise HTTPError(500, str(e)) from e
+
+    @staticmethod
+    def _resolve_reference_images(req: GenerateVideoRequest) -> list[ReferenceImageInput]:
+        if req.referenceImages:
+            return [
+                ReferenceImageInput(path=str(validate_image_file(item.path)), role=item.role)
+                for item in req.referenceImages
+                if normalize_optional_path(item.path) is not None
+            ]
+        return [
+            ReferenceImageInput(path=str(validate_image_file(path)), role="keyframe")
+            for path in req.referenceImagePaths
+            if normalize_optional_path(path) is not None
+        ]
 
     def generate_video(
         self,
@@ -525,7 +537,7 @@ class VideoGenerationHandler(StateHandlerBase):
         self,
         *,
         prompt: str,
-        reference_image_paths: list[str],
+        reference_images: list[ReferenceImageInput],
         width: int,
         height: int,
         num_frames: int,
@@ -549,12 +561,11 @@ class VideoGenerationHandler(StateHandlerBase):
         prepared_paths: list[str] = []
         control_path: str | None = None
         try:
-            prepared_images: list[Image.Image] = [
-                self._prepare_image(path, width, height)
-                for path in reference_image_paths
+            prepared_references: list[tuple[Image.Image, ReferenceImageRole]] = [
+                (self._prepare_image(item.path, width, height), item.role)
+                for item in reference_images
             ]
-            frame_indices = self._reference_frame_indices(len(prepared_images), num_frames)
-            for image in prepared_images:
+            for image, _role in prepared_references:
                 tmp = tempfile.NamedTemporaryFile(suffix=".png", delete=False)
                 tmp.close()
                 image.save(tmp.name)
@@ -569,15 +580,21 @@ class VideoGenerationHandler(StateHandlerBase):
 
             self._generation.update_progress("preparing_references", 14, 0, 12)
             control_path = self._make_reference_control_video(
-                prepared_images=prepared_images,
+                prepared_references=prepared_references,
                 width=width,
                 height=height,
                 num_frames=self._reference_control_frame_count(num_frames),
                 fps=fps,
             )
+            keyframe_paths = [
+                path
+                for path, item in zip(prepared_paths, reference_images, strict=True)
+                if item.role == "keyframe"
+            ]
+            frame_indices = self._reference_frame_indices(len(keyframe_paths), num_frames)
             anchors = [
                 ImageConditioningInput(path=path, frame_idx=frame_idx, strength=1.0)
-                for path, frame_idx in zip(prepared_paths, frame_indices, strict=True)
+                for path, frame_idx in zip(keyframe_paths, frame_indices, strict=True)
             ]
 
             output_path = self._make_output_path()
@@ -609,6 +626,8 @@ class VideoGenerationHandler(StateHandlerBase):
 
     @staticmethod
     def _reference_frame_indices(reference_count: int, num_frames: int) -> list[int]:
+        if reference_count <= 0:
+            return []
         if reference_count <= 1:
             return [0]
         last = max(num_frames - 1, 0)
@@ -624,7 +643,7 @@ class VideoGenerationHandler(StateHandlerBase):
     def _make_reference_control_video(
         self,
         *,
-        prepared_images: list[Image.Image],
+        prepared_references: list[tuple[Image.Image, ReferenceImageRole]],
         width: int,
         height: int,
         num_frames: int,
@@ -672,13 +691,39 @@ class VideoGenerationHandler(StateHandlerBase):
         assert proc.stdin is not None
         try:
             total = max(num_frames - 1, 1)
+            role_weights: dict[ReferenceImageRole, float] = {
+                "character": 0.85,
+                "location": 0.65,
+                "style": 0.35,
+                "keyframe": 1.0,
+            }
+            edge_references: list[tuple[Any, ReferenceImageRole]] = []
+            for image, role in prepared_references:
+                rgb = np.asarray(image.resize((width, height), Image.Resampling.LANCZOS))
+                gray = cv2.cvtColor(rgb, cv2.COLOR_RGB2GRAY)
+                edges = cv2.Canny(gray, 100, 200)
+                edge_references.append((edges, role))
+            persistent_edges: list[tuple[Any, ReferenceImageRole]] = [
+                (edges, role)
+                for edges, role in edge_references
+                if role != "keyframe"
+            ]
             for frame_idx in range(num_frames):
                 if self._generation.is_generation_cancelled():
                     raise RuntimeError("Generation was cancelled")
-                ref_index = round((len(prepared_images) - 1) * frame_idx / total)
-                rgb = np.asarray(prepared_images[ref_index].resize((width, height), Image.Resampling.LANCZOS))
-                gray = cv2.cvtColor(rgb, cv2.COLOR_RGB2GRAY)
-                edges = cv2.Canny(gray, 100, 200)
+                if persistent_edges:
+                    combined = np.zeros((height, width), dtype=np.uint8)
+                    for edges, role in persistent_edges:
+                        weighted = np.clip(
+                            edges.astype(np.float32) * role_weights[role],
+                            0,
+                            255,
+                        ).astype(np.uint8)
+                        combined = np.maximum(combined, weighted)
+                    edges = combined
+                else:
+                    ref_index = round((len(edge_references) - 1) * frame_idx / total)
+                    edges = edge_references[ref_index][0]
                 edge_rgb = cv2.cvtColor(edges, cv2.COLOR_GRAY2RGB)
                 proc.stdin.write(edge_rgb.tobytes())
                 if frame_idx % max(fps, 1) == 0:

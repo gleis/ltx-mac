@@ -673,11 +673,6 @@ export interface components {
             /** Imagepath */
             imagePath?: string | null;
             /**
-             * Referenceimagepaths
-             * @default []
-             */
-            referenceImagePaths: string[];
-            /**
              * Model
              * @default fast
              * @enum {string}
@@ -690,6 +685,10 @@ export interface components {
             negativePrompt: string;
             /** Prompt */
             prompt: string;
+            /** Referenceimagepaths */
+            referenceImagePaths?: string[];
+            /** Referenceimages */
+            referenceImages?: components["schemas"]["ReferenceImageInput"][];
             /**
              * Resolution
              * @default 1080p
@@ -1018,6 +1017,17 @@ export interface components {
             loaded: boolean;
             /** Name */
             name: string;
+        };
+        /** ReferenceImageInput */
+        ReferenceImageInput: {
+            /** Path */
+            path: string;
+            /**
+             * Role
+             * @default character
+             * @enum {string}
+             */
+            role: "character" | "location" | "style" | "keyframe";
         };
         /** RetakeCancelledResponse */
         RetakeCancelledResponse: {

@@ -43,6 +43,14 @@ VideoCameraMotion = Literal[
     "static",
     "focus_shift",
 ]
+ReferenceImageRole = Literal["character", "location", "style", "keyframe"]
+
+
+class ReferenceImageInput(BaseModel):
+    model_config = ConfigDict(strict=True)
+
+    path: str
+    role: ReferenceImageRole = "character"
 
 
 # ============================================================
@@ -318,6 +326,7 @@ class GenerateVideoRequest(BaseModel):
     fps: LTXVideoGenFps = 24
     audio: bool = False
     imagePath: str | None = None
+    referenceImages: list[ReferenceImageInput] = Field(default_factory=lambda: [])
     referenceImagePaths: list[str] = Field(default_factory=list)
     audioPath: str | None = None
     aspectRatio: Literal["16:9", "9:16"] = "16:9"

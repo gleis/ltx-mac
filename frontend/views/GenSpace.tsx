@@ -8,7 +8,7 @@ import {
 import { useProjects } from '../contexts/ProjectContext'
 import type { GenSpaceRetakeSource } from '../contexts/ProjectContext'
 import { useAppSettings } from '../contexts/AppSettingsContext'
-import { useGeneration } from '../hooks/use-generation'
+import { useGeneration, type GenerationReferenceImage, type ReferenceImageRole } from '../hooks/use-generation'
 import { useVideoGenerationModelSpecs } from '../hooks/use-video-generation-model-specs'
 import { createLocalGenerationError, type GenerationError } from '../lib/generation-errors'
 import { ApiClient } from '../lib/api-client'
@@ -37,6 +37,13 @@ type DownloadProgress =
   | components['schemas']['DownloadProgressRunningResponse']
   | components['schemas']['DownloadProgressCompleteResponse']
   | components['schemas']['DownloadProgressErrorResponse']
+
+const REFERENCE_ROLE_OPTIONS: Array<{ value: ReferenceImageRole; label: string }> = [
+  { value: 'character', label: 'Character' },
+  { value: 'location', label: 'Location' },
+  { value: 'style', label: 'Style' },
+  { value: 'keyframe', label: 'Keyframe' },
+]
 
 // Asset card with hover overlays
 function AssetCard({
@@ -411,8 +418,8 @@ function PromptBar({
   buttonLabel: string
   buttonIcon: React.ReactNode
   onInputImageChange: (path: string | null) => void
-  referenceImages: string[]
-  onReferenceImagesChange: (paths: string[]) => void
+  referenceImages: GenerationReferenceImage[]
+  onReferenceImagesChange: (images: GenerationReferenceImage[]) => void
   inputAudio: string | null
   onInputAudioChange: (path: string | null) => void
   settings: {
@@ -456,17 +463,24 @@ function PromptBar({
   const addReferenceImages = useCallback((paths: string[]) => {
     const next = [...referenceImages]
     for (const path of paths) {
-      if (!next.includes(path)) next.push(path)
+      if (!next.some((item) => item.path === path)) next.push({ path, role: 'character' })
     }
     onReferenceImagesChange(next)
-    onInputImageChange(next[0] ?? null)
+    onInputImageChange(next[0]?.path ?? null)
   }, [onInputImageChange, onReferenceImagesChange, referenceImages])
 
   const removeReferenceImage = useCallback((path: string) => {
-    const next = referenceImages.filter((item) => item !== path)
+    const next = referenceImages.filter((item) => item.path !== path)
     onReferenceImagesChange(next)
-    onInputImageChange(next[0] ?? null)
+    onInputImageChange(next[0]?.path ?? null)
   }, [onInputImageChange, onReferenceImagesChange, referenceImages])
+
+  const updateReferenceRole = useCallback((path: string, role: ReferenceImageRole) => {
+    const next = referenceImages.map((item) => (
+      item.path === path ? { ...item, role } : item
+    ))
+    onReferenceImagesChange(next)
+  }, [onReferenceImagesChange, referenceImages])
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault()
@@ -557,7 +571,7 @@ function PromptBar({
           >
             {referenceImages.length > 0 ? (
               <>
-                <img src={pathToFileUrl(referenceImages[0])} alt="" className="w-full h-full object-cover rounded-md" />
+                <img src={pathToFileUrl(referenceImages[0].path)} alt="" className="w-full h-full object-cover rounded-md" />
                 {referenceImages.length > 1 && (
                   <span className="absolute -bottom-1 -right-1 min-w-4 h-4 px-1 rounded-full bg-blue-500 text-white text-[10px] leading-4 text-center font-semibold">
                     {referenceImages.length}
@@ -622,20 +636,42 @@ function PromptBar({
         {/* Prompt input - fills remaining width */}
         <div className="flex-1 min-w-0 py-1">
           {mode === 'video' && referenceImages.length > 1 && (
-            <div className="flex items-center gap-1.5 px-2 pt-1 overflow-x-auto">
-              {referenceImages.map((path, index) => (
-                <button
-                  key={path}
-                  type="button"
-                  onClick={() => removeReferenceImage(path)}
-                  className="group relative h-8 w-8 flex-shrink-0 rounded-md overflow-hidden border border-zinc-700 hover:border-zinc-500"
-                  title={`Remove reference ${index + 1}`}
+            <div className="flex items-center gap-2 px-2 pt-1 overflow-x-auto">
+              {referenceImages.map((reference, index) => (
+                <div
+                  key={reference.path}
+                  className="group relative flex h-9 flex-shrink-0 items-center gap-1 rounded-md border border-zinc-700 bg-zinc-900 pr-1"
                 >
-                  <img src={pathToFileUrl(path)} alt="" className="h-full w-full object-cover" />
-                  <span className="absolute inset-0 hidden group-hover:flex items-center justify-center bg-black/55 text-white">
+                  <button
+                    type="button"
+                    onClick={() => removeReferenceImage(reference.path)}
+                    className="relative h-8 w-8 overflow-hidden rounded-[5px]"
+                    title={`Remove reference ${index + 1}`}
+                  >
+                    <img src={pathToFileUrl(reference.path)} alt="" className="h-full w-full object-cover" />
+                    <span className="absolute inset-0 hidden group-hover:flex items-center justify-center bg-black/55 text-white">
+                      <X className="h-3 w-3" />
+                    </span>
+                  </button>
+                  <select
+                    value={reference.role}
+                    onChange={(event) => updateReferenceRole(reference.path, event.target.value as ReferenceImageRole)}
+                    className="h-7 rounded border border-zinc-700 bg-zinc-950 px-1 text-[11px] text-zinc-200 outline-none hover:border-zinc-500"
+                    title="Reference role"
+                  >
+                    {REFERENCE_ROLE_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() => removeReferenceImage(reference.path)}
+                    className="hidden h-6 w-6 items-center justify-center rounded text-zinc-500 hover:bg-zinc-800 hover:text-white group-hover:flex"
+                    title={`Remove reference ${index + 1}`}
+                  >
                     <X className="h-3 w-3" />
-                  </span>
-                </button>
+                  </button>
+                </div>
               ))}
             </div>
           )}
@@ -972,7 +1008,7 @@ export function GenSpace() {
   const [mode, setMode] = useState<'image' | 'video' | 'retake' | 'ic-lora'>('video')
   const [prompt, setPrompt] = useState('')
   const [inputImage, setInputImage] = useState<string | null>(null)
-  const [referenceImages, setReferenceImages] = useState<string[]>([])
+  const [referenceImages, setReferenceImages] = useState<GenerationReferenceImage[]>([])
   const [inputAudio, setInputAudio] = useState<string | null>(null)
   const [requiredReferenceCpIds, setRequiredReferenceCpIds] = useState<ModelCheckpointID[]>([])
   const [isCheckingReferenceModels, setIsCheckingReferenceModels] = useState(false)
@@ -1088,7 +1124,7 @@ export function GenSpace() {
     if (genSpaceEditImagePath) {
       setMode('video')
       setInputImage(genSpaceEditImagePath)
-      setReferenceImages([genSpaceEditImagePath])
+      setReferenceImages([{ path: genSpaceEditImagePath, role: 'keyframe' }])
       setPrompt('')
       setGenSpaceEditImagePath(null)
       setGenSpaceEditMode(null)
@@ -1282,7 +1318,7 @@ export function GenSpace() {
             cameraMotion: 'none',
             imageAspectRatio: savedVideoSettings.aspectRatio,
             imageSteps: 4,
-            inputImageUrl: referenceImages[0] || inputImage || undefined,
+            inputImageUrl: referenceImages[0]?.path || inputImage || undefined,
             inputAudioUrl: inputAudio || undefined,
           },
           takes: [{
@@ -1574,8 +1610,10 @@ export function GenSpace() {
       )
     } else {
       // Generate video (t2v if no image/audio, i2v if image, a2v if audio)
-      const videoReferences = referenceImages.length > 0 ? referenceImages : (inputImage ? [inputImage] : [])
-      const imagePath = videoReferences[0] || null
+      const videoReferences = referenceImages.length > 0
+        ? referenceImages
+        : (inputImage ? [{ path: inputImage, role: 'keyframe' as const }] : [])
+      const imagePath = videoReferences[0]?.path || null
       const audioPath = inputAudio || null
       if (videoReferences.length > 1 && requiredReferenceCpIds.length > 0) {
         await downloadReferenceModels()
@@ -1624,7 +1662,7 @@ export function GenSpace() {
   const handleCreateVideo = (imageAsset: Asset) => {
     setMode('video')
     setInputImage(imageAsset.path)
-    setReferenceImages([imageAsset.path])
+    setReferenceImages([{ path: imageAsset.path, role: 'keyframe' }])
     setPrompt(`${imageAsset.prompt || 'The scene comes to life...'}`)
   }
 

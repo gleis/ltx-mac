@@ -589,14 +589,6 @@
             ],
             "title": "Imagepath"
           },
-          "referenceImagePaths": {
-            "default": [],
-            "items": {
-              "type": "string"
-            },
-            "title": "Referenceimagepaths",
-            "type": "array"
-          },
           "model": {
             "default": "fast",
             "enum": [
@@ -615,6 +607,20 @@
             "minLength": 1,
             "title": "Prompt",
             "type": "string"
+          },
+          "referenceImagePaths": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Referenceimagepaths",
+            "type": "array"
+          },
+          "referenceImages": {
+            "items": {
+              "$ref": "#/components/schemas/ReferenceImageInput"
+            },
+            "title": "Referenceimages",
+            "type": "array"
           },
           "resolution": {
             "default": "1080p",
@@ -1485,6 +1491,30 @@
           "downloaded"
         ],
         "title": "ModelStatusItem",
+        "type": "object"
+      },
+      "ReferenceImageInput": {
+        "properties": {
+          "path": {
+            "title": "Path",
+            "type": "string"
+          },
+          "role": {
+            "default": "character",
+            "enum": [
+              "character",
+              "location",
+              "style",
+              "keyframe"
+            ],
+            "title": "Role",
+            "type": "string"
+          }
+        },
+        "required": [
+          "path"
+        ],
+        "title": "ReferenceImageInput",
         "type": "object"
       },
       "RetakeCancelledResponse": {
