@@ -1463,6 +1463,7 @@ class TestEnhancePromptFlag:
         assert len(calls) == 1
         call = calls[0]
         assert call["speed_mode"] == "reference_i2v"
+        assert call["skip_stage_2"] is True
         assert len(call["images"]) == 2
         assert [image.frame_idx for image in call["images"]] == [0, 120]
         assert len(call["video_conditioning"]) == 1

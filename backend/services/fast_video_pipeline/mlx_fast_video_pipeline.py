@@ -352,7 +352,7 @@ class MLXFastVideoPipeline:
                 "frame_rate": float(frame_rate),
                 "seed": int(seed),
                 "stage1_steps": 8,
-                "stage2_steps": 3,
+                "stage2_steps": 0,
                 "loras": [{"path": lora_path, "strength": 1.0}],
                 "video_conditioning": video_conditioning,
                 "images": [
@@ -360,7 +360,7 @@ class MLXFastVideoPipeline:
                     for image in images
                 ],
                 "conditioning_attention_strength": 1.0,
-                "skip_stage_2": False,
+                "skip_stage_2": True,
             },
         }
         result = self._run(job)

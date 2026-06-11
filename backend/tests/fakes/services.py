@@ -559,6 +559,7 @@ class FakeFastVideoPipeline(_FakeVideoPipelineBase):
                 "video_conditioning": video_conditioning,
                 "lora_path": lora_path,
                 "output_path": output_path,
+                "skip_stage_2": True,
                 "speed_mode": "reference_i2v",
             }
         )
