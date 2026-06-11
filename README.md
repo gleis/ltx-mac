@@ -1,4 +1,4 @@
-# LTX Desktop Mac Local Fork
+# LTX Desktop Mac Local Fork (no api needed)
 
 This fork of [Lightricks/LTX-Desktop](https://github.com/Lightricks/LTX-Desktop)
 adds a first working Apple Silicon local-generation path using MLX and the
