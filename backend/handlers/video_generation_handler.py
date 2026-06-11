@@ -572,7 +572,7 @@ class VideoGenerationHandler(StateHandlerBase):
                 prepared_images=prepared_images,
                 width=width,
                 height=height,
-                num_frames=num_frames,
+                num_frames=self._reference_control_frame_count(num_frames),
                 fps=fps,
             )
             anchors = [
@@ -616,6 +616,15 @@ class VideoGenerationHandler(StateHandlerBase):
             round(last * index / (reference_count - 1))
             for index in range(reference_count)
         ]
+
+    @staticmethod
+    def _reference_control_frame_count(num_frames: int) -> int:
+        # The MLX IC-LoRA VAE encoder pads temporal chunks differently from the
+        # target latent-shape helper. A control clip with the full target frame
+        # count can encode to one extra latent frame (for example 121px -> 17
+        # ref latents while the target expects 16). One fewer pixel frame keeps
+        # the reference latent sequence aligned to the target grid.
+        return max(num_frames - 1, 1)
 
     def _make_reference_control_video(
         self,
