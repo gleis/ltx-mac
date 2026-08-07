@@ -6,8 +6,9 @@ compact Q4 LTX 2.3 model. It is intended to run locally on a Mac with about
 36 GB of unified memory while keeping the original LTX API mode available.
 
 > Status: working first milestone. Text-to-video runs locally through the MLX Q4
-> path. Local image-to-video uses a deterministic still-motion fallback because
-> the current MLX Q4 distilled I2V path collapses into tiled artifacts after the
+> path, with 720p 10-second generation confirmed working on the 36 GB target Mac.
+> Local image-to-video uses a deterministic still-motion fallback because the
+> current MLX Q4 distilled I2V path collapses into tiled artifacts after the
 > first frame. The LTX API path remains available for true generative I2V.
 
 <img width="1394" height="896" alt="Screenshot 2026-06-10 at 8 12 44 PM" src="https://github.com/user-attachments/assets/f797cfca-11a3-4f37-be76-5c11a93f312e" />
@@ -34,8 +35,8 @@ Validated target machine: Apple Silicon Mac with 36 GB unified memory.
 | Resolution | Local MLX Q4 durations exposed in UI | Current recommendation |
 | --- | --- | --- |
 | 540p | 5-20 seconds at 24 fps | Good for longer tests |
-| 720p | 5-20 seconds at 24 fps | Best default for usable longer clips |
-| 1080p | 5 seconds at 24 fps | 10 seconds can complete, but only the first 5 seconds has been usable so far |
+| 720p | 5-20 seconds at 24 fps | Best default; 10-second clips are confirmed usable on the target Mac |
+| 1080p | 5 seconds at 24 fps | 10 seconds can complete, but extended quality still needs more validation |
 
 The app may be able to render beyond these limits if edited manually, but this
 fork treats actual viewable quality as the release gate.
@@ -58,7 +59,7 @@ From the project root:
 corepack enable
 pnpm install
 scripts/setup-mac-mlx.sh
-pnpm dev
+LTX_APP_DATA_DIR="$PWD/.ltx-data" LTX_MLX_PATH="$PWD/.ltx-data/ltx-2-mlx" pnpm dev
 ```
 
 The setup script keeps its downloads under `.ltx-data/` by default:
@@ -82,7 +83,15 @@ For more detail, see [docs/MAC_LOCAL_MLX.md](docs/MAC_LOCAL_MLX.md).
 Development:
 
 ```bash
-pnpm dev
+LTX_APP_DATA_DIR="$PWD/.ltx-data" LTX_MLX_PATH="$PWD/.ltx-data/ltx-2-mlx" pnpm dev
+```
+
+If `pnpm dev` tries to rerun dependency installation and asks to purge
+`node_modules` in a non-interactive shell, launch the already-installed Vite
+dev app directly instead:
+
+```bash
+LTX_APP_DATA_DIR="$PWD/.ltx-data" LTX_MLX_PATH="$PWD/.ltx-data/ltx-2-mlx" ./node_modules/.bin/vite
 ```
 
 TypeScript check:
@@ -202,8 +211,9 @@ Key fork files:
 - Local Mac image-to-video uses a deterministic still-motion fallback. It avoids
   the MLX Q4 distilled I2V tiled-artifact failure, but it is not true generative
   motion. Use the LTX API path for generative image-to-video.
-- The MLX path currently relies on an external `ltx-2-mlx` checkout at version
-  `v0.14.0` prepared by `scripts/setup-mac-mlx.sh`.
+- The MLX path relies on a project-local `ltx-2-mlx` checkout at version
+  `v0.14.0` prepared by `scripts/setup-mac-mlx.sh`; run with
+  `LTX_MLX_PATH="$PWD/.ltx-data/ltx-2-mlx"` when starting from a shell.
 - The local setup downloads large model/runtime assets that are intentionally
   ignored by Git.
 

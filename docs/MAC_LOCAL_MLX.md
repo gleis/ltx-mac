@@ -102,18 +102,23 @@ If `uv` is installed inside the repo helper environment, the script uses
 
 ## Running
 
-Start the app in development:
-
-```bash
-pnpm dev
-```
-
-If you want to be explicit about project-local storage:
+Start the app in development with project-local storage and the prepared MLX
+runtime checkout:
 
 ```bash
 export LTX_APP_DATA_DIR="$PWD/.ltx-data"
 export LTX_MLX_PATH="$PWD/.ltx-data/ltx-2-mlx"
 pnpm dev
+```
+
+If `pnpm dev` attempts to rerun dependency installation and aborts with
+`ERR_PNPM_ABORTED_REMOVE_MODULES_DIR_NO_TTY`, use the installed Vite binary
+directly:
+
+```bash
+export LTX_APP_DATA_DIR="$PWD/.ltx-data"
+export LTX_MLX_PATH="$PWD/.ltx-data/ltx-2-mlx"
+./node_modules/.bin/vite
 ```
 
 The backend should select `mac_mlx_q4` automatically on Apple Silicon with
@@ -143,12 +148,13 @@ produce tiled conditioning artifacts.
 | Resolution | Duration | Notes |
 | --- | --- | --- |
 | 540p | 5-20 seconds | Good for longer experiments and prompt iteration |
-| 720p | 5-20 seconds | Best practical default for this 36 GB target |
-| 1080p | 5 seconds | Current quality gate for usable local Mac output |
+| 720p | 5-20 seconds | Best practical default; 10-second output is confirmed usable on the 36 GB target |
+| 1080p | 5 seconds | Current conservative quality gate for local Mac output |
 
-1080p 10-second generation has completed on the target machine, but only the
-first 5 seconds were usable. The UI therefore caps 1080p local Mac generation at
-5 seconds.
+A 720p 10-second text-to-video render has been confirmed to complete and produce
+a decent usable result on the target 36 GB Mac. 1080p 10-second generation has
+also completed, but extended quality still needs more validation before treating
+it as a default recommendation.
 
 ## Prompt Enhancement
 
@@ -206,7 +212,9 @@ The MLX helper recognizes several environment variables:
 | `LTX_ENABLE_MODEL_UPSCALE` | Disabled by default. |
 | `LTX_VAE_STREAMING` | Override VAE streaming behavior. Usually leave unset. |
 
-Most users should only set `LTX_APP_DATA_DIR` and possibly `LTX_MLX_PATH`.
+Most users should only set `LTX_APP_DATA_DIR` and `LTX_MLX_PATH` when launching
+from a development shell. `LTX_MLX_PATH` should point at
+`$PWD/.ltx-data/ltx-2-mlx` after `scripts/setup-mac-mlx.sh` completes.
 
 ## Verification Commands
 
@@ -240,17 +248,24 @@ corepack pnpm exec openapi-typescript frontend/generated/backend-openapi.json -o
 
 ## Troubleshooting
 
-### No module named `ltx_pipelines_mlx`
+### `LTX_MLX_PATH is not configured` or `No module named ltx_pipelines_mlx`
 
-The MLX runtime was not installed or the helper is pointing at the wrong
-checkout.
+The MLX runtime was not installed, or the backend cannot see the prepared
+`ltx-2-mlx` checkout.
 
 Fix:
 
 ```bash
 scripts/setup-mac-mlx.sh
+export LTX_APP_DATA_DIR="$PWD/.ltx-data"
 export LTX_MLX_PATH="$PWD/.ltx-data/ltx-2-mlx"
 pnpm dev
+```
+
+The backend should resolve the helper Python at:
+
+```text
+.ltx-data/ltx-2-mlx/env/bin/python3.11
 ```
 
 ### App still uses the main drive
@@ -270,9 +285,11 @@ For packaged apps, macOS still defaults to:
 
 unless `LTX_APP_DATA_DIR` is set before launch.
 
-### 1080p longer clips look bad after 5 seconds
+### Longer clips look bad after a few seconds
 
-Use 1080p for 5-second clips only. For 10-20 seconds, use 720p or 540p.
+Use 720p for 10-second local text-to-video clips first; this is the confirmed
+working milestone on the 36 GB target Mac. Keep 1080p at 5 seconds until the
+longer 1080p path has more validation.
 
 ### Generation is slow
 
@@ -282,6 +299,19 @@ That is expected for local MLX video generation. Try:
 - `Boost` speed mode for text-to-video. Image-to-video remains on `Quality`.
 - Closing GPU-heavy apps.
 - Keeping the project data folder on a fast external SSD.
+
+### MLX setup patch warnings
+
+`scripts/setup-mac-mlx.sh` may print drift warnings for optional I2V or long-clip
+boost patches when `ltx-2-mlx` changes shape. The important project-local setup
+checks are:
+
+- `.ltx-data/ltx-2-mlx` exists.
+- `.ltx-data/ltx-2-mlx/env/bin/python3.11` exists.
+- The codec patch and VAE temporal streaming patch apply successfully.
+
+If generation fails with missing `LTX_MLX_PATH`, rerun with the explicit
+environment variables shown in the Running section.
 
 ### Prompt Enhancer appears to do nothing
 
