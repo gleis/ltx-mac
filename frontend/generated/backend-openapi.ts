@@ -711,6 +711,10 @@ export interface components {
             status: "idle" | "running" | "complete" | "cancelled" | "error";
             /** Totalsteps */
             totalSteps: number | null;
+            /** Result */
+            result?: string | string[] | null;
+            /** Id */
+            id?: string | null;
         };
         /** GpuInfoResponse */
         GpuInfoResponse: {

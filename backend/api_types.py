@@ -99,6 +99,8 @@ class GenerationProgressResponse(BaseModel):
     progress: int
     currentStep: int | None
     totalSteps: int | None
+    result: str | list[str] | None = None
+    id: str | None = None
 
 
 class DownloadProgressRunningResponse(BaseModel):

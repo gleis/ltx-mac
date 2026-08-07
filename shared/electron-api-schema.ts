@@ -277,6 +277,11 @@ export const electronAPISchemas = {
     output: backendHealthStatus.nullable(),
   },
 
+  notifyGenerationActive: {
+    input: z.object({ active: z.boolean() }),
+    output: z.void(),
+  },
+
   // Video processing
   extractVideoFrame: {
     input: z.object({ videoPath: z.string(), seekTime: z.number(), width: z.number().optional(), quality: z.number().optional() }),

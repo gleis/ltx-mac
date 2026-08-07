@@ -7,6 +7,7 @@ import { KeyboardShortcutsProvider } from './contexts/KeyboardShortcutsContext'
 import { AppSettingsProvider, useAppSettings } from './contexts/AppSettingsContext'
 import { KeyboardShortcutsModal } from './components/KeyboardShortcutsModal'
 import { useBackend } from './hooks/use-backend'
+import { useGenerationRecoveryWatcher } from './hooks/use-generation-recovery-watcher'
 import { logger } from './lib/logger'
 import { Home } from './views/Home'
 import { Project } from './views/Project'
@@ -27,6 +28,7 @@ function AppContent() {
   const { currentView } = useView()
   const { connected, processStatus, isLoading: backendLoading } = useBackend()
   const { settings, saveLtxApiKey, saveFalApiKey, forceApiGenerations, isLoaded, runtimePolicyLoaded } = useAppSettings()
+  useGenerationRecoveryWatcher()
 
   const [pythonReady, setPythonReady] = useState<boolean | null>(null)
   const [backendStarted, setBackendStarted] = useState(false)

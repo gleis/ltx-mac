@@ -2,6 +2,7 @@ import { useState, useCallback, useRef } from 'react'
 import type { GenerationSettings } from '../components/SettingsPanel'
 import { ApiClient, type ApiRequestBodyOf } from '../lib/api-client'
 import { createLocalGenerationError, type GenerationError } from '../lib/generation-errors'
+import { withGenerationActive } from '../lib/generation-active'
 import { useAppSettings } from '../contexts/AppSettingsContext'
 
 interface GenerationState {
@@ -204,9 +205,9 @@ export function useGeneration(): UseGenerationReturn {
       progressInterval = setInterval(pollProgress, 500)
 
       // Start generation (HTTP POST - synchronous, returns when done)
-      const result = await ApiClient.generateVideo(body as unknown as GenerateVideoRequest, {
-        signal: abortControllerRef.current.signal,
-      })
+      const result = await withGenerationActive(() => ApiClient.generateVideo(body as unknown as GenerateVideoRequest, {
+        signal: abortControllerRef.current?.signal,
+      }))
       shouldApplyPollingUpdates = false
       if (!result.ok) {
         setState(prev => ({
@@ -361,9 +362,9 @@ export function useGeneration(): UseGenerationReturn {
         numSteps,
         numImages,
       }
-      const result = await ApiClient.generateImage(imageRequest, {
-        signal: abortControllerRef.current.signal,
-      })
+      const result = await withGenerationActive(() => ApiClient.generateImage(imageRequest, {
+        signal: abortControllerRef.current?.signal,
+      }))
 
       clearInterval(progressInterval)
       if (!result.ok) {

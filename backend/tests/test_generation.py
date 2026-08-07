@@ -1149,6 +1149,19 @@ class TestGenerationProgress:
         assert data["progress"] == 50
         assert data["currentStep"] == 4
         assert data["totalSteps"] == 8
+        assert data["id"] == "running"
+        assert data["result"] is None
+
+    def test_complete_includes_id_and_result(self, client, test_state):
+        _fake_running_generation_state(test_state)
+        test_state.generation.complete_generation("/tmp/generated.mp4")
+
+        r = client.get("/api/generation/progress")
+        assert r.status_code == 200
+        data = r.json()
+        assert data["status"] == "complete"
+        assert data["id"] == "running"
+        assert data["result"] == "/tmp/generated.mp4"
 
     def test_running_from_api_generation_state(self, client, test_state):
         test_state.generation.start_api_generation("api-running")

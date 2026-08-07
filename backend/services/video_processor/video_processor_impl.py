@@ -83,7 +83,10 @@ class VideoProcessorImpl:
         import cv2
 
         code = cv2.VideoWriter.fourcc(*fourcc)
-        return cast(VideoWriterLike, cv2.VideoWriter(path, code, fps, size))
+        writer = cv2.VideoWriter(path, code, fps, size)
+        if not writer.isOpened():
+            raise ValueError(f"Could not open video writer for {path} (codec={fourcc}, size={size})")
+        return cast(VideoWriterLike, writer)
 
     def release(self, cap_or_writer: VideoCaptureLike | VideoWriterLike) -> None:
         try:

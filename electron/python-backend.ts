@@ -23,9 +23,31 @@ let takeoverInFlight: Promise<void> | null = null
 const STARTUP_PROBE_TIMEOUT_MS = 30_000
 const STARTUP_PROBE_INTERVAL_MS = 500
 const LIVENESS_POLL_INTERVAL_MS = 10_000
-const LIVENESS_FAILURE_THRESHOLD = 3
+const LIVENESS_FAILURE_THRESHOLD = 5
 let livenessMonitorTimer: NodeJS.Timeout | null = null
 let livenessFailureCount = 0
+
+// Local generations can starve the Python event loop long enough for /health probes to time out.
+// The renderer sets this while a generation request is in flight so the liveness monitor does not
+// kill a busy backend. The timeout prevents a renderer crash from disabling liveness forever.
+const MAX_LIVENESS_SUPPRESSION_MS = 20 * 60_000
+let generationActiveSince: number | null = null
+let activeGenerationCount = 0
+
+export function setGenerationActive(active: boolean): void {
+  if (active) {
+    activeGenerationCount += 1
+    if (generationActiveSince == null) generationActiveSince = Date.now()
+    livenessFailureCount = 0
+    return
+  }
+  activeGenerationCount = Math.max(0, activeGenerationCount - 1)
+  if (activeGenerationCount === 0) generationActiveSince = null
+}
+
+function isLivenessSuppressed(): boolean {
+  return generationActiveSince != null && Date.now() - generationActiveSince < MAX_LIVENESS_SUPPRESSION_MS
+}
 
 let backendUrl: string | null = null
 let authToken: string | null = null
@@ -136,6 +158,9 @@ function startLivenessMonitor(): void {
   livenessMonitorTimer = setInterval(() => {
     void (async () => {
       if (!pythonProcess || backendOwnership !== 'managed' || isIntentionalShutdown) {
+        return
+      }
+      if (isLivenessSuppressed()) {
         return
       }
       const healthy = await probeBackendHealth(2000)

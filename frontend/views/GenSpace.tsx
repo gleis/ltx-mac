@@ -19,6 +19,7 @@ import type { Asset } from '../types/project-model'
 import type { components } from '../generated/backend-openapi'
 import { GenerationErrorDialog } from '../components/GenerationErrorDialog'
 import { addVisualAssetToProject } from '../lib/asset-copy'
+import { clearGenerationRecoveryMarker, setActiveGenerationOwner, writeGenerationRecoveryMarker } from '../lib/generation-recovery'
 import { pathToFileUrl } from '../lib/file-url'
 import {
   areVideoGenerationSettingsEquivalent,
@@ -999,6 +1000,11 @@ export function GenSpace() {
     setPendingIcLoraUpdate,
   } = useProjects()
   const currentProjectId = activeProject?.id ?? null
+
+  useEffect(() => {
+    setActiveGenerationOwner(currentProjectId)
+    return () => setActiveGenerationOwner(null)
+  }, [currentProjectId])
   const { shouldVideoGenerateWithLtxApi, forceApiGenerations, settings: appSettings } = useAppSettings()
   const {
     modelSpecs: videoGenerationModelSpecsResponse,
@@ -1276,6 +1282,12 @@ export function GenSpace() {
     }
   }, [icLoraError])
 
+  useEffect(() => {
+    if (error && currentProjectId) {
+      clearGenerationRecoveryMarker(currentProjectId)
+    }
+  }, [error, currentProjectId])
+
   // Only show assets that were generated (have generationParams), not imported files
   const assets = (activeProject?.assets || []).filter(a => a.generationParams)
   const [lastPrompt, setLastPrompt] = useState('')
@@ -1331,6 +1343,7 @@ export function GenSpace() {
           }],
           activeTakeIndex: 0,
         })
+        clearGenerationRecoveryMarker(currentProjectId)
         reset()
       } catch (err) {
         persistedVideoKeyRef.current = null
@@ -1543,6 +1556,7 @@ export function GenSpace() {
             })
           }
         }
+        clearGenerationRecoveryMarker(currentProjectId)
       })()
     }
   }, [imagePaths, currentProjectId, isGenerating])
@@ -1593,21 +1607,27 @@ export function GenSpace() {
     if (mode === 'image') {
       // Save the prompt before generation starts
       setLastPrompt(prompt)
-      generateImage(
-        prompt,
-        {
-          model: 'fast' as 'fast' | 'pro',
-          duration: 5,
-          videoResolution: settings.videoResolution,
-          fps: 24,
-          audio: false,
-          cameraMotion: 'none',
-          imageResolution: settings.imageResolution,
-          imageAspectRatio: settings.aspectRatio,
-          imageSteps: 4,
-          variations: settings.variations,
-        }
-      )
+      const imageSettings = {
+        model: 'fast' as 'fast' | 'pro',
+        duration: 5,
+        videoResolution: settings.videoResolution,
+        fps: 24,
+        audio: false,
+        cameraMotion: 'none',
+        imageResolution: settings.imageResolution,
+        imageAspectRatio: settings.aspectRatio,
+        imageSteps: 4,
+        variations: settings.variations,
+      }
+      if (currentProjectId) {
+        await writeGenerationRecoveryMarker({
+          projectId: currentProjectId,
+          prompt,
+          settings: imageSettings,
+          genType: 'image',
+        })
+      }
+      await generateImage(prompt, imageSettings)
     } else {
       // Generate video (t2v if no image/audio, i2v if image, a2v if audio)
       const videoReferences = referenceImages.length > 0
@@ -1625,22 +1645,33 @@ export function GenSpace() {
       // Save the prompt before generation starts
       setLastPrompt(prompt)
       const videoSettings = sanitizeVideoSettings(settings)
+      const generationSettings = {
+        model: videoSettings.model as 'fast' | 'pro',
+        duration: videoSettings.duration,
+        videoResolution: videoSettings.videoResolution,
+        fps: videoSettings.fps,
+        audio: videoSettings.audio || false,
+        cameraMotion: 'none',
+        aspectRatio: videoSettings.aspectRatio,
+        imageResolution: videoSettings.imageResolution,
+        imageAspectRatio: videoSettings.aspectRatio,
+        imageSteps: 4,
+      }
+      if (currentProjectId) {
+        await writeGenerationRecoveryMarker({
+          projectId: currentProjectId,
+          prompt,
+          settings: generationSettings,
+          inputImageUrl: imagePath || undefined,
+          inputAudioUrl: audioPath || undefined,
+          genType: 'video',
+        })
+      }
 
-      generate(
+      await generate(
         prompt,
         imagePath,
-        {
-          model: videoSettings.model as 'fast' | 'pro',
-          duration: videoSettings.duration,
-          videoResolution: videoSettings.videoResolution,
-          fps: videoSettings.fps,
-          audio: videoSettings.audio || false,
-          cameraMotion: 'none',
-          aspectRatio: videoSettings.aspectRatio,
-          imageResolution: videoSettings.imageResolution,
-          imageAspectRatio: videoSettings.aspectRatio,
-          imageSteps: 4,
-        },
+        generationSettings,
         audioPath,
         videoReferences,
       )

@@ -208,37 +208,42 @@ class GenerationHandler(StateHandlerBase):
         gen = self._generation_for_polling()
 
         match gen:
-            case GenerationRunning(progress=progress):
+            case GenerationRunning(id=generation_id, progress=progress):
                 return GenerationProgressResponse(
                     status="running",
                     phase=progress.phase,
                     progress=progress.progress,
                     currentStep=progress.current_step,
                     totalSteps=progress.total_steps,
+                    id=generation_id,
                 )
-            case GenerationComplete():
+            case GenerationComplete(id=generation_id, result=result):
                 return GenerationProgressResponse(
                     status="complete",
                     phase="complete",
                     progress=100,
                     currentStep=0,
                     totalSteps=0,
+                    result=result,
+                    id=generation_id,
                 )
-            case GenerationCancelled():
+            case GenerationCancelled(id=generation_id):
                 return GenerationProgressResponse(
                     status="cancelled",
                     phase="cancelled",
                     progress=0,
                     currentStep=0,
                     totalSteps=0,
+                    id=generation_id,
                 )
-            case GenerationError():
+            case GenerationError(id=generation_id):
                 return GenerationProgressResponse(
                     status="error",
                     phase="error",
                     progress=0,
                     currentStep=0,
                     totalSteps=0,
+                    id=generation_id,
                 )
             case _:
                 return GenerationProgressResponse(
