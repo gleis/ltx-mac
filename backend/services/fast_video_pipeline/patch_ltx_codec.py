@@ -36,20 +36,37 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-VENV_ROOTS = [
-    "ltx-2-mlx/env/lib/python3.11/site-packages",      # Pinokio
-    "ltx-2-mlx/.venv/lib/python3.11/site-packages",    # manual
-    "ltx-2-mlx/packages/ltx-core-mlx/src",             # editable (ltx-core)
-    "ltx-2-mlx/packages/ltx-pipelines-mlx/src",        # editable (ltx-pipelines)
+DEFAULT_MLX_ROOTS = [
+    "ltx-2-mlx",              # Pinokio/manual checkout beside this repo
+    ".ltx-data/ltx-2-mlx",    # LTX Desktop project-local setup
 ]
 
 
+def _candidate_roots() -> list[Path]:
+    """Return candidate ltx-2-mlx roots for project-local and explicit installs."""
+    import os
+
+    roots: list[Path] = []
+    env_root = os.environ.get("LTX_MLX_PATH")
+    if env_root:
+        roots.append(Path(env_root))
+    roots.extend(Path(root) for root in DEFAULT_MLX_ROOTS)
+    return roots
+
+
 def _find(rel: str) -> Path | None:
-    """Resolve a package-relative path under the first venv root that contains it."""
-    for root in VENV_ROOTS:
-        p = Path(root) / rel
-        if p.exists():
-            return p
+    """Resolve a package-relative path under the first MLX runtime root that contains it."""
+    subroots = [
+        "env/lib/python3.11/site-packages",
+        ".venv/lib/python3.11/site-packages",
+        "packages/ltx-core-mlx/src",
+        "packages/ltx-pipelines-mlx/src",
+    ]
+    for mlx_root in _candidate_roots():
+        for subroot in subroots:
+            p = mlx_root / subroot / rel
+            if p.exists():
+                return p
     return None
 
 
