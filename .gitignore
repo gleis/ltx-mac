@@ -1,5 +1,12 @@
 # Dependencies
 node_modules/
+
+# Repo-local dependency caches
+.local/
+.pnpm-store/
+.uv-cache/
+._*
+**/._*
 .pnp
 .pnp.js
 
