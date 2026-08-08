@@ -129,13 +129,14 @@ prompt per line, click `Add`, then click the play button to render the queued
 scenes one at a time. Pause stops after the current render finishes. Completed
 clips are saved into the active project gallery just like normal generations.
 
-Each queued scene snapshots the current video settings, reference images, input
-image, and input audio at the moment it is added. Set the duration/resolution and
-attach any character, location, style, or keyframe references first, then add the
-prompts that should use that setup. The queue is stored per project in local
-browser storage; if the app reloads, any item that was mid-render is returned to
-`queued`. Use `Clear all` to remove every row at once; the app asks for
-confirmation first, and an already-started render will continue running.
+Each queued scene snapshots the current reference images, input image, input
+audio, and other generation settings at the moment it is added. The queue panel
+exposes a queue-wide resolution selector and a per-scene time selector, so you can
+load many prompts, set the global output size, then tune each scene duration
+before pressing play. The queue is stored per project in local browser storage;
+if the app reloads, any item that was mid-render is returned to `queued`. Use
+`Clear all` to remove every row at once; the app asks for confirmation first, and
+an already-started render will continue running.
 
 ## Data Locations
 

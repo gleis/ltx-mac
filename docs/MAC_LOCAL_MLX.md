@@ -184,8 +184,11 @@ only renders one clip at a time. Pause stops after the current clip completes.
 Queue items keep a snapshot of the current settings and media references when
 they are added. For consistent characters, environments, outfits, or visual
 style, attach the reference images and choose their roles first, then add the
-prompts that should share those references. If you need a different setup, change
-the references/settings and add the next batch as separate queue rows.
+prompts that should share those references. Use the queue-wide resolution control
+to set the output size for all non-running queue rows, and use each row's time
+selector to set that scene's duration before the batch starts. If you need a
+different reference setup, change the references/settings and add the next batch
+as separate queue rows.
 
 The queue is saved per project in local browser storage. A running item is reset
 to `queued` after a reload so it can be started again. Finished and failed rows

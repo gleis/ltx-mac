@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import {
   Trash2, Download, Image, Video, X,
   Heart, Film, Volume2, VolumeX, Sparkles,
@@ -1015,6 +1015,11 @@ function SceneQueuePanel({
   onClearAll,
   onStart,
   onPause,
+  queueResolution,
+  queueResolutionOptions,
+  onQueueResolutionChange,
+  getDurationOptions,
+  onDurationChange,
   isRunning,
   activeSceneId,
   disabled,
@@ -1030,6 +1035,11 @@ function SceneQueuePanel({
   onClearAll: () => void
   onStart: () => void
   onPause: () => void
+  queueResolution: string
+  queueResolutionOptions: string[]
+  onQueueResolutionChange: (resolution: string) => void
+  getDurationOptions: (item: SceneQueueItem) => number[]
+  onDurationChange: (id: string, duration: number) => void
   isRunning: boolean
   activeSceneId: string | null
   disabled: boolean
@@ -1070,6 +1080,26 @@ function SceneQueuePanel({
 
       {isOpen && (
         <div className="border-t border-zinc-800 p-2">
+          <div className="mb-2 flex items-center justify-between gap-2 rounded-md border border-zinc-800 bg-zinc-950/70 px-2 py-1.5">
+            <label className="flex items-center gap-2 text-xs text-zinc-400">
+              <Monitor className="h-3.5 w-3.5" />
+              Queue resolution
+            </label>
+            <select
+              value={queueResolution}
+              onChange={(event) => onQueueResolutionChange(event.target.value)}
+              disabled={queueResolutionOptions.length === 0}
+              className="h-7 rounded border border-zinc-700 bg-zinc-950 px-2 text-xs text-zinc-200 outline-none hover:border-zinc-500 disabled:cursor-not-allowed disabled:text-zinc-600"
+              title="Resolution for queued scenes"
+            >
+              {queueResolutionOptions.length > 0 ? queueResolutionOptions.map((resolution) => (
+                <option key={resolution} value={resolution}>{resolution}</option>
+              )) : (
+                <option value={queueResolution}>{queueResolution}</option>
+              )}
+            </select>
+          </div>
+
           <textarea
             value={draft}
             onChange={(event) => onDraftChange(event.target.value)}
@@ -1121,10 +1151,23 @@ A quiet sunrise over the same street..."
                   <div className="mt-0.5 w-6 shrink-0 text-right text-[11px] text-zinc-600">{index + 1}</div>
                   <div className="min-w-0 flex-1">
                     <div className="line-clamp-2 text-xs leading-4 text-zinc-300">{item.prompt}</div>
-                    <div className="mt-1 flex items-center gap-1.5 text-[10px] uppercase tracking-wide text-zinc-600">
+                    <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[10px] uppercase tracking-wide text-zinc-600">
                       <span className={item.status === 'failed' ? 'text-red-400' : item.status === 'done' ? 'text-emerald-400' : item.status === 'running' ? 'text-violet-300' : ''}>{item.status}</span>
                       <span>{item.settings.videoResolution}</span>
-                      <span>{item.settings.duration}s</span>
+                      <label className="flex items-center gap-1 normal-case tracking-normal text-zinc-500">
+                        <span className="uppercase tracking-wide">Time</span>
+                        <select
+                          value={String(item.settings.duration)}
+                          onChange={(event) => onDurationChange(item.id, parseInt(event.target.value, 10))}
+                          disabled={item.status === 'running'}
+                          className="h-6 rounded border border-zinc-800 bg-zinc-950 px-1.5 text-[11px] text-zinc-200 outline-none hover:border-zinc-600 disabled:cursor-not-allowed disabled:text-zinc-600"
+                          title="Scene duration"
+                        >
+                          {getDurationOptions(item).map((duration) => (
+                            <option key={duration} value={duration}>{duration}s</option>
+                          ))}
+                        </select>
+                      </label>
                     </div>
                     {item.error && <div className="mt-1 line-clamp-2 text-[11px] leading-4 text-red-300">{item.error}</div>}
                   </div>
@@ -1270,6 +1313,57 @@ export function GenSpace() {
     },
     [inputAudio, mode, videoModelSpecs],
   )
+
+  const sanitizeSceneQueueSettings = useCallback(
+    (next: VideoSettingsState, hasAudio: boolean) => {
+      if (videoModelSpecs.length === 0) return next
+      return sanitizeVideoGenerationSettings(next, videoModelSpecs, { hasAudio }) ?? next
+    },
+    [videoModelSpecs],
+  )
+
+  const queueResolutionOptions = useMemo(() => {
+    if (videoModelSpecs.length === 0) return [settings.videoResolution]
+    const resolved = resolveVideoGenerationOptions({
+      settings,
+      modelSpecs: videoModelSpecs,
+      hasAudio: false,
+    })
+    return resolved.resolutionOptions.length > 0 ? resolved.resolutionOptions : [settings.videoResolution]
+  }, [settings, videoModelSpecs])
+
+  const getSceneQueueDurationOptions = useCallback((item: SceneQueueItem) => {
+    if (videoModelSpecs.length === 0) return [item.settings.duration]
+    const resolved = resolveVideoGenerationOptions({
+      settings: item.settings,
+      modelSpecs: videoModelSpecs,
+      hasAudio: Boolean(item.inputAudio),
+    })
+    return resolved.durationOptions.length > 0 ? resolved.durationOptions : [item.settings.duration]
+  }, [videoModelSpecs])
+
+  const updateSceneQueueDuration = useCallback((id: string, duration: number) => {
+    setSceneQueue((prev) => prev.map((item) => {
+      if (item.id !== id || item.status === 'running') return item
+      return {
+        ...item,
+        settings: sanitizeSceneQueueSettings({ ...item.settings, duration }, Boolean(item.inputAudio)),
+      }
+    }))
+  }, [sanitizeSceneQueueSettings])
+
+  const updateSceneQueueResolution = useCallback((resolution: string) => {
+    setSettings((prev) => sanitizeVideoGenerationSettings({ ...prev, videoResolution: resolution }, videoModelSpecs, {
+      hasAudio: Boolean(inputAudio),
+    }) ?? { ...prev, videoResolution: resolution })
+    setSceneQueue((prev) => prev.map((item) => {
+      if (item.status === 'running') return item
+      return {
+        ...item,
+        settings: sanitizeSceneQueueSettings({ ...item.settings, videoResolution: resolution }, Boolean(item.inputAudio)),
+      }
+    }))
+  }, [inputAudio, sanitizeSceneQueueSettings, videoModelSpecs])
 
   const addSceneQueuePrompts = useCallback(() => {
     const prompts = sceneQueueText
@@ -2329,6 +2423,11 @@ export function GenSpace() {
             onRemove={removeSceneQueueItem}
             onClearFinished={clearFinishedSceneQueueItems}
             onClearAll={clearAllSceneQueueItems}
+            queueResolution={settings.videoResolution}
+            queueResolutionOptions={queueResolutionOptions}
+            onQueueResolutionChange={updateSceneQueueResolution}
+            getDurationOptions={getSceneQueueDurationOptions}
+            onDurationChange={updateSceneQueueDuration}
             onStart={() => setIsSceneQueueRunning(true)}
             onPause={() => setIsSceneQueueRunning(false)}
             isRunning={isSceneQueueRunning}
