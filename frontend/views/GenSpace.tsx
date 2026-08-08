@@ -1012,6 +1012,7 @@ function SceneQueuePanel({
   onAdd,
   onRemove,
   onClearFinished,
+  onClearAll,
   onStart,
   onPause,
   isRunning,
@@ -1026,6 +1027,7 @@ function SceneQueuePanel({
   onAdd: () => void
   onRemove: (id: string) => void
   onClearFinished: () => void
+  onClearAll: () => void
   onStart: () => void
   onPause: () => void
   isRunning: boolean
@@ -1034,6 +1036,7 @@ function SceneQueuePanel({
 }) {
   const queuedCount = queue.filter((item) => item.status === 'queued').length
   const finishedCount = queue.filter((item) => item.status === 'done' || item.status === 'failed').length
+  const hasQueue = queue.length > 0
   const hasDraft = draft.split('\n').some((line) => line.trim())
   const canStart = !disabled && queuedCount > 0 && !isRunning
 
@@ -1086,16 +1089,29 @@ A quiet sunrise over the same street..."
               <Plus className="h-3.5 w-3.5" />
               Add
             </button>
-            <button
-              type="button"
-              onClick={onClearFinished}
-              disabled={finishedCount === 0}
-              className={`rounded-md px-2.5 py-1.5 text-xs transition-colors ${
-                finishedCount > 0 ? 'text-zinc-400 hover:bg-zinc-800 hover:text-white' : 'text-zinc-700 cursor-not-allowed'
-              }`}
-            >
-              Clear finished
-            </button>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={onClearFinished}
+                disabled={finishedCount === 0}
+                className={`rounded-md px-2.5 py-1.5 text-xs transition-colors ${
+                  finishedCount > 0 ? 'text-zinc-400 hover:bg-zinc-800 hover:text-white' : 'text-zinc-700 cursor-not-allowed'
+                }`}
+              >
+                Clear finished
+              </button>
+              <button
+                type="button"
+                onClick={onClearAll}
+                disabled={!hasQueue}
+                className={`rounded-md px-2.5 py-1.5 text-xs transition-colors ${
+                  hasQueue ? 'text-red-300 hover:bg-red-950/50 hover:text-red-100' : 'text-zinc-700 cursor-not-allowed'
+                }`}
+                title="Clear the entire queue"
+              >
+                Clear all
+              </button>
+            </div>
           </div>
 
           {queue.length > 0 && (
@@ -1291,6 +1307,21 @@ export function GenSpace() {
   const clearFinishedSceneQueueItems = useCallback(() => {
     setSceneQueue((prev) => prev.filter((item) => item.status !== 'done' && item.status !== 'failed'))
   }, [])
+
+  const clearAllSceneQueueItems = useCallback(() => {
+    if (sceneQueue.length === 0) return
+    const hasRunningScene = sceneQueue.some((item) => item.status === 'running')
+    const confirmed = window.confirm(
+      hasRunningScene
+        ? 'Clear the entire scene queue? The current render will keep running, but every queue row will be removed and the queue will stop after it finishes.'
+        : 'Clear the entire scene queue? This removes queued, completed, and failed rows.',
+    )
+    if (!confirmed) return
+    setIsSceneQueueRunning(false)
+    activeSceneIdRef.current = null
+    setActiveSceneId(null)
+    setSceneQueue([])
+  }, [sceneQueue])
   
   const {
     generate,
@@ -2297,6 +2328,7 @@ export function GenSpace() {
             onAdd={addSceneQueuePrompts}
             onRemove={removeSceneQueueItem}
             onClearFinished={clearFinishedSceneQueueItems}
+            onClearAll={clearAllSceneQueueItems}
             onStart={() => setIsSceneQueueRunning(true)}
             onPause={() => setIsSceneQueueRunning(false)}
             isRunning={isSceneQueueRunning}

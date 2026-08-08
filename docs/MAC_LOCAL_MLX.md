@@ -189,7 +189,9 @@ the references/settings and add the next batch as separate queue rows.
 
 The queue is saved per project in local browser storage. A running item is reset
 to `queued` after a reload so it can be started again. Finished and failed rows
-can be cleared from the panel.
+can be cleared from the panel, or `Clear all` can remove every row after a
+confirmation warning. If a render has already started, clearing the queue stops
+the queue from advancing but does not cancel that in-flight render.
 
 ## Performance Notes
 

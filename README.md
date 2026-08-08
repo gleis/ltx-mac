@@ -134,7 +134,8 @@ image, and input audio at the moment it is added. Set the duration/resolution an
 attach any character, location, style, or keyframe references first, then add the
 prompts that should use that setup. The queue is stored per project in local
 browser storage; if the app reloads, any item that was mid-render is returned to
-`queued`.
+`queued`. Use `Clear all` to remove every row at once; the app asks for
+confirmation first, and an already-started render will continue running.
 
 ## Data Locations
 
