@@ -3,7 +3,7 @@ import {
   Trash2, Download, Image, Video, X,
   Heart, Film, Volume2, VolumeX, Sparkles,
   Clock, Monitor, ChevronUp, Scissors, Music,
-  ChevronLeft, ChevronRight, Copy, Check
+  ChevronLeft, ChevronRight, Copy, Check, ListPlus, Play, Pause, Plus
 } from 'lucide-react'
 import { useProjects } from '../contexts/ProjectContext'
 import type { GenSpaceRetakeSource } from '../contexts/ProjectContext'
@@ -980,6 +980,157 @@ const DEFAULT_VIDEO_SETTINGS = {
   audio: true,
 }
 
+type VideoSettingsState = typeof DEFAULT_VIDEO_SETTINGS
+type SceneQueueStatus = 'queued' | 'running' | 'done' | 'failed'
+
+type SceneQueueItem = {
+  id: string
+  prompt: string
+  settings: VideoSettingsState
+  referenceImages: GenerationReferenceImage[]
+  inputImage: string | null
+  inputAudio: string | null
+  status: SceneQueueStatus
+  createdAt: number
+  error?: string
+}
+
+function sceneQueueStorageKey(projectId: string): string {
+  return `ltx-scene-queue:${projectId}`
+}
+
+function normalizeSceneQueueItem(item: SceneQueueItem): SceneQueueItem {
+  return item.status === 'running' ? { ...item, status: 'queued', error: undefined } : item
+}
+
+function SceneQueuePanel({
+  isOpen,
+  onToggleOpen,
+  queue,
+  draft,
+  onDraftChange,
+  onAdd,
+  onRemove,
+  onClearFinished,
+  onStart,
+  onPause,
+  isRunning,
+  activeSceneId,
+  disabled,
+}: {
+  isOpen: boolean
+  onToggleOpen: () => void
+  queue: SceneQueueItem[]
+  draft: string
+  onDraftChange: (value: string) => void
+  onAdd: () => void
+  onRemove: (id: string) => void
+  onClearFinished: () => void
+  onStart: () => void
+  onPause: () => void
+  isRunning: boolean
+  activeSceneId: string | null
+  disabled: boolean
+}) {
+  const queuedCount = queue.filter((item) => item.status === 'queued').length
+  const finishedCount = queue.filter((item) => item.status === 'done' || item.status === 'failed').length
+  const hasDraft = draft.split('\n').some((line) => line.trim())
+  const canStart = !disabled && queuedCount > 0 && !isRunning
+
+  return (
+    <div className="mb-2 overflow-hidden rounded-lg border border-zinc-800 bg-zinc-900/95 shadow-xl backdrop-blur-md">
+      <div className="flex h-10 items-center gap-2 px-2">
+        <button
+          type="button"
+          onClick={onToggleOpen}
+          className="flex min-w-0 flex-1 items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-zinc-200 hover:bg-zinc-800"
+        >
+          <ListPlus className="h-4 w-4 shrink-0 text-zinc-400" />
+          <span className="font-medium">Scene Queue</span>
+          <span className="rounded bg-zinc-800 px-1.5 py-0.5 text-[11px] text-zinc-400">{queue.length}</span>
+          {activeSceneId && <span className="truncate text-[11px] text-violet-300">Rendering</span>}
+        </button>
+        <button
+          type="button"
+          onClick={isRunning ? onPause : onStart}
+          disabled={!isRunning && !canStart}
+          className={`flex h-8 w-8 items-center justify-center rounded-md transition-colors ${
+            isRunning
+              ? 'bg-zinc-800 text-zinc-200 hover:bg-zinc-700'
+              : canStart ? 'bg-white text-black hover:bg-zinc-200' : 'bg-zinc-800 text-zinc-600 cursor-not-allowed'
+          }`}
+          title={isRunning ? 'Pause after current scene' : 'Run queued scenes'}
+        >
+          {isRunning ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+        </button>
+      </div>
+
+      {isOpen && (
+        <div className="border-t border-zinc-800 p-2">
+          <textarea
+            value={draft}
+            onChange={(event) => onDraftChange(event.target.value)}
+            placeholder="A slow dolly through a neon alley at night...
+A quiet sunrise over the same street..."
+            className="h-24 w-full resize-none rounded-md border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm leading-5 text-zinc-100 outline-none placeholder:text-zinc-600 focus:border-zinc-600"
+          />
+          <div className="mt-2 flex items-center justify-between gap-2">
+            <button
+              type="button"
+              onClick={onAdd}
+              disabled={!hasDraft || disabled}
+              className={`flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors ${
+                hasDraft && !disabled ? 'bg-zinc-100 text-black hover:bg-white' : 'bg-zinc-800 text-zinc-600 cursor-not-allowed'
+              }`}
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Add
+            </button>
+            <button
+              type="button"
+              onClick={onClearFinished}
+              disabled={finishedCount === 0}
+              className={`rounded-md px-2.5 py-1.5 text-xs transition-colors ${
+                finishedCount > 0 ? 'text-zinc-400 hover:bg-zinc-800 hover:text-white' : 'text-zinc-700 cursor-not-allowed'
+              }`}
+            >
+              Clear finished
+            </button>
+          </div>
+
+          {queue.length > 0 && (
+            <div className="mt-2 max-h-40 space-y-1 overflow-y-auto pr-1">
+              {queue.map((item, index) => (
+                <div key={item.id} className="flex items-start gap-2 rounded-md border border-zinc-800 bg-zinc-950/70 px-2 py-1.5">
+                  <div className="mt-0.5 w-6 shrink-0 text-right text-[11px] text-zinc-600">{index + 1}</div>
+                  <div className="min-w-0 flex-1">
+                    <div className="line-clamp-2 text-xs leading-4 text-zinc-300">{item.prompt}</div>
+                    <div className="mt-1 flex items-center gap-1.5 text-[10px] uppercase tracking-wide text-zinc-600">
+                      <span className={item.status === 'failed' ? 'text-red-400' : item.status === 'done' ? 'text-emerald-400' : item.status === 'running' ? 'text-violet-300' : ''}>{item.status}</span>
+                      <span>{item.settings.videoResolution}</span>
+                      <span>{item.settings.duration}s</span>
+                    </div>
+                    {item.error && <div className="mt-1 line-clamp-2 text-[11px] leading-4 text-red-300">{item.error}</div>}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => onRemove(item.id)}
+                    disabled={item.status === 'running'}
+                    className={`mt-0.5 rounded p-1 transition-colors ${item.status === 'running' ? 'text-zinc-700 cursor-not-allowed' : 'text-zinc-500 hover:bg-zinc-800 hover:text-white'}`}
+                    title="Remove scene"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export function GenSpace() {
   const {
     activeProject,
@@ -1001,10 +1152,6 @@ export function GenSpace() {
   } = useProjects()
   const currentProjectId = activeProject?.id ?? null
 
-  useEffect(() => {
-    setActiveGenerationOwner(currentProjectId)
-    return () => setActiveGenerationOwner(null)
-  }, [currentProjectId])
   const { shouldVideoGenerateWithLtxApi, forceApiGenerations, settings: appSettings } = useAppSettings()
   const {
     modelSpecs: videoGenerationModelSpecsResponse,
@@ -1027,8 +1174,15 @@ export function GenSpace() {
   const [showFavorites, setShowFavorites] = useState(false)
   const [gallerySize, setGallerySize] = useState<GallerySize>('medium')
   const [showSizeMenu, setShowSizeMenu] = useState(false)
+  const [sceneQueue, setSceneQueue] = useState<SceneQueueItem[]>([])
+  const [sceneQueueText, setSceneQueueText] = useState('')
+  const [isSceneQueueOpen, setIsSceneQueueOpen] = useState(false)
+  const [isSceneQueueRunning, setIsSceneQueueRunning] = useState(false)
+  const [activeSceneId, setActiveSceneId] = useState<string | null>(null)
   const sizeMenuRef = useRef<HTMLDivElement>(null)
   const persistedVideoKeyRef = useRef<string | null>(null)
+  const activeSceneIdRef = useRef<string | null>(null)
+  const sceneQueueProjectIdRef = useRef<string | null>(null)
   const retakeSubmissionRef = useRef<{
     prompt: string
     input: {
@@ -1038,6 +1192,42 @@ export function GenSpace() {
       videoDuration: number
     }
   } | null>(null)
+
+  useEffect(() => {
+    setActiveGenerationOwner(currentProjectId)
+    return () => setActiveGenerationOwner(null)
+  }, [currentProjectId])
+
+  useEffect(() => {
+    activeSceneIdRef.current = activeSceneId
+  }, [activeSceneId])
+
+  useEffect(() => {
+    setIsSceneQueueRunning(false)
+    setActiveSceneId(null)
+    sceneQueueProjectIdRef.current = currentProjectId
+    if (!currentProjectId) {
+      setSceneQueue([])
+      return
+    }
+    const saved = localStorage.getItem(sceneQueueStorageKey(currentProjectId))
+    if (!saved) {
+      setSceneQueue([])
+      return
+    }
+    try {
+      const parsed = JSON.parse(saved) as SceneQueueItem[]
+      setSceneQueue(Array.isArray(parsed) ? parsed.map(normalizeSceneQueueItem) : [])
+    } catch {
+      localStorage.removeItem(sceneQueueStorageKey(currentProjectId))
+      setSceneQueue([])
+    }
+  }, [currentProjectId])
+
+  useEffect(() => {
+    if (!currentProjectId || sceneQueueProjectIdRef.current !== currentProjectId) return
+    localStorage.setItem(sceneQueueStorageKey(currentProjectId), JSON.stringify(sceneQueue))
+  }, [currentProjectId, sceneQueue])
   const icLoraSubmissionRef = useRef<{
     prompt: string
     input: {
@@ -1064,6 +1254,43 @@ export function GenSpace() {
     },
     [inputAudio, mode, videoModelSpecs],
   )
+
+  const addSceneQueuePrompts = useCallback(() => {
+    const prompts = sceneQueueText
+      .split('\n')
+      .map((line) => line.trim())
+      .filter(Boolean)
+    if (prompts.length === 0) return
+    const queuedSettings = sanitizeVideoSettings(settings)
+    const now = Date.now()
+    setSceneQueue((prev) => [
+      ...prev,
+      ...prompts.map((queuedPrompt, index): SceneQueueItem => ({
+        id: `${now}-${index}-${Math.random().toString(36).slice(2, 8)}`,
+        prompt: queuedPrompt,
+        settings: { ...queuedSettings },
+        referenceImages: referenceImages.map((item) => ({ ...item })),
+        inputImage,
+        inputAudio,
+        status: 'queued',
+        createdAt: now + index,
+      })),
+    ])
+    setSceneQueueText('')
+    setIsSceneQueueOpen(true)
+  }, [inputAudio, inputImage, referenceImages, sanitizeVideoSettings, sceneQueueText, settings])
+
+  const updateSceneQueueItem = useCallback((id: string, patch: Partial<SceneQueueItem>) => {
+    setSceneQueue((prev) => prev.map((item) => item.id === id ? { ...item, ...patch } : item))
+  }, [])
+
+  const removeSceneQueueItem = useCallback((id: string) => {
+    setSceneQueue((prev) => prev.filter((item) => item.id !== id || item.status === 'running'))
+  }, [])
+
+  const clearFinishedSceneQueueItems = useCallback(() => {
+    setSceneQueue((prev) => prev.filter((item) => item.status !== 'done' && item.status !== 'failed'))
+  }, [])
   
   const {
     generate,
@@ -1076,6 +1303,54 @@ export function GenSpace() {
     error,
     reset,
   } = useGeneration()
+
+  const startQueuedScene = useCallback(async (item: SceneQueueItem) => {
+    if (!currentProjectId) return
+    setActiveSceneId(item.id)
+    updateSceneQueueItem(item.id, { status: 'running', error: undefined })
+    setMode('video')
+    setPrompt(item.prompt)
+    setInputImage(item.inputImage)
+    setInputAudio(item.inputAudio)
+    setReferenceImages(item.referenceImages)
+    setLastPrompt(item.prompt)
+
+    const videoReferences = item.referenceImages.length > 0
+      ? item.referenceImages
+      : (item.inputImage ? [{ path: item.inputImage, role: 'keyframe' as const }] : [])
+    const imagePath = videoReferences[0]?.path || null
+    const audioPath = item.inputAudio || null
+    const videoSettings = sanitizeVideoSettings(item.settings)
+    const generationSettings = {
+      model: videoSettings.model as 'fast' | 'pro',
+      duration: videoSettings.duration,
+      videoResolution: videoSettings.videoResolution,
+      fps: videoSettings.fps,
+      audio: videoSettings.audio || false,
+      cameraMotion: 'none',
+      aspectRatio: videoSettings.aspectRatio,
+      imageResolution: videoSettings.imageResolution,
+      imageAspectRatio: videoSettings.aspectRatio,
+      imageSteps: 4,
+    }
+
+    await writeGenerationRecoveryMarker({
+      projectId: currentProjectId,
+      prompt: item.prompt,
+      settings: generationSettings,
+      inputImageUrl: imagePath || undefined,
+      inputAudioUrl: audioPath || undefined,
+      genType: 'video',
+    })
+
+    await generate(
+      item.prompt,
+      imagePath,
+      generationSettings,
+      audioPath,
+      videoReferences,
+    )
+  }, [currentProjectId, generate, sanitizeVideoSettings, updateSceneQueueItem])
 
   const {
     submitRetake,
@@ -1271,6 +1546,32 @@ export function GenSpace() {
   }, [mode, sanitizeVideoSettings, videoModelSpecs.length])
 
   useEffect(() => {
+    if (!isSceneQueueRunning || activeSceneId || isGenerating || isRetaking || isIcLoraGenerating) return
+    const nextScene = sceneQueue.find((item) => item.status === 'queued')
+    if (!nextScene) {
+      setIsSceneQueueRunning(false)
+      return
+    }
+    void startQueuedScene(nextScene).catch((err) => {
+      updateSceneQueueItem(nextScene.id, {
+        status: 'failed',
+        error: err instanceof Error ? err.message : String(err),
+      })
+      setActiveSceneId(null)
+    })
+  }, [activeSceneId, isGenerating, isIcLoraGenerating, isRetaking, isSceneQueueRunning, sceneQueue, startQueuedScene, updateSceneQueueItem])
+
+  useEffect(() => {
+    if (error && activeSceneIdRef.current) {
+      updateSceneQueueItem(activeSceneIdRef.current, {
+        status: 'failed',
+        error: error.error.message,
+      })
+      setActiveSceneId(null)
+    }
+  }, [error, updateSceneQueueItem])
+
+  useEffect(() => {
     if (retakeError) {
       setLocalError(createLocalGenerationError(retakeError))
     }
@@ -1344,13 +1645,24 @@ export function GenSpace() {
           activeTakeIndex: 0,
         })
         clearGenerationRecoveryMarker(currentProjectId)
+        if (activeSceneIdRef.current) {
+          updateSceneQueueItem(activeSceneIdRef.current, { status: 'done', error: undefined })
+          setActiveSceneId(null)
+        }
         reset()
       } catch (err) {
         persistedVideoKeyRef.current = null
+        if (activeSceneIdRef.current) {
+          updateSceneQueueItem(activeSceneIdRef.current, {
+            status: 'failed',
+            error: err instanceof Error ? err.message : String(err),
+          })
+          setActiveSceneId(null)
+        }
         logger.error(`Failed to persist generated video asset: ${err}`)
       }
     })()
-  }, [videoPath, currentProjectId, isGenerating, sanitizeVideoSettings, settings, inputImage, referenceImages, inputAudio, lastPrompt, addAsset, reset])
+  }, [videoPath, currentProjectId, isGenerating, sanitizeVideoSettings, settings, inputImage, referenceImages, inputAudio, lastPrompt, addAsset, reset, updateSceneQueueItem])
 
   // When retake completes, add as take or new asset
   useEffect(() => {
@@ -1974,6 +2286,24 @@ export function GenSpace() {
 
       {/* Floating prompt panel — wider, responsive, centered */}
       <div className="absolute bottom-5 left-1/2 w-[min(700px,calc(100%-2rem))] -translate-x-1/2">
+
+        {mode === 'video' && !isRetakeMode && !isIcLoraMode && (
+          <SceneQueuePanel
+            isOpen={isSceneQueueOpen}
+            onToggleOpen={() => setIsSceneQueueOpen((prev) => !prev)}
+            queue={sceneQueue}
+            draft={sceneQueueText}
+            onDraftChange={setSceneQueueText}
+            onAdd={addSceneQueuePrompts}
+            onRemove={removeSceneQueueItem}
+            onClearFinished={clearFinishedSceneQueueItems}
+            onStart={() => setIsSceneQueueRunning(true)}
+            onPause={() => setIsSceneQueueRunning(false)}
+            isRunning={isSceneQueueRunning}
+            activeSceneId={activeSceneId}
+            disabled={isGenerating || isRetaking || isIcLoraGenerating || isCheckingReferenceModels || isDownloadingReferenceModels}
+          />
+        )}
 
         <FreeApiKeyBubble
           forceApiGenerations={forceApiGenerations}

@@ -174,6 +174,23 @@ For this fork:
   uses the helper's `enhance_prompt` action rather than the LTX API
   `/v1/prompt-embedding` endpoint.
 
+## Scene Queue
+
+Gen Space includes a local scene queue for unattended batch rendering. In video
+mode, expand `Scene Queue` above the prompt bar, paste one prompt per line, click
+`Add`, then click the play button. The queue runs scenes sequentially so the Mac
+only renders one clip at a time. Pause stops after the current clip completes.
+
+Queue items keep a snapshot of the current settings and media references when
+they are added. For consistent characters, environments, outfits, or visual
+style, attach the reference images and choose their roles first, then add the
+prompts that should share those references. If you need a different setup, change
+the references/settings and add the next batch as separate queue rows.
+
+The queue is saved per project in local browser storage. A running item is reset
+to `queued` after a reload so it can be started again. Finished and failed rows
+can be cleared from the panel.
+
 ## Performance Notes
 
 Local MLX video generation is slow compared with cloud/API generation, but it

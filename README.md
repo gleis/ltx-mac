@@ -22,6 +22,7 @@ compact Q4 LTX 2.3 model. It is intended to run locally on a Mac with about
 - MLX 4-bit Gemma text encoder and local prompt enhancement from
   `mlx-community/gemma-3-12b-it-4bit`.
 - Prompt Enhancer visibility without requiring an LTX API key.
+- A Gen Space scene queue for loading many video prompts and rendering them sequentially overnight.
 - A Mac MLX speed control in Settings:
   - `Quality`: exact/default sampler.
   - `Boost`: skips stable middle denoise steps for faster text-to-video renders.
@@ -120,6 +121,20 @@ pnpm typecheck
 pnpm backend:test
 pnpm build:frontend
 ```
+
+## Scene Queue
+
+In Gen Space video mode, open `Scene Queue` above the prompt bar. Paste one
+prompt per line, click `Add`, then click the play button to render the queued
+scenes one at a time. Pause stops after the current render finishes. Completed
+clips are saved into the active project gallery just like normal generations.
+
+Each queued scene snapshots the current video settings, reference images, input
+image, and input audio at the moment it is added. Set the duration/resolution and
+attach any character, location, style, or keyframe references first, then add the
+prompts that should use that setup. The queue is stored per project in local
+browser storage; if the app reloads, any item that was mid-render is returned to
+`queued`.
 
 ## Data Locations
 
