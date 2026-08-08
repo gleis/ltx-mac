@@ -87,7 +87,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_APP_SETTINGS)
   const [isLoaded, setIsLoaded] = useState(false)
   const [runtimePolicyLoaded, setRuntimePolicyLoaded] = useState(false)
-  const [forceApiGenerations, setForceApiGenerations] = useState(true)
+  const [forceApiGenerations, setForceApiGenerations] = useState(false)
   const [backendProcessStatus, setBackendProcessStatus] = useState<BackendProcessStatus | null>(null)
 
   useEffect(() => {
