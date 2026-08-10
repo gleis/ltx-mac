@@ -95,6 +95,22 @@ dev app directly instead:
 LTX_APP_DATA_DIR="$PWD/.ltx-data" LTX_MLX_PATH="$PWD/.ltx-data/ltx-2-mlx" ./node_modules/.bin/vite
 ```
 
+Project-local launcher script:
+
+```bash
+scripts/start-mac-local.sh
+```
+
+Install a double-clickable launcher app into `/Applications`:
+
+```bash
+scripts/install-mac-launcher-app.sh
+```
+
+This creates `/Applications/LTX Desktop Local.app`. It opens Terminal and runs
+the project-local launcher so logs remain visible and the app keeps using
+`.ltx-data` on the project drive.
+
 TypeScript check:
 
 ```bash

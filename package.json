@@ -30,7 +30,9 @@
     "prepare:python": "node scripts/run-script.js scripts/prepare-python",
     "build:frontend": "vite build",
     "start:unpacked:mac": "open release/mac-arm64/LTX\\ Desktop.app",
-    "start:unpacked:win": "powershell -Command \"& '.\\release\\win-unpacked\\LTX Desktop.exe'\""
+    "start:unpacked:win": "powershell -Command \"& '.\\release\\win-unpacked\\LTX Desktop.exe'\"",
+    "start:mac-local": "bash scripts/start-mac-local.sh",
+    "install:mac-launcher": "bash scripts/install-mac-launcher-app.sh"
   },
   "dependencies": {
     "class-variance-authority": "^0.7.0",
