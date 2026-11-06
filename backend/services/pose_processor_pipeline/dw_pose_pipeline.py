@@ -6,6 +6,8 @@ import math
 from typing import Any, cast
 
 import torch
+import numpy as np
+from numpy.typing import NDArray
 
 from services.services_utils import FrameArray
 
@@ -341,7 +343,7 @@ class DWPosePipeline:
         keypoints, scores = self._decode_pose_outputs(simcc_x, simcc_y)
         return keypoints, scores
 
-    def _simcc_maximum(self, simcc_x: Any, simcc_y: Any) -> tuple[Any, Any]:
+    def _simcc_maximum(self, simcc_x: NDArray[np.float32], simcc_y: NDArray[np.float32]) -> tuple[NDArray[np.float32], NDArray[np.float32]]:
         import numpy as np
 
         batch_size, keypoint_count, _ = simcc_x.shape
@@ -587,12 +589,12 @@ class DWPosePipeline:
 
         boxes = self._detect_person_boxes(frame)
         if boxes.size == 0:
-            return cast(FrameArray, np.zeros(frame.shape, dtype=np.uint8))
+            return np.zeros(frame.shape, dtype=np.uint8)
 
         images, centers, scales = self._preprocess_pose(frame, boxes)
         keypoints, scores = self._infer_pose_model(images)
         if keypoints.size == 0:
-            return cast(FrameArray, np.zeros(frame.shape, dtype=np.uint8))
+            return np.zeros(frame.shape, dtype=np.uint8)
 
         rescaled_keypoints = self._rescale_keypoints(keypoints, centers, scales)
         instances = self._format_instances(rescaled_keypoints, scores)
