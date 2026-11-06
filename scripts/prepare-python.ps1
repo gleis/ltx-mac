@@ -26,10 +26,7 @@ $TempDir = Join-Path $env:TEMP "ltx-python-build"
 
 # Python embed URL
 $PythonUrl = "https://www.python.org/ftp/python/$PythonVersion/python-$PythonVersion-embed-amd64.zip"
-$GetPipUrl = "https://bootstrap.pypa.io/get-pip.py"
 
-# PyTorch CUDA index (must match the index in pyproject.toml)
-$PyTorchIndex = "https://download.pytorch.org/whl/cu128"
 
 # ============================================================
 # Step 1: Verify prerequisites
@@ -58,7 +55,7 @@ Write-Host "`nStep 2: Generating requirements.txt from uv.lock..." -ForegroundCo
 $RequirementsFile = Join-Path $BackendDir "requirements-dist.txt"
 
 # Export pinned deps, excluding the project itself (--no-emit-project)
-& uv export --frozen --no-hashes --no-editable --no-emit-project `
+& uv export --frozen --no-editable --no-emit-project `
     --no-header --no-annotate `
     --project $BackendDir `
     > $RequirementsFile
@@ -103,7 +100,7 @@ Write-Host "Extracted to $OutputPath"
 # ============================================================
 # Step 5: Enable pip in embedded Python
 # ============================================================
-Write-Host "`nStep 5: Enabling pip in embedded Python..." -ForegroundColor Yellow
+Write-Host "`nStep 5: Enabling embedded site-packages..." -ForegroundColor Yellow
 
 $PthFile = Get-ChildItem -Path $OutputPath -Filter "python*._pth" | Select-Object -First 1
 if ($PthFile) {
@@ -111,39 +108,19 @@ if ($PthFile) {
     $PthContent = $PthContent -replace "^#import site", "import site"
     $PthContent += "`nLib\site-packages"
     Set-Content -Path $PthFile.FullName -Value $PthContent
-    Write-Host "Modified $($PthFile.Name) to enable pip and site-packages"
+    Write-Host "Modified $($PthFile.Name) to enable site-packages"
 }
 
-$GetPipPath = Join-Path $TempDir "get-pip.py"
-Invoke-WebRequest -Uri $GetPipUrl -OutFile $GetPipPath -UseBasicParsing
-
 $PythonExe = Join-Path $OutputPath "python.exe"
-& $PythonExe $GetPipPath --no-warn-script-location
-Write-Host "pip installed" -ForegroundColor Green
-
-# Install setuptools and wheel (needed to build some dependencies from source)
-& $PythonExe -m pip install setuptools wheel --no-warn-script-location --quiet
-Write-Host "setuptools and wheel installed" -ForegroundColor Green
 
 # ============================================================
 # Step 6: Install all dependencies from requirements.txt
 # ============================================================
 Write-Host "`nStep 6: Installing dependencies from requirements.txt..." -ForegroundColor Yellow
 
-# Use uv for installation — it natively handles uv_build backends and is faster.
-# Falls back to pip if uv is not available (local dev without uv).
-$UvAvailable = Get-Command uv -ErrorAction SilentlyContinue
-if ($UvAvailable) {
-    & uv pip install -r $RequirementsFile `
-        --project $BackendDir `
-        --extra-index-url $PyTorchIndex `
-        --index-strategy unsafe-best-match `
-        --python $PythonExe
-} else {
-    & $PythonExe -m pip install -r $RequirementsFile `
-        --extra-index-url $PyTorchIndex `
-        --no-warn-script-location --quiet
-}
+# uv is required above. Preserve exported hashes/Git revisions and install only
+# the locked graph; a second package index must not change artifact selection.
+& uv pip install --python $PythonExe --no-deps -r $RequirementsFile
 
 if ($LASTEXITCODE -ne 0) {
     Write-Host "ERROR: pip install failed!" -ForegroundColor Red

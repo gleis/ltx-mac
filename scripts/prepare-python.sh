@@ -88,7 +88,7 @@ REQUIREMENTS_FILE="$BACKEND_DIR/requirements-dist.txt"
 # Export pinned deps, excluding the project itself.
 # Platform markers in pyproject.toml auto-exclude irrelevant deps
 # (e.g. triton-windows on Linux/macOS, triton on macOS/Windows).
-uv export --frozen --no-hashes --no-editable --no-emit-project \
+uv export --frozen --no-editable --no-emit-project \
     --no-header --no-annotate \
     --project "$BACKEND_DIR" \
     > "$REQUIREMENTS_FILE"
@@ -139,34 +139,15 @@ echo "  Python binary: $PYTHON_EXE"
 "$PYTHON_EXE" --version
 
 # ============================================================
-# Step 5: Ensure pip is available
-# ============================================================
-echo ""
-echo "Step 5: Setting up pip..."
-
-# python-build-standalone install_only usually includes pip, but verify
-if ! "$PYTHON_EXE" -m pip --version &>/dev/null; then
-    echo "  Installing pip..."
-    curl -sL https://bootstrap.pypa.io/get-pip.py -o "$TEMP_DIR/get-pip.py"
-    "$PYTHON_EXE" "$TEMP_DIR/get-pip.py" --no-warn-script-location
-fi
-echo "  pip: $("$PYTHON_EXE" -m pip --version)"
-
-# ============================================================
 # Step 6: Install all dependencies from requirements.txt
 # ============================================================
 echo ""
 echo "Step 6: Installing dependencies from requirements.txt..."
 echo "  (This may take a while — PyTorch + ML libraries are large)"
 
-PIP_EXTRA_ARGS=()
-if [ "$PBS_OS" = "unknown-linux-gnu" ]; then
-  # Linux needs CUDA PyTorch wheels from the PyTorch index
-  PIP_EXTRA_ARGS+=(--extra-index-url "https://download.pytorch.org/whl/cu128")
-fi
-# On macOS, no --extra-index-url needed: standard PyPI torch includes MPS support
-"$PYTHON_EXE" -m pip install -r "$REQUIREMENTS_FILE" \
-    --no-warn-script-location --no-cache-dir --quiet "${PIP_EXTRA_ARGS[@]+"${PIP_EXTRA_ARGS[@]}"}"
+# Install only the exported graph. uv checks the registry hashes and immutable
+# Git revisions; do not add a second package index or resolve new dependencies.
+uv pip install --python "$PYTHON_EXE" --no-deps -r "$REQUIREMENTS_FILE" --quiet
 
 echo "  All dependencies installed"
 
