@@ -28,6 +28,12 @@ if [[ "$(uname -s)" != "Darwin" || "$(uname -m)" != "arm64" ]]; then
   echo "This setup is for Apple Silicon Macs only." >&2
   exit 1
 fi
+# MLX 0.32.4 publishes its Apple Silicon wheels for macOS 26 or later.
+macos_major="$(sw_vers -productVersion | cut -d. -f1)"
+if (( macos_major < 26 )); then
+  echo "The pinned MLX runtime requires macOS 26 or later. Update macOS before setup." >&2
+  exit 1
+fi
 
 mkdir -p "$APP_DATA_DIR" "$MODELS_DIR" "$UV_CACHE_DIR" "$HF_HOME" "$XDG_CACHE_HOME"
 

@@ -46,7 +46,7 @@ fork treats actual viewable quality as the release gate.
 
 Prerequisites:
 
-- macOS on Apple Silicon (`arm64`)
+- macOS 26 or later on Apple Silicon (`arm64`), with at least 32 GB unified memory
 - Git
 - Node.js and Corepack
 - `pnpm`
