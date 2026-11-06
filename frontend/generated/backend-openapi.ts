@@ -700,10 +700,14 @@ export interface components {
         GenerationProgressResponse: {
             /** Currentstep */
             currentStep: number | null;
+            /** Id */
+            id?: string | null;
             /** Phase */
             phase: string;
             /** Progress */
             progress: number;
+            /** Result */
+            result?: string | string[] | null;
             /**
              * Status
              * @enum {string}
@@ -711,10 +715,6 @@ export interface components {
             status: "idle" | "running" | "complete" | "cancelled" | "error";
             /** Totalsteps */
             totalSteps: number | null;
-            /** Result */
-            result?: string | string[] | null;
-            /** Id */
-            id?: string | null;
         };
         /** GpuInfoResponse */
         GpuInfoResponse: {
