@@ -8,6 +8,7 @@ from api_types import ImageConditioningInput
 
 if TYPE_CHECKING:
     import torch
+    from ltx_pipelines.utils.types import OffloadMode
 
 
 class A2VPipeline(Protocol):
@@ -18,6 +19,12 @@ class A2VPipeline(Protocol):
         upsampler_path: str,
         device: torch.device,
         streaming_prefetch_count: int | None,
+        loras: list[tuple[str, float]] | None = None,
+        *,
+        offload_mode: OffloadMode,
+        video_vae_path: str | None = None,
+        audio_vae_path: str | None = None,
+        duration_head_path: str | None = None,
     ) -> "A2VPipeline": ...
 
     def generate(
@@ -35,4 +42,5 @@ class A2VPipeline(Protocol):
         audio_start_time: float,
         audio_max_duration: float | None,
         output_path: str,
+        chunk_pixel_frames: int | None = None,
     ) -> None: ...

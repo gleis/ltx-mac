@@ -2,20 +2,32 @@ name: CI
 
 on:
   pull_request:
-    branches: [main, mac-local-mlx-q4]
+    branches: [main, mac-local-mlx-q4, maintenance/upstream-reconcile]
   push:
-    branches: [main, mac-local-mlx-q4]
+    branches: [main, mac-local-mlx-q4, maintenance/upstream-reconcile]
 
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
+  archive-markers:
+    name: Archive markers
+    if: github.repository == 'Lightricks/ltx-desktop-internal'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+
+      - name: Check archive markers
+        run: bash .github/sync/check-archive-markers.sh
+
   typecheck:
     name: Type Checking
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          fetch-depth: 0
 
       - uses: pnpm/action-setup@41ff72655975bd51cab0327fa583b6e92b6d3061 # v4.2.0
 
@@ -29,7 +41,7 @@ jobs:
 
       - uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5.4.2
         with:
-          version: "latest"
+          version: "0.13.7"
           enable-cache: true
           cache-dependency-glob: "backend/uv.lock"
 
@@ -50,39 +62,77 @@ jobs:
       - name: TypeScript type check
         run: pnpm run typecheck:ts
 
-  test-python:
-    name: Python Tests (${{ matrix.os }})
-    runs-on: ${{ matrix.runner }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: macos
-            runner: macos-latest
-          - os: windows
-            runner: windows-latest
-          - os: linux
-            runner: ubuntu-latest
+      - name: ESLint
+        run: pnpm run lint
+
+      - name: Pack helper tests
+        run: pnpm run scripts:test
+
+      - name: File size check
+        run: bash scripts/check-file-sizes.sh origin/main
+
+  test-python-windows:
+    name: Python Tests (windows)
+    runs-on: windows-latest
     defaults:
       run:
         working-directory: backend
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - &checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
 
-      - uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5.4.2
+      - &setup-uv
+        uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5.4.2
         with:
-          version: "latest"
+          version: "0.13.7"
           enable-cache: true
           cache-dependency-glob: "backend/uv.lock"
 
-      - name: Install pinned Python with uv
+      - &setup-python
+        name: Install pinned Python with uv
         run: uv python install 3.13.18
 
-      - name: Install dependencies
+      - &install-backend
+        name: Install dependencies
         run: uv sync --frozen --extra test --extra dev
 
+      # The full suite runs on Linux. Windows only runs tests that call the
+      # real Win32 DLL APIs. `--` keeps `-m` from being read as a uv flag.
       - name: Run tests
-        run: uv run pytest -v --tb=short
+        run: uv run -- pytest -v --tb=short -m ci_os
+
+  # One Linux pytest job was the wait. Four shards run together.
+  # The matrix length and `--splits` below are the same number.
+  test-python-linux:
+    name: Python Tests (linux ${{ matrix.shard }}/4)
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - *checkout
+      - *setup-uv
+      - *setup-python
+      - *install-backend
+      # `--` keeps `--splits` from being read as a uv flag.
+      # least_duration deals tests round-robin when there is no durations file,
+      # so a slow module is not collected entirely onto the first shard.
+      - name: Run tests
+        run: uv run -- pytest -v --tb=short --splits 4 --group ${{ matrix.shard }} --splitting-algorithm least_duration
+
+  # Branch protection still looks for this name. It passes when every Linux shard passes.
+  test-python-linux-gate:
+    name: Python Tests (linux)
+    needs: test-python-linux
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require every Linux shard
+        run: test "${{ needs.test-python-linux.result }}" = "success"
 
   build-check:
     name: Frontend Build
@@ -123,3 +173,19 @@ jobs:
           node-version: 24
       - name: Audit locked Node dependencies
         run: pnpm audit --audit-level low
+
+  test-python-macos:
+    name: Python Tests (macOS)
+    runs-on: macos-26
+    timeout-minutes: 35
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          version: "0.13.7"
+      - run: uv python install 3.13.18
+      - run: uv sync --frozen --extra test --extra dev
+      - run: uv run pytest -q --tb=short

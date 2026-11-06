@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, NewType, Protocol
+from typing import TYPE_CHECKING, NewType, Protocol, Union
 
-from api_types import ModelCheckpointID
+from api_types import AssistantModelDownloadProgress, LTXLocalModelId, ModelCheckpointID
+from runtime_config.eta import WallTimeEstimate
+from runtime_config.ic_lora_tiling import IcLoraTiling
+from runtime_config.runtime_policy import LocalGenerationMode
 from state.conditioning_cache import ConditioningCache
 
 if TYPE_CHECKING:
@@ -65,6 +68,26 @@ class DownloadingSession:
     completed_bytes: int
 
 
+# One shape for both catalog download kinds (IC-LoRA + plain LoRA). The kinds keep separate
+# state slots below so an IC-LoRA download never collides with a plain-LoRA one; `item_id` is
+# the catalog id of whichever kind owns the slot.
+@dataclass
+class CatalogDownloadSession:
+    id: DownloadSessionId
+    item_id: str
+    downloaded_bytes: int
+    expected_bytes: int
+    speed_bytes_per_sec: float = 0.0
+
+
+def _default_completed_ic_lora_download_sessions() -> dict[DownloadSessionId, DownloadSessionResult]:
+    return {}
+
+
+def _default_completed_lora_download_sessions() -> dict[DownloadSessionId, DownloadSessionResult]:
+    return {}
+
+
 # ============================================================
 # Text encoding
 # ============================================================
@@ -81,14 +104,14 @@ class CachedTextEncoder(Protocol):
         ...
 
 
-def _new_prompt_cache() -> dict[tuple[str, bool], TextEncodingResult]:
+def _new_prompt_cache() -> dict[tuple[str, bool, str], TextEncodingResult]:
     return {}
 
 
 @dataclass
 class TextEncoderState:
     service: TextEncoder
-    prompt_cache: dict[tuple[str, bool], TextEncodingResult] = field(default_factory=_new_prompt_cache)
+    prompt_cache: dict[tuple[str, bool, str], TextEncodingResult] = field(default_factory=_new_prompt_cache)
     api_embeddings: TextEncodingResult | None = None
     cached_encoder: CachedTextEncoder | None = None
 
@@ -102,6 +125,20 @@ class TextEncoderState:
 class VideoPipelineState:
     pipeline: FastVideoPipeline
     is_compiled: bool
+    # Cache key: API text-encode mode leaves gemma_root=None across versions, so without this a
+    # switch (2.5 <-> 2.3) wouldn't rebuild.
+    ltx_model_id: LTXLocalModelId
+    # Full vs stream for this resident pipeline. A 5s full load must not be reused for
+    # a 720p/20s job that needs streaming weights.
+    loading_mode: LocalGenerationMode
+    loras: tuple[tuple[str, float], ...] = field(default_factory=tuple)
+    # gemma_root the pipeline's text encoder was built with. Part of the cache key: switching
+    # text-encoding mode (API<->local) changes it, and a cached pipeline built for the other
+    # mode must be rebuilt (an API-mode pipeline has a stub encoder that can't encode locally).
+    gemma_root: str | None = None
+    # Video VAE file the pipeline was built with. Fast decode swaps this path; a cached
+    # pipeline loaded for the other decoder must be rebuilt.
+    video_vae_path: str | None = None
 
 
 @dataclass
@@ -115,15 +152,30 @@ class PoseResources:
 class ICLoraState:
     pipeline: IcLoraPipeline
     lora_path: str
-    depth_pipeline: DepthProcessorPipeline
-    depth_model_path: str
+    depth_pipeline: DepthProcessorPipeline | None
+    depth_model_path: str | None
+    ltx_model_id: LTXLocalModelId  # cache key — see VideoPipelineState.ltx_model_id
+    loading_mode: LocalGenerationMode
+    lora_strength: float = 1.0
     pose_resources: PoseResources | None = None
     conditioning_cache: ConditioningCache = field(default_factory=ConditioningCache)
+    gemma_root: str | None = None  # cache key — see VideoPipelineState.gemma_root
+    video_vae_path: str | None = None  # cache key — see VideoPipelineState.video_vae_path
+    # Cache key. The stage list is fixed at build, so a one-stage-LoRA pipeline cannot serve it.
+    stage_2_ic_lora: bool = False
+    # Cache key: the catalog tiling. The tile size follows the canvas orientation, so the
+    # pipeline sets the stage list per job. A pipeline built for another tiling cannot serve it.
+    tiling: IcLoraTiling | None = None
 
 
 @dataclass
 class A2VPipelineState:
     pipeline: A2VPipeline
+    ltx_model_id: LTXLocalModelId  # cache key — see VideoPipelineState.ltx_model_id
+    loading_mode: LocalGenerationMode
+    loras: tuple[tuple[str, float], ...] = field(default_factory=tuple)
+    gemma_root: str | None = None  # cache key — see VideoPipelineState.gemma_root
+    video_vae_path: str | None = None  # cache key — see VideoPipelineState.video_vae_path
 
 
 @dataclass
@@ -131,6 +183,12 @@ class RetakePipelineState:
     pipeline: RetakePipeline
     distilled: bool
     quantized: bool
+    ltx_model_id: LTXLocalModelId  # cache key — see VideoPipelineState.ltx_model_id
+    # Full vs stream for this resident pipeline. A small retake must not be reused
+    # for a 1080p job that the budget streamed.
+    loading_mode: LocalGenerationMode
+    gemma_root: str | None = None  # cache key — see VideoPipelineState.gemma_root
+    video_vae_path: str | None = None  # cache key — see VideoPipelineState.video_vae_path
 
 
 # ============================================================
@@ -150,12 +208,17 @@ class GenerationProgress:
 class GenerationRunning:
     id: str
     progress: GenerationProgress
+    # Whole-run wall-time estimate fixed at start (ETA v1: local Fast video on
+    # measured hardware only). None means unknown, not zero.
+    estimated: WallTimeEstimate | None = None
 
 
 @dataclass
 class GenerationComplete:
     id: str
-    result: str | list[str]
+    # None = completed successfully but produced no locally-recoverable artifact
+    # (e.g. an API retake that returned a remote payload instead of video bytes).
+    result: str | list[str] | None
 
 
 @dataclass
@@ -189,10 +252,17 @@ ActiveGeneration = GpuGeneration | ApiGeneration
 # Device slots
 # ============================================================
 
+# What a GPU slot can hold. The image pipeline rides bare (no state wrapper).
+# ImageGenerationPipeline is TYPE_CHECKING-only here, so it rides a forward
+# ref; pipelines_handler bounds its loader generic over this alias.
+GpuSlotContent = Union[
+    VideoPipelineState, ICLoraState, A2VPipelineState, RetakePipelineState, "ImageGenerationPipeline"
+]
+
 
 @dataclass
 class GpuSlot:
-    active_pipeline: VideoPipelineState | ICLoraState | A2VPipelineState | RetakePipelineState | ImageGenerationPipeline
+    active_pipeline: GpuSlotContent
 
 
 @dataclass
@@ -242,3 +312,29 @@ class AppState:
         default_factory=_default_completed_download_sessions
     )
     hf_auth_state: HfAuthState = field(default_factory=HfNotAuthenticated)
+    ic_lora_download_session: CatalogDownloadSession | None = None
+    completed_ic_lora_download_sessions: dict[DownloadSessionId, DownloadSessionResult] = field(
+        default_factory=_default_completed_ic_lora_download_sessions
+    )
+    lora_download_session: CatalogDownloadSession | None = None
+    assistant_model_download: AssistantModelDownloadProgress | None = None
+    completed_lora_download_sessions: dict[DownloadSessionId, DownloadSessionResult] = field(
+        default_factory=_default_completed_lora_download_sessions
+    )
+    # Timestamp (time.monotonic()) of when a generation request passed its "not already running"
+    # check, before it does any slow pre-work (pipeline load — can take tens of seconds, worse
+    # for image models loading checkpoint shards) and long before active_generation reflects it
+    # as GenerationRunning. Without this, a second concurrent request's own "not already running"
+    # check would also pass during that window, letting two generations race to load pipelines
+    # and start concurrently — whichever loses the start_generation() race gets an error that
+    # (via fail_generation) can overwrite the WINNER's still-legitimately-running state.
+    # A timestamp (not a bool) so try_reserve_generation_start() can self-expire it — a request
+    # that raises on some validation path before ever reaching start_generation()/
+    # fail_generation() (both of which clear it) must not block every future generation forever.
+    generation_starting_since: float | None = None
+    # True for the whole reserved_generation_start() body, including after start_generation()
+    # clears generation_starting_since and after cancel flips GenerationRunning → Cancelled.
+    # Without this, Stop during text-encoder/transformer build frees the slot while
+    # pipeline.generate() is still on the GPU; the next Start double-loads weights
+    # (meta vs cuda:0).
+    generation_in_flight: bool = False

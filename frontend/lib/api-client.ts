@@ -1,5 +1,6 @@
-import { backendFetch } from './backend'
-import type { components, paths } from '../generated/backend-openapi'
+import { backendFetch, type BackendFetch } from './backend.ts'
+import type { components, paths } from '../generated/backend-openapi.ts'
+import type { ExploreAsset, ExploreAssetListResponse } from './explore-contract.ts'
 
 type HttpMethod = 'get' | 'post' | 'put' | 'patch' | 'delete'
 
@@ -125,6 +126,45 @@ export type EndpointResult<
 
 type SyntheticErrorStatus = '4XX' | '5XX' | 'default'
 
+type StandardHttpErrorResult =
+  | {
+      ok: false
+      status: '4XX'
+      error: HTTPErrorResponse
+    }
+  | {
+      ok: false
+      status: '5XX'
+      error: HTTPErrorResponse
+    }
+  | {
+      ok: false
+      status: 'default'
+      error: HTTPErrorResponse
+    }
+
+type ExactParsedErrorMembers<TExactStatuses extends readonly number[]> = {
+  [TStatus in TExactStatuses[number]]: {
+    ok: false
+    status: TStatus
+    error: HTTPErrorResponse
+  }
+}[TExactStatuses[number]]
+
+type ParsedJsonResult<TData, TExactStatuses extends readonly number[] = []> =
+  | {
+      ok: true
+      data: TData
+    }
+  | ExactParsedErrorMembers<TExactStatuses>
+  | StandardHttpErrorResult
+
+/** Remote-only multipart `POST /api/assets/upload`. Success is the path-optional Explore Asset. */
+export type RemoteUploadAssetResult = ParsedJsonResult<ExploreAsset>
+
+/** Shared list payload: Desktop path fields optional; Remote may set `has_thumbnail`. */
+export type ExploreListAssetsResult = ParsedJsonResult<ExploreAssetListResponse>
+
 export type ApiSuccess<TValue> = TValue extends { ok: true; data: infer TData }
   ? TData
   : never
@@ -174,63 +214,49 @@ function resolveErrorStatus<TExactStatuses extends readonly number[]>(
   return resolveFallbackStatus(httpStatus)
 }
 
-function buildParsedErrorResult<
-  TPath extends keyof paths,
-  TMethod extends HttpMethod,
-  TExactStatuses extends readonly number[],
->(
+function buildParsedErrorResult<TExactStatuses extends readonly number[]>(
   status: TExactStatuses[number] | SyntheticErrorStatus,
   payload: unknown,
-): EndpointResult<TPath, TMethod, TExactStatuses> {
+): Exclude<ParsedJsonResult<never, TExactStatuses>, { ok: true }> {
   return {
     ok: false,
     status,
-    error: payload as ExactErrorResponseFor<TPath, TMethod, TExactStatuses[number]>
-      | Fallback4xxErrorFor<TPath, TMethod>
-      | Fallback5xxErrorFor<TPath, TMethod>
-      | DefaultErrorFor<TPath, TMethod>,
-  } as EndpointResult<TPath, TMethod, TExactStatuses>
+    error: payload as HTTPErrorResponse,
+  } as Exclude<ParsedJsonResult<never, TExactStatuses>, { ok: true }>
 }
 
-function buildSyntheticErrorResult<
-  TPath extends keyof paths,
-  TMethod extends HttpMethod,
-  TExactStatuses extends readonly number[],
->(
+function buildSyntheticErrorResult(
   status: SyntheticErrorStatus,
   code: string,
   message: string,
-): EndpointResult<TPath, TMethod, TExactStatuses> {
+): StandardHttpErrorResult {
   return {
     ok: false,
     status,
-    error: buildSyntheticError(code, message) as Fallback4xxErrorFor<TPath, TMethod>
-      | Fallback5xxErrorFor<TPath, TMethod>
-      | DefaultErrorFor<TPath, TMethod>,
-  } as EndpointResult<TPath, TMethod, TExactStatuses>
+    error: buildSyntheticError(code, message),
+  }
 }
 
-async function requestEndpointResult<
-  TPath extends keyof paths,
-  TMethod extends HttpMethod,
+// Shared JSON parser for OpenAPI endpoints and the remote-only multipart upload
+// route, which is intentionally absent from the desktop schema.
+async function requestParsedJson<
+  TData,
   TExactStatuses extends readonly number[],
 >(
-  endpoint: TPath,
-  method: TMethod,
+  fetchImpl: BackendFetch,
+  path: string,
+  method: string,
   exactErrorStatuses: TExactStatuses,
   init?: RequestInit,
-  requestPath?: string,
-): Promise<EndpointResult<TPath, TMethod, TExactStatuses>> {
-  const path = requestPath ?? String(endpoint)
-
+): Promise<ParsedJsonResult<TData, TExactStatuses>> {
   let response: Response
   try {
-    response = await backendFetch(path, {
+    response = await fetchImpl(path, {
       method: method.toUpperCase(),
       ...init,
     })
   } catch (error) {
-    return buildSyntheticErrorResult<TPath, TMethod, TExactStatuses>(
+    return buildSyntheticErrorResult(
       'default',
       'NETWORK_ERROR',
       error instanceof Error ? error.message : 'Request failed before the server responded.',
@@ -241,7 +267,7 @@ async function requestEndpointResult<
   try {
     text = await response.text()
   } catch (error) {
-    return buildSyntheticErrorResult<TPath, TMethod, TExactStatuses>(
+    return buildSyntheticErrorResult(
       resolveFallbackStatus(response.status),
       'RESPONSE_READ_FAILED',
       error instanceof Error ? error.message : 'Failed to read response body.',
@@ -250,7 +276,7 @@ async function requestEndpointResult<
 
   if (response.ok) {
     if (!text) {
-      return buildSyntheticErrorResult<TPath, TMethod, TExactStatuses>(
+      return buildSyntheticErrorResult(
         'default',
         'EMPTY_SUCCESS_RESPONSE',
         `${path} returned an empty response body.`,
@@ -258,12 +284,13 @@ async function requestEndpointResult<
     }
 
     try {
+      // Untyped JSON boundary: callers pin TData (ExploreAsset for remote upload, OpenAPI body otherwise).
       return {
         ok: true,
-        data: JSON.parse(text) as JsonResponseFor<TPath, TMethod>,
+        data: JSON.parse(text) as TData,
       }
     } catch (error) {
-      return buildSyntheticErrorResult<TPath, TMethod, TExactStatuses>(
+      return buildSyntheticErrorResult(
         'default',
         'INVALID_SUCCESS_RESPONSE',
         error instanceof Error ? error.message : 'Server returned invalid JSON.',
@@ -272,7 +299,7 @@ async function requestEndpointResult<
   }
 
   if (!text) {
-    return buildSyntheticErrorResult<TPath, TMethod, TExactStatuses>(
+    return buildSyntheticErrorResult(
       resolveFallbackStatus(response.status),
       `HTTP_${response.status}`,
       `${response.status} ${response.statusText || 'Request failed'}`,
@@ -280,13 +307,13 @@ async function requestEndpointResult<
   }
 
   try {
-    const payload = JSON.parse(text) as unknown
-    return buildParsedErrorResult<TPath, TMethod, TExactStatuses>(
+    const payload: unknown = JSON.parse(text)
+    return buildParsedErrorResult(
       resolveErrorStatus(response.status, exactErrorStatuses),
       payload,
     )
   } catch {
-    return buildSyntheticErrorResult<TPath, TMethod, TExactStatuses>(
+    return buildSyntheticErrorResult(
       resolveFallbackStatus(response.status),
       `HTTP_${response.status}`,
       text,
@@ -294,11 +321,33 @@ async function requestEndpointResult<
   }
 }
 
-export function makeEndpointClient<
+function requestEndpointResult<
+  TPath extends keyof paths,
+  TMethod extends HttpMethod,
+  TExactStatuses extends readonly number[],
+>(
+  fetchImpl: BackendFetch,
+  endpoint: TPath,
+  method: TMethod,
+  exactErrorStatuses: TExactStatuses,
+  init?: RequestInit,
+  requestPath?: string,
+): Promise<EndpointResult<TPath, TMethod, TExactStatuses>> {
+  return requestParsedJson<JsonResponseFor<TPath, TMethod>, TExactStatuses>(
+    fetchImpl,
+    requestPath ?? String(endpoint),
+    method,
+    exactErrorStatuses,
+    init,
+  ) as Promise<EndpointResult<TPath, TMethod, TExactStatuses>>
+}
+
+function makeEndpointClient<
   TPath extends keyof paths,
   TMethod extends HttpMethod,
   TExactStatuses extends readonly number[] = [],
 >(
+  fetchImpl: BackendFetch,
   endpoint: TPath,
   method: TMethod,
   config?: {
@@ -315,69 +364,490 @@ export function makeEndpointClient<
     const requestInit = body === undefined
       ? init
       : buildJsonRequestInit(body, init)
-    return requestEndpointResult(endpoint, method, exactErrorStatuses, requestInit, requestPath)
+    return requestEndpointResult(fetchImpl, endpoint, method, exactErrorStatuses, requestInit, requestPath)
   }
 }
 
-export class ApiClient {
-  static getHealth = makeEndpointClient('/health', 'get')
+export function createApiClient(fetchImpl: BackendFetch) {
+  return {
+    getHealth: makeEndpointClient(fetchImpl, '/health', 'get'),
+    assistantTurn: makeEndpointClient(fetchImpl, '/api/assistant/turn', 'post'),
+    listAssistantConversations: makeEndpointClient(fetchImpl, '/api/assistant/conversations', 'get'),
+    getAssistantConversation(id: string): Promise<EndpointResult<'/api/assistant/conversations/{conversation_id}', 'get'>> {
+      return requestEndpointResult(fetchImpl, '/api/assistant/conversations/{conversation_id}', 'get', [] as const,
+        undefined, `/api/assistant/conversations/${encodeURIComponent(id)}`)
+    },
+    deleteAssistantConversation(id: string): Promise<EndpointResult<'/api/assistant/conversations/{conversation_id}', 'delete'>> {
+      return requestEndpointResult(fetchImpl, '/api/assistant/conversations/{conversation_id}', 'delete', [] as const,
+        undefined, `/api/assistant/conversations/${encodeURIComponent(id)}`)
+    },
+    enqueueAssistantMessage(
+      conversationId: string,
+      body: JsonBodyFor<'/api/assistant/conversations/{conversation_id}/queue', 'post'>,
+    ): Promise<EndpointResult<'/api/assistant/conversations/{conversation_id}/queue', 'post'>> {
+      return makeEndpointClient(fetchImpl, '/api/assistant/conversations/{conversation_id}/queue', 'post')(
+        body, undefined, `/api/assistant/conversations/${encodeURIComponent(conversationId)}/queue`)
+    },
+    removeQueuedAssistantMessage(
+      conversationId: string,
+      itemId: string,
+    ): Promise<EndpointResult<'/api/assistant/conversations/{conversation_id}/queue/{item_id}', 'delete'>> {
+      return requestEndpointResult(fetchImpl, '/api/assistant/conversations/{conversation_id}/queue/{item_id}', 'delete', [] as const,
+        undefined, `/api/assistant/conversations/${encodeURIComponent(conversationId)}/queue/${encodeURIComponent(itemId)}`)
+    },
+    releaseAssistantQueue(
+      conversationId: string,
+    ): Promise<EndpointResult<'/api/assistant/conversations/{conversation_id}/queue/release', 'post'>> {
+      return requestEndpointResult(fetchImpl, '/api/assistant/conversations/{conversation_id}/queue/release', 'post', [] as const,
+        undefined, `/api/assistant/conversations/${encodeURIComponent(conversationId)}/queue/release`)
+    },
+    getAssistantSelection: makeEndpointClient(fetchImpl, '/api/assistant/selection', 'get'),
+    setAssistantSelection: makeEndpointClient(fetchImpl, '/api/assistant/selection', 'put'),
+    listAssistantModels: makeEndpointClient(fetchImpl, '/api/assistant/models', 'get'),
+    downloadAssistantModel: makeEndpointClient(fetchImpl, '/api/assistant/models/download', 'post'),
+    deleteAssistantModel: makeEndpointClient(fetchImpl, '/api/assistant/models/delete', 'post'),
+    continueAssistant(runId: string): Promise<EndpointResult<'/api/assistant/runs/{run_id}/continue', 'post'>> {
+      return requestEndpointResult(fetchImpl, '/api/assistant/runs/{run_id}/continue', 'post', [] as const,
+        undefined, `/api/assistant/runs/${encodeURIComponent(runId)}/continue`)
+    },
+    stopAssistant(runId: string): Promise<EndpointResult<'/api/assistant/runs/{run_id}/stop', 'post'>> {
+      return requestEndpointResult(fetchImpl, '/api/assistant/runs/{run_id}/stop', 'post', [] as const,
+        undefined, `/api/assistant/runs/${encodeURIComponent(runId)}/stop`)
+    },
+    streamAssistantEvents(runId: string, init?: RequestInit): Promise<Response> {
+      return fetchImpl(`/api/assistant/runs/${encodeURIComponent(runId)}/events`, init)
+    },
 
-  static getModelDownloadProgress(
-    query: QueryFor<'/api/models/download/progress', 'get'>,
-  ): Promise<EndpointResult<'/api/models/download/progress', 'get'>> {
-    const path = `/api/models/download/progress${buildQueryString(query as Record<string, unknown>)}`
-    return requestEndpointResult('/api/models/download/progress', 'get', [] as const, undefined, path)
+    getModelDownloadProgress(
+      query: QueryFor<'/api/models/download/progress', 'get'>,
+    ): Promise<EndpointResult<'/api/models/download/progress', 'get'>> {
+      const path = `/api/models/download/progress${buildQueryString(query as Record<string, unknown>)}`
+      return requestEndpointResult(fetchImpl, '/api/models/download/progress', 'get', [] as const, undefined, path)
+    },
+
+    listModels(
+      query?: QueryFor<'/api/models', 'get'>,
+    ): Promise<EndpointResult<'/api/models', 'get'>> {
+      const path = `/api/models${buildQueryString(query as Record<string, unknown>)}`
+      return requestEndpointResult(fetchImpl, '/api/models', 'get', [] as const, undefined, path)
+    },
+
+    getLtxRecommendation(
+      query?: QueryFor<'/api/models/ltx-recommendation', 'get'>,
+    ): Promise<EndpointResult<'/api/models/ltx-recommendation', 'get'>> {
+      const path = `/api/models/ltx-recommendation${buildQueryString(query as Record<string, unknown>)}`
+      return requestEndpointResult(fetchImpl, '/api/models/ltx-recommendation', 'get', [] as const, undefined, path)
+    },
+
+    getImgGenRecommendation(
+      query?: QueryFor<'/api/models/img-gen-recommendation', 'get'>,
+    ): Promise<EndpointResult<'/api/models/img-gen-recommendation', 'get'>> {
+      const path = `/api/models/img-gen-recommendation${buildQueryString(query as Record<string, unknown>)}`
+      return requestEndpointResult(
+        fetchImpl,
+        '/api/models/img-gen-recommendation',
+        'get',
+        [] as const,
+        undefined,
+        path,
+      )
+    },
+
+    getLtxIcLoraRecommendation: makeEndpointClient(fetchImpl, '/api/models/ltx-ic-lora-recommendation', 'get'),
+
+    getTextEncoderRecommendation: makeEndpointClient(fetchImpl, '/api/models/text-encoder-recommendation', 'get'),
+
+    describeCheckpoints: makeEndpointClient(fetchImpl, '/api/models/describe', 'post'),
+
+    getActiveDownload: makeEndpointClient(fetchImpl, '/api/models/download/active', 'get'),
+
+    getLtxVersions: makeEndpointClient(fetchImpl, '/api/models/ltx-versions', 'get'),
+
+    setActiveLtxModel: makeEndpointClient(fetchImpl, '/api/models/active-ltx-model', 'post'),
+
+    startModelDownload: makeEndpointClient(fetchImpl, '/api/models/download', 'post'),
+
+    deleteModels: makeEndpointClient(fetchImpl, '/api/models/delete', 'delete'),
+
+    getRuntimePolicy: makeEndpointClient(fetchImpl, '/api/runtime-policy', 'get'),
+
+    getFeatureFlags: makeEndpointClient(fetchImpl, '/api/feature-flags', 'get'),
+
+    updateFeatureFlags: makeEndpointClient(fetchImpl, '/api/feature-flags', 'patch'),
+
+    getGpuInfo: makeEndpointClient(fetchImpl, '/api/gpu-info', 'get'),
+
+    getSettings: makeEndpointClient(fetchImpl, '/api/settings', 'get'),
+
+    getPromptEnhancer: makeEndpointClient(fetchImpl, '/api/prompt-enhancer', 'get'),
+
+    listGeminiModels: makeEndpointClient(fetchImpl, '/api/settings/gemini-models', 'get'),
+
+    updateSettings: makeEndpointClient(fetchImpl, '/api/settings', 'post'),
+
+    getRemoteStatus: makeEndpointClient(fetchImpl, '/api/remote/status', 'get'),
+
+    listRemoteDevices: makeEndpointClient(fetchImpl, '/api/remote/devices', 'get'),
+
+    revokeRemoteDevice(
+      deviceId: string,
+    ): Promise<EndpointResult<'/api/remote/devices/{device_id}/revoke', 'post', [404]>> {
+      return requestEndpointResult(
+        fetchImpl,
+        '/api/remote/devices/{device_id}/revoke',
+        'post',
+        [404] as const,
+        undefined,
+        `/api/remote/devices/${encodeURIComponent(deviceId)}/revoke`,
+      )
+    },
+
+    suggestGapPrompt: makeEndpointClient(fetchImpl, '/api/suggest-gap-prompt', 'post', {
+      exactErrorStatuses: [401, 403] as const,
+    }),
+
+    generateVideo: makeEndpointClient(fetchImpl, '/api/generate', 'post', {
+      exactErrorStatuses: [402] as const,
+    }),
+
+    getGenerateVideoModelSpecs: makeEndpointClient(fetchImpl, '/api/generate/models-specs', 'get'),
+
+    cancelGeneration: makeEndpointClient(fetchImpl, '/api/generate/cancel', 'post'),
+
+    getGenerationProgress: makeEndpointClient(fetchImpl, '/api/generation/progress', 'get'),
+
+    generateImage: makeEndpointClient(fetchImpl, '/api/generate-image', 'post'),
+
+    enhancePrompt: makeEndpointClient(fetchImpl, '/api/enhance-prompt', 'post', {
+      exactErrorStatuses: [404, 409] as const,
+    }),
+
+    retake: makeEndpointClient(fetchImpl, '/api/retake', 'post'),
+
+    extend: makeEndpointClient(fetchImpl, '/api/extend', 'post'),
+
+    startHuggingFaceLogin: makeEndpointClient(fetchImpl, '/api/auth/huggingface/login', 'post'),
+
+    getHuggingFaceAuthStatus: makeEndpointClient(fetchImpl, '/api/auth/huggingface/status', 'get'),
+
+    huggingFaceLogout: makeEndpointClient(fetchImpl, '/api/auth/huggingface/logout', 'post'),
+
+    checkModelAccess: makeEndpointClient(fetchImpl, '/api/models/check-access', 'post'),
+
+    generateIcLora: makeEndpointClient(fetchImpl, '/api/ic-lora/generate', 'post'),
+
+    extractIcLoraConditioning: makeEndpointClient(fetchImpl, '/api/ic-lora/extract-conditioning', 'post'),
+
+    preflightIcLora: makeEndpointClient(fetchImpl, '/api/ic-lora/preflight', 'post'),
+
+    listIcLoras(
+      query?: QueryFor<'/api/ic-loras', 'get'>,
+    ): Promise<EndpointResult<'/api/ic-loras', 'get'>> {
+      const path = `/api/ic-loras${buildQueryString(query as Record<string, unknown>)}`
+      return requestEndpointResult(fetchImpl, '/api/ic-loras', 'get', [] as const, undefined, path)
+    },
+
+    startIcLoraDownload: makeEndpointClient(fetchImpl, '/api/ic-loras/download', 'post'),
+    getIcLoraDownloadActive: makeEndpointClient(fetchImpl, '/api/ic-loras/download/active', 'get'),
+
+    getIcLoraDownloadProgress(
+      query: QueryFor<'/api/ic-loras/download/progress', 'get'>,
+    ): Promise<EndpointResult<'/api/ic-loras/download/progress', 'get'>> {
+      const path = `/api/ic-loras/download/progress${buildQueryString(query as Record<string, unknown>)}`
+      return requestEndpointResult(fetchImpl, '/api/ic-loras/download/progress', 'get', [] as const, undefined, path)
+    },
+
+    deleteIcLoraInstallation: makeEndpointClient(fetchImpl, '/api/ic-loras/installation', 'delete'),
+
+    ingestAsset: makeEndpointClient(fetchImpl, '/api/assets', 'post'),
+
+    listAssets(
+      query: QueryFor<'/api/assets', 'get'>,
+    ): Promise<ExploreListAssetsResult> {
+      const path = `/api/assets${buildQueryString(query as Record<string, unknown>)}`
+      return requestParsedJson<ExploreAssetListResponse, []>(
+        fetchImpl,
+        path,
+        'get',
+        [] as const,
+      )
+    },
+
+    uploadAsset(file: File): Promise<RemoteUploadAssetResult> {
+      const body = new FormData()
+      body.append('file', file)
+      return requestParsedJson<ExploreAsset, []>(
+        fetchImpl,
+        '/api/assets/upload',
+        'post',
+        [] as const,
+        { body },
+      )
+    },
+
+    getAsset(
+      assetId: string,
+    ): Promise<EndpointResult<'/api/assets/{asset_id}', 'get', [404]>> {
+      return requestEndpointResult(
+        fetchImpl,
+        '/api/assets/{asset_id}',
+        'get',
+        [404] as const,
+        undefined,
+        `/api/assets/${assetId}`,
+      )
+    },
+
+    deleteAsset(
+      assetId: string,
+    ): Promise<EndpointResult<'/api/assets/{asset_id}', 'delete', [404, 409]>> {
+      return requestEndpointResult(
+        fetchImpl,
+        '/api/assets/{asset_id}',
+        'delete',
+        [404, 409] as const,
+        undefined,
+        `/api/assets/${assetId}`,
+      )
+    },
+
+    trimAudio(
+      assetId: string,
+      body: JsonBodyFor<'/api/assets/{asset_id}/trim-audio', 'post'>,
+    ): Promise<
+      EndpointResult<'/api/assets/{asset_id}/trim-audio', 'post', [404, 422]>
+    > {
+      return requestEndpointResult(
+        fetchImpl,
+        '/api/assets/{asset_id}/trim-audio',
+        'post',
+        [404, 422] as const,
+        buildJsonRequestInit(body),
+        `/api/assets/${assetId}/trim-audio`,
+      )
+    },
+
+    trimVideo(
+      assetId: string,
+      body: JsonBodyFor<'/api/assets/{asset_id}/trim-video', 'post'>,
+    ): Promise<
+      EndpointResult<'/api/assets/{asset_id}/trim-video', 'post', [404, 422]>
+    > {
+      return requestEndpointResult(
+        fetchImpl,
+        '/api/assets/{asset_id}/trim-video',
+        'post',
+        [404, 422] as const,
+        buildJsonRequestInit(body),
+        `/api/assets/${assetId}/trim-video`,
+      )
+    },
+
+    extractAudio(
+      assetId: string,
+    ): Promise<
+      EndpointResult<'/api/assets/{asset_id}/extract-audio', 'post', [404, 422]>
+    > {
+      return requestEndpointResult(
+        fetchImpl,
+        '/api/assets/{asset_id}/extract-audio',
+        'post',
+        [404, 422] as const,
+        undefined,
+        `/api/assets/${assetId}/extract-audio`,
+      )
+    },
+
+    getGenerationQueue: makeEndpointClient(fetchImpl, '/api/generation-queue', 'get'),
+
+    reorderGenerationQueue: makeEndpointClient(fetchImpl, '/api/generation-queue/reorder', 'post'),
+
+    clearGenerationQueueDone: makeEndpointClient(
+      fetchImpl,
+      '/api/generation-queue/done/clear',
+      'post',
+    ),
+
+    clearGenerationQueueFailed: makeEndpointClient(
+      fetchImpl,
+      '/api/generation-queue/failed/clear',
+      'post',
+    ),
+
+    markGenerationQueueDoneSeen(
+      generationId: string,
+    ): Promise<EndpointResult<'/api/generation-queue/done/{generation_id}/seen', 'post'>> {
+      return requestEndpointResult(
+        fetchImpl,
+        '/api/generation-queue/done/{generation_id}/seen',
+        'post',
+        [] as const,
+        undefined,
+        `/api/generation-queue/done/${generationId}/seen`,
+      )
+    },
+
+    dismissGenerationQueueDone(
+      generationId: string,
+    ): Promise<EndpointResult<'/api/generation-queue/done/{generation_id}/dismiss', 'post'>> {
+      return requestEndpointResult(
+        fetchImpl,
+        '/api/generation-queue/done/{generation_id}/dismiss',
+        'post',
+        [] as const,
+        undefined,
+        `/api/generation-queue/done/${generationId}/dismiss`,
+      )
+    },
+
+    listGenerations(
+      query: QueryFor<'/api/generations', 'get'>,
+    ): Promise<EndpointResult<'/api/generations', 'get'>> {
+      const path = `/api/generations${buildQueryString(query as Record<string, unknown>)}`
+      return requestEndpointResult(fetchImpl, '/api/generations', 'get', [] as const, undefined, path)
+    },
+
+    listRecentFeatures(
+      query: QueryFor<'/api/generations/recent-features', 'get'>,
+    ): Promise<EndpointResult<'/api/generations/recent-features', 'get'>> {
+      const path = `/api/generations/recent-features${buildQueryString(query as Record<string, unknown>)}`
+      return requestEndpointResult(
+        fetchImpl,
+        '/api/generations/recent-features',
+        'get',
+        [] as const,
+        undefined,
+        path,
+      )
+    },
+
+    getDashboardSelection: makeEndpointClient(fetchImpl, '/api/stats/activity-dashboard-selections', 'get'),
+
+    updateDashboardSelection: makeEndpointClient(fetchImpl, '/api/stats/activity-dashboard-selections', 'post'),
+
+    getGenerationSeed: makeEndpointClient(fetchImpl, '/api/generation-seed', 'get'),
+
+    updateGenerationSeed: makeEndpointClient(fetchImpl, '/api/generation-seed', 'post'),
+
+    getDashboard(
+      query: QueryFor<'/api/stats/dashboard', 'get'>,
+    ): Promise<EndpointResult<'/api/stats/dashboard', 'get'>> {
+      const path = `/api/stats/dashboard${buildQueryString(query as Record<string, unknown>)}`
+      return requestEndpointResult(
+        fetchImpl,
+        '/api/stats/dashboard',
+        'get',
+        [] as const,
+        undefined,
+        path,
+      )
+    },
+
+    createTextToVideo: makeEndpointClient(fetchImpl, '/api/generations/text-to-video', 'post'),
+
+    getGeneration(generationId: string): Promise<EndpointResult<'/api/generations/{generation_id}', 'get'>> {
+      return requestEndpointResult(fetchImpl, '/api/generations/{generation_id}', 'get', [] as const,
+        undefined, `/api/generations/${encodeURIComponent(generationId)}`)
+    },
+
+    createImageToVideo: makeEndpointClient(fetchImpl, '/api/generations/image-to-video', 'post'),
+
+    createLoraRecipe(
+      recipeId: string,
+      body: JsonBodyFor<'/api/generations/recipes/{recipe_id}', 'post'>,
+    ): Promise<EndpointResult<'/api/generations/recipes/{recipe_id}', 'post'>> {
+      return requestEndpointResult(
+        fetchImpl,
+        '/api/generations/recipes/{recipe_id}',
+        'post',
+        [] as const,
+        buildJsonRequestInit(body),
+        `/api/generations/recipes/${encodeURIComponent(recipeId)}`,
+      )
+    },
+    createAudioToVideo: makeEndpointClient(fetchImpl, '/api/generations/audio-to-video', 'post'),
+    createRetake: makeEndpointClient(fetchImpl, '/api/generations/retake', 'post'),
+    createIcLoraRecipe(
+      recipeId: string,
+      body: JsonBodyFor<'/api/generations/ic-lora-recipes/{recipe_id}', 'post'>,
+    ): Promise<EndpointResult<'/api/generations/ic-lora-recipes/{recipe_id}', 'post'>> {
+      return requestEndpointResult(
+        fetchImpl,
+        '/api/generations/ic-lora-recipes/{recipe_id}',
+        'post',
+        [] as const,
+        buildJsonRequestInit(body),
+        `/api/generations/ic-lora-recipes/${encodeURIComponent(recipeId)}`,
+      )
+    },
+    createExtend: makeEndpointClient(fetchImpl, '/api/generations/extend', 'post'),
+    preflightEdit: makeEndpointClient(fetchImpl, '/api/generations/edit/preflight', 'post'),
+
+    deleteGeneration(
+      generationId: string,
+    ): Promise<EndpointResult<'/api/generations/{generation_id}', 'delete'>> {
+      return requestEndpointResult(
+        fetchImpl,
+        '/api/generations/{generation_id}',
+        'delete',
+        [] as const,
+        undefined,
+        `/api/generations/${generationId}`,
+      )
+    },
+
+    cancelQueuedGeneration(
+      generationId: string,
+    ): Promise<EndpointResult<'/api/generations/{generation_id}/cancel', 'post'>> {
+      return requestEndpointResult(
+        fetchImpl,
+        '/api/generations/{generation_id}/cancel',
+        'post',
+        [] as const,
+        undefined,
+        `/api/generations/${generationId}/cancel`,
+      )
+    },
+
+    retryGeneration(
+      generationId: string,
+    ): Promise<EndpointResult<'/api/generations/{generation_id}/retry', 'post'>> {
+      return requestEndpointResult(
+        fetchImpl,
+        '/api/generations/{generation_id}/retry',
+        'post',
+        [] as const,
+        undefined,
+        `/api/generations/${generationId}/retry`,
+      )
+    },
+
+    listLoras(
+      query?: QueryFor<'/api/loras', 'get'>,
+    ): Promise<EndpointResult<'/api/loras', 'get'>> {
+      const path = `/api/loras${buildQueryString(query as Record<string, unknown>)}`
+      return requestEndpointResult(fetchImpl, '/api/loras', 'get', [] as const, undefined, path)
+    },
+
+    startLoraDownload: makeEndpointClient(fetchImpl, '/api/loras/download', 'post'),
+
+    getLoraDownloadProgress(
+      query: QueryFor<'/api/loras/download/progress', 'get'>,
+    ): Promise<EndpointResult<'/api/loras/download/progress', 'get'>> {
+      const path = `/api/loras/download/progress${buildQueryString(query as Record<string, unknown>)}`
+      return requestEndpointResult(fetchImpl, '/api/loras/download/progress', 'get', [] as const, undefined, path)
+    },
+
+    getLoraDownloadActive: makeEndpointClient(fetchImpl, '/api/loras/download/active', 'get'),
+
+    deleteLoraInstallation: makeEndpointClient(fetchImpl, '/api/loras/installation', 'delete'),
   }
-
-  
-  static getLtxRecommendation = makeEndpointClient('/api/models/ltx-recommendation', 'get')
-
-  static getImgGenRecommendation = makeEndpointClient('/api/models/img-gen-recommendation', 'get')
-
-  static getLtxIcLoraRecommendation = makeEndpointClient('/api/models/ltx-ic-lora-recommendation', 'get')
-
-  static getTextEncoderRecommendation = makeEndpointClient('/api/models/text-encoder-recommendation', 'get')
-
-  static startModelDownload = makeEndpointClient('/api/models/download', 'post')
-
-  static deleteModels = makeEndpointClient('/api/models/delete', 'delete')
-
-  static getRuntimePolicy = makeEndpointClient('/api/runtime-policy', 'get')
-
-  static getSettings = makeEndpointClient('/api/settings', 'get')
-
-  static updateSettings = makeEndpointClient('/api/settings', 'post')
-
-  static suggestGapPrompt = makeEndpointClient('/api/suggest-gap-prompt', 'post', {
-    exactErrorStatuses: [401, 403] as const,
-  })
-
-  static generateVideo = makeEndpointClient('/api/generate', 'post', {
-    exactErrorStatuses: [402] as const,
-  })
-
-  static getGenerateVideoModelSpecs = makeEndpointClient('/api/generate/models-specs', 'get')
-
-  static cancelGeneration = makeEndpointClient('/api/generate/cancel', 'post')
-
-  static getGenerationProgress = makeEndpointClient('/api/generation/progress', 'get')
-
-  static generateImage = makeEndpointClient('/api/generate-image', 'post')
-
-  static retake = makeEndpointClient('/api/retake', 'post')
-
-  static startHuggingFaceLogin = makeEndpointClient('/api/auth/huggingface/login', 'post')
-
-  static getHuggingFaceAuthStatus = makeEndpointClient('/api/auth/huggingface/status', 'get')
-
-  static huggingFaceLogout = makeEndpointClient('/api/auth/huggingface/logout', 'post')
-
-  static checkModelAccess = makeEndpointClient('/api/models/check-access', 'post')
-
-  static generateIcLora = makeEndpointClient('/api/ic-lora/generate', 'post')
-
-  static extractIcLoraConditioning = makeEndpointClient('/api/ic-lora/extract-conditioning', 'post')
 }
+
+export type BoundApiClient = ReturnType<typeof createApiClient>
+
+/** Electron-bound default for non-Explore Desktop callers. */
+export const ApiClient: BoundApiClient = createApiClient(backendFetch)
 
 type ApiClientMethodName = keyof typeof ApiClient
 

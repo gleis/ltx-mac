@@ -2,19 +2,43 @@
 
 from __future__ import annotations
 
-from typing import Any, Literal, TypeGuard, TypeVar, cast, get_args
+import sys
+from typing import Annotated, Any, Literal, TypeGuard, TypeVar, cast, get_args
 
-from pydantic import BaseModel, ConfigDict, Field, create_model, field_validator
+from pydantic import BaseModel, BeforeValidator, ConfigDict, Field, StringConstraints, create_model, field_validator
+
+from api_types import LTXLocalModelId, LocalAssistantModel
+from runtime_config.reject_reasons import BudgetMode
+
+RemoteExposure = Literal["off", "lan"]
+DashboardRange = Literal["7d", "30d", "all"]
+MAX_GENERATION_SEED = 2_147_483_647
+AssistantProviderName = Literal["gemini", "local"]
+
+
+def _parse_remote_exposure(value: object) -> RemoteExposure:
+    return "lan" if value == "lan" else "off"
+
+
+RemoteExposureSetting = Annotated[RemoteExposure, BeforeValidator(_parse_remote_exposure)]
+
+
+def _parse_budget_mode(value: object) -> BudgetMode:
+    return "standard" if value == "standard" else "reckless"
+
+
+BudgetModeSetting = Annotated[BudgetMode, BeforeValidator(_parse_budget_mode)]
+
+
+def _parse_dashboard_range(value: object) -> DashboardRange:
+    if value == "30d":
+        return "30d"
+    if value == "all":
+        return "all"
+    return "7d"
 
 
 def _to_camel_case(field_name: str) -> str:
-    special_aliases = {
-        "prompt_enhancer_enabled_t2v": "promptEnhancerEnabledT2V",
-        "prompt_enhancer_enabled_i2v": "promptEnhancerEnabledI2V",
-    }
-    if field_name in special_aliases:
-        return special_aliases[field_name]
-
     head, *tail = field_name.split("_")
     return head + "".join(part.title() for part in tail)
 
@@ -45,20 +69,74 @@ class SettingsPatchModel(SettingsBaseModel):
     )
 
 
+SelectionValues = list[Annotated[str, StringConstraints(max_length=64)]]
+
+
+class DashboardSelection(SettingsBaseModel):
+    """Activity Dashboard view. An empty list means Any."""
+
+    range: DashboardRange = "7d"
+    models: SelectionValues = Field(default_factory=list, max_length=32)
+    resolutions: SelectionValues = Field(default_factory=list, max_length=32)
+    aspect_ratios: SelectionValues = Field(default_factory=list, max_length=32)
+    fps: SelectionValues = Field(default_factory=list, max_length=32)
+
+
+class GenerationSeed(SettingsBaseModel):
+    """The seed every generate surface shares. `seed` is the next seed to use."""
+
+    seed: int = Field(ge=0, le=MAX_GENERATION_SEED)
+    locked: bool
+
+
+class GenerationSeedUpdate(SettingsBaseModel):
+    """Partial update: a client can flip the lock without touching the seed."""
+
+    seed: int | None = Field(default=None, ge=0, le=MAX_GENERATION_SEED)
+    locked: bool | None = None
+
+
 class AppSettings(SettingsBaseModel):
     use_torch_compile: bool = False
+    diffusion_stage_cache_enabled: bool = False
+    budget_mode: BudgetModeSetting = "reckless"
     ltx_api_key: str = ""
     user_prefers_ltx_api_video_generations: bool = False
     fal_api_key: str = ""
+    user_prefers_fal_api_image_generations: bool = False
     use_local_text_encoder: bool = False
     prompt_cache_size: int = 100
-    prompt_enhancer_enabled_t2v: bool = True
-    prompt_enhancer_enabled_i2v: bool = False
+    # API enhance_prompt gate. One switch for every conditioning (text, image, keyframes,
+    # audio) — Settings presents it as one control, so the state behind it is one flag too.
+    prompt_enhancer_enabled: bool = True
+    # Home / Remote Explore: automatic prompt rewrite before Generate. Gen Space is unchanged.
+    explore_auto_enhance_prompts: bool = True
+    # The user's explicit choice, persisted so it survives restarts. None means no active choice
+    # has been made yet — the UI defaults to whichever provider is available, preferring local,
+    # without writing that default back here. Only an explicit user pick (not an automatic
+    # fallback when the preferred provider is temporarily unavailable) ever sets this.
+    prompt_enhancer_provider_preference: Literal["local", "api"] | None = None
     gemini_api_key: str = ""
+    # Empty string means "use DEFAULT_GEMINI_MODEL at generate time" — unlike API keys, an
+    # empty patch is persisted so the user can reset to the default without a tombstone value.
+    gemini_model: str = ""
+    assistant_provider: AssistantProviderName = "gemini"
+    assistant_local_model: LocalAssistantModel = "qwen3.5:9b"
+    # Gemini only: a written reply ends the run without waiting for its jobs, so the next
+    # message starts at once. Off by default; no closing message when the jobs finish.
+    assistant_parallel_gemini: bool = False
     seed_locked: bool = False
     locked_seed: int = 42
     local_mlx_speed_mode: Literal["quality", "boost", "turbo"] = "quality"
     models_dir: str = ""
+    active_ltx_model_id: LTXLocalModelId | None = None
+    # None = platform default (Mac on, CUDA/Linux off). An explicit bool is a user override.
+    use_conv_vae: bool | None = None
+    # Remote client HTTP server. Serving only when this is not off. Default off so a leftover
+    # settings.json cannot expose the engine after an upgrade. Unknown values (PoC tunnel modes)
+    # coerce to off.
+    remote_exposure: RemoteExposureSetting = "off"
+    activity_dashboard_selections: DashboardSelection = Field(default_factory=DashboardSelection)
 
     @field_validator("prompt_cache_size", mode="before")
     @classmethod
@@ -68,7 +146,18 @@ class AppSettings(SettingsBaseModel):
     @field_validator("locked_seed", mode="before")
     @classmethod
     def _clamp_locked_seed(cls, value: Any) -> int:
-        return _clamp_int(value, minimum=0, maximum=2_147_483_647, default=42)
+        return _clamp_int(value, minimum=0, maximum=MAX_GENERATION_SEED, default=42)
+
+    @field_validator("activity_dashboard_selections", mode="before")
+    @classmethod
+    def _tolerate_unknown_dashboard_range(cls, value: object) -> object:
+        """Only a stored file is forgiven an unknown range. The API rejects it."""
+        if not isinstance(value, dict):
+            return value
+        stored = cast(dict[str, object], value)
+        if "range" not in stored:
+            return stored
+        return {**stored, "range": _parse_dashboard_range(stored["range"])}
 
 
 SettingsModelT = TypeVar("SettingsModelT", bound=SettingsBaseModel)
@@ -117,18 +206,41 @@ UpdateSettingsRequest = AppSettingsPatch
 
 class SettingsResponse(SettingsBaseModel):
     use_torch_compile: bool = False
+    diffusion_stage_cache_enabled: bool = False
+    budget_mode: BudgetModeSetting = "reckless"
     has_ltx_api_key: bool = False
     user_prefers_ltx_api_video_generations: bool = False
     has_fal_api_key: bool = False
+    user_prefers_fal_api_image_generations: bool = False
     use_local_text_encoder: bool = False
     prompt_cache_size: int = 100
-    prompt_enhancer_enabled_t2v: bool = True
-    prompt_enhancer_enabled_i2v: bool = False
+    prompt_enhancer_enabled: bool = True
+    explore_auto_enhance_prompts: bool = True
+    prompt_enhancer_provider_preference: Literal["local", "api"] | None = None
     has_gemini_api_key: bool = False
+    gemini_model: str = ""
+    assistant_provider: AssistantProviderName = "gemini"
+    assistant_local_model: LocalAssistantModel = "qwen3.5:9b"
+    assistant_parallel_gemini: bool = False
     seed_locked: bool = False
     locked_seed: int = 42
     local_mlx_speed_mode: Literal["quality", "boost", "turbo"] = "quality"
     models_dir: str = ""
+    active_ltx_model_id: LTXLocalModelId | None = None
+    use_conv_vae: bool = False
+    remote_exposure: RemoteExposureSetting = "off"
+    activity_dashboard_selections: DashboardSelection = Field(default_factory=DashboardSelection)
+
+
+def remote_is_on(exposure: RemoteExposure) -> bool:
+    return exposure != "off"
+
+
+def resolved_use_conv_vae(settings: AppSettings) -> bool:
+    """Effective Fast decode setting: user override, else Mac on / CUDA off."""
+    if settings.use_conv_vae is not None:
+        return settings.use_conv_vae
+    return sys.platform == "darwin"
 
 
 def to_settings_response(settings: AppSettings) -> SettingsResponse:
@@ -139,7 +251,7 @@ def to_settings_response(settings: AppSettings) -> SettingsResponse:
     data["has_ltx_api_key"] = bool(ltx_key)
     data["has_fal_api_key"] = bool(fal_key)
     data["has_gemini_api_key"] = bool(gemini_key)
-    # models_dir passes through as-is (not secret)
+    data["use_conv_vae"] = resolved_use_conv_vae(settings)
     return SettingsResponse.model_validate(data)
 
 
@@ -147,4 +259,11 @@ def should_video_generate_with_ltx_api(*, force_api_generations: bool, settings:
     has_ltx_api_key = bool(settings.ltx_api_key.strip())
     return force_api_generations or (
         settings.user_prefers_ltx_api_video_generations and has_ltx_api_key
+    )
+
+
+def should_image_generate_with_fal_api(*, force_api_generations: bool, settings: AppSettings) -> bool:
+    has_fal_api_key = bool(settings.fal_api_key.strip())
+    return force_api_generations or (
+        settings.user_prefers_fal_api_image_generations and has_fal_api_key
     )

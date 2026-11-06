@@ -1,8 +1,8 @@
 # Third-party dependencies for the pinned MLX runtime (core, pipelines, trainer).
 # Local packages are installed from the exact source revision without dependencies.
-mlx==0.31.1
-mlx-lm==0.31.1
-mlx-metal==0.31.1
+mlx==0.32.4
+mlx-lm==0.32.2
+mlx-metal==0.32.4
 mlx-arsenal>=0.2.4
 safetensors>=0.4.0
 huggingface-hub>=1.5.0,<2.0

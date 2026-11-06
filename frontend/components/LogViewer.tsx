@@ -1,7 +1,19 @@
-import { useState, useEffect, useRef } from 'react'
-import { X, FolderOpen, RefreshCw, ChevronDown, ChevronUp, Download } from 'lucide-react'
-import { Button } from './ui/button'
+import { useMemo, useState } from 'react'
+import { X } from 'lucide-react'
+import { Text } from '@ds/Text/Text'
 import { logger } from '../lib/logger'
+import { getBackendCredentials } from '../lib/backend'
+import { copyTextToClipboard } from '../lib/copy-to-clipboard'
+import { AppProductDialogShell, ProductDialogIconButton } from './dialog/AppProductDialogShell'
+import { LogPane } from './log-viewer/LogPane'
+import { LogToolbar } from './log-viewer/LogToolbar'
+import { filterByLevels, parseLogEntries } from './log-viewer/logEntries'
+import { useCloseOnEscape } from './log-viewer/useCloseOnEscape'
+import { useLevelFilter } from './log-viewer/useLevelFilter'
+import { useSearchInput, useSearchMatches } from './log-viewer/useLogSearch'
+import { useLogViewPrefs } from './log-viewer/useLogViewPrefs'
+import { useSessionLogs } from './log-viewer/useSessionLogs'
+import styles from './log-viewer/LogViewer.module.scss'
 
 interface LogViewerProps {
   isOpen: boolean
@@ -9,51 +21,74 @@ interface LogViewerProps {
   embedded?: boolean
 }
 
-export function LogViewer({ isOpen, onClose, embedded = false }: LogViewerProps) {
-  const [logs, setLogs] = useState<string[]>([])
-  const [logPath, setLogPath] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
-  const [autoScroll, setAutoScroll] = useState(true)
-  const logContainerRef = useRef<HTMLDivElement>(null)
+const DIALOG_TITLE_ID = 'log-viewer-dialog-title'
+const COPIED_FEEDBACK_MS = 1200
 
-  const fetchLogs = async () => {
-    if (!window.electronAPI?.getLogs) return
-    
-    setIsLoading(true)
-    try {
-      const result = await window.electronAPI.getLogs()
-      setLogs(result.lines || [])
-      setLogPath(result.logPath || '')
-    } catch (error) {
-      logger.error(`Failed to fetch logs: ${error}`)
-    } finally {
-      setIsLoading(false)
+export function LogViewer({ isOpen, onClose, embedded = false }: LogViewerProps) {
+  const searchInput = useSearchInput()
+  const { search } = searchInput
+  // A valid search needs the whole session, so it also switches off the live tail.
+  const isSearching = search.kind === 'ok'
+  // False while the user has scrolled up to read. The live tail then pauses so the text stays put.
+  const [isFollowing, setIsFollowing] = useState(true)
+  const { logs, logPath, isLoading, refresh } = useSessionLogs(
+    isOpen,
+    search.kind === 'ok' ? search.query : '',
+    isFollowing,
+  )
+  const levelFilter = useLevelFilter()
+  const prefs = useLogViewPrefs()
+
+  const allEntries = useMemo(() => parseLogEntries(logs), [logs])
+  const entries = useMemo(
+    () => filterByLevels(allEntries, levelFilter.enabled),
+    [allEntries, levelFilter.enabled],
+  )
+  const matches = useSearchMatches(entries, search)
+
+  // The embedded crash screen has nothing to close, so Escape does nothing there.
+  useCloseOnEscape(onClose, isOpen && !embedded)
+
+  const [logsCopied, setLogsCopied] = useState(false)
+  const [tokenCopied, setTokenCopied] = useState(false)
+
+  const handleRevealLog = async () => {
+    if (window.electronAPI?.revealSessionLog) {
+      await window.electronAPI.revealSessionLog()
     }
   }
 
-  useEffect(() => {
-    if (isOpen) {
-      fetchLogs()
-      // Auto-refresh every 2 seconds when open
-      const interval = setInterval(fetchLogs, 2000)
-      return () => clearInterval(interval)
+  // Copy and download use the lines on screen, so a level filter applies to both.
+  const handleCopyLogs = async () => {
+    const copied = await copyTextToClipboard(entries.map((entry) => entry.text).join('\n'))
+    if (!copied) {
+      logger.error('Failed to copy logs')
+      return
     }
-  }, [isOpen])
+    setLogsCopied(true)
+    setTimeout(() => setLogsCopied(false), COPIED_FEEDBACK_MS)
+  }
 
-  useEffect(() => {
-    if (autoScroll && logContainerRef.current) {
-      logContainerRef.current.scrollTop = logContainerRef.current.scrollHeight
-    }
-  }, [logs, autoScroll])
-
-  const handleOpenFolder = async () => {
-    if (window.electronAPI?.openLogFolder) {
-      await window.electronAPI.openLogFolder()
+  // Copy the backend Bearer token so local QA/perf scripts can authenticate
+  // against the Electron-spawned backend (its token is random per launch).
+  // Surfaced via a semi-hidden control in the footer (see below).
+  const handleCopyToken = async () => {
+    try {
+      const { token } = await getBackendCredentials()
+      if (!token) {
+        logger.error('No backend token available to copy')
+        return
+      }
+      await navigator.clipboard.writeText(token)
+      setTokenCopied(true)
+      setTimeout(() => setTokenCopied(false), COPIED_FEEDBACK_MS)
+    } catch (error) {
+      logger.error(`Failed to copy backend token: ${error}`)
     }
   }
 
   const handleDownload = () => {
-    const content = logs.join('\n')
+    const content = entries.map((entry) => entry.text).join('\n')
     const blob = new Blob([content], { type: 'text/plain' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
@@ -65,117 +100,111 @@ export function LogViewer({ isOpen, onClose, embedded = false }: LogViewerProps)
 
   if (!isOpen) return null
 
+  // The status says what the view does. A count shows only when it is not the plain tail.
+  const footerStatus = [
+    isSearching
+      ? `Searching the full session (${logs.length} lines)`
+      : isFollowing
+        ? 'Auto-refreshing every 2s'
+        : 'Paused while scrolled up',
+    levelFilter.isFiltered ? `${entries.length} of ${logs.length} lines` : null,
+  ]
+    .filter(Boolean)
+    .join(' · ')
+
   const panel = (
-    <div className={`bg-zinc-900 rounded-lg border border-zinc-700 w-full ${embedded ? 'h-full' : 'max-w-4xl h-[80vh]'} flex flex-col`}>
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-zinc-700">
-          <div className="flex items-center gap-3">
-            <h2 className="text-lg font-semibold text-white">Logs</h2>
-            <span className="text-xs text-zinc-500 font-mono truncate max-w-[300px]" title={logPath}>
-              {logPath}
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleDownload}
-              disabled={logs.length === 0}
-              className="text-zinc-400 hover:text-white"
-              title="Download logs"
-            >
-              <Download className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleOpenFolder}
-              className="text-zinc-400 hover:text-white"
-              title="Open log folder"
-            >
-              <FolderOpen className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={fetchLogs}
-              disabled={isLoading}
-              className="text-zinc-400 hover:text-white"
-              title="Refresh logs"
-            >
-              <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setAutoScroll(!autoScroll)}
-              className={`${autoScroll ? 'text-blue-400' : 'text-zinc-400'} hover:text-white`}
-              title={autoScroll ? 'Auto-scroll enabled' : 'Auto-scroll disabled'}
-            >
-              {autoScroll ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
-            </Button>
-            {!embedded && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={onClose}
-                className="text-zinc-400 hover:text-white"
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            )}
-          </div>
-        </div>
+    <div className={styles.panel}>
+      <LogToolbar
+        search={{
+          input: searchInput.input,
+          onInputChange: searchInput.setInput,
+          onClear: searchInput.clear,
+          matchCase: searchInput.matchCase,
+          onMatchCaseChange: searchInput.setMatchCase,
+          useRegex: searchInput.useRegex,
+          onUseRegexChange: searchInput.setUseRegex,
+          isInvalid: search.kind === 'invalid',
+          isActive: isSearching,
+          matchCount: matches.matchCount,
+          currentMatchNumber: matches.currentMatchNumber,
+          onNext: matches.next,
+          onPrevious: matches.previous,
+        }}
+        levels={{ enabled: levelFilter.enabled, onToggle: levelFilter.toggle }}
+        view={{
+          fontSize: prefs.fontSize,
+          onFontSizeChange: prefs.setFontSize,
+          wrap: prefs.wrap,
+          onWrapChange: prefs.setWrap,
+        }}
+        actions={{
+          isLoading,
+          hasLines: entries.length > 0,
+          copied: logsCopied,
+          onRefresh: () => void refresh(),
+          onCopy: () => void handleCopyLogs(),
+          onDownload: handleDownload,
+          onRevealLog: () => void handleRevealLog(),
+        }}
+      />
 
-        {/* Log content */}
-        <div
-          ref={logContainerRef}
-          className="flex-1 overflow-auto p-4 font-mono text-xs bg-black"
+      {logPath && (
+        <Text variant="body" size="xs" shouldTruncate title={logPath} className={styles.path}>
+          {logPath}
+        </Text>
+      )}
+
+      <LogPane
+        entries={entries}
+        lineRanges={matches.lineRanges}
+        currentLine={matches.currentLine}
+        scrollNonce={matches.scrollNonce}
+        emptyLabel={logs.length === 0 ? 'No logs yet...' : 'No lines match the selected levels.'}
+        fontSizePx={prefs.fontSizePx}
+        wrap={prefs.wrap}
+        followEnabled={!isSearching}
+        onFollowingChange={setIsFollowing}
+      />
+
+      <div className={styles.footer}>
+        <Text variant="body" size="xs">{footerStatus}</Text>
+        {/* Semi-hidden: copies the backend Bearer token for local QA/perf scripts
+            (the Electron-spawned backend's token is random per launch). */}
+        <button
+          type="button"
+          onClick={() => void handleCopyToken()}
+          className={styles.tokenButton}
+          title="Copy backend auth token"
+          aria-label="Copy backend auth token"
         >
-          {logs.length === 0 ? (
-            <div className="text-zinc-500 text-center py-8">
-              No logs yet...
-            </div>
-          ) : (
-            <div className="space-y-0.5">
-              {logs.map((line, index) => {
-                // Color code log levels
-                let lineClass = 'text-zinc-300'
-                if (line.includes(' - ERROR - ') || line.includes(' - CRITICAL - ')) {
-                  lineClass = 'text-red-400'
-                } else if (line.includes(' - WARNING - ')) {
-                  lineClass = 'text-yellow-400'
-                } else if (line.includes(' - INFO - ')) {
-                  lineClass = 'text-blue-300'
-                } else if (line.includes(' - DEBUG - ')) {
-                  lineClass = 'text-zinc-500'
-                }
-                
-                return (
-                  <div key={index} className={`${lineClass} whitespace-pre-wrap break-all`}>
-                    {line}
-                  </div>
-                )
-              })}
-            </div>
-          )}
-        </div>
-
-        {/* Footer */}
-        <div className="flex items-center justify-between p-3 border-t border-zinc-700 text-xs text-zinc-500">
-          <span>{logs.length} lines (last 200)</span>
-          <span>Auto-refreshing every 2s</span>
-        </div>
+          {tokenCopied ? 'copied!' : '•••••'}
+        </button>
       </div>
+    </div>
   )
 
   if (embedded) {
-    return panel
+    return (
+      <div className={styles.embedded}>
+        <Text as="h3" variant="heading" size="sm">Diagnostic logs</Text>
+        {panel}
+      </div>
+    )
   }
 
   return (
-    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+    <AppProductDialogShell
+      aria-labelledby={DIALOG_TITLE_ID}
+      title="Diagnostic logs"
+      onBackdropClick={onClose}
+      className="h-[80vh] max-w-5xl"
+      headerActions={
+        <ProductDialogIconButton aria-label="Close diagnostic logs" onClick={onClose}>
+          <X className="h-4 w-4" />
+        </ProductDialogIconButton>
+      }
+    >
       {panel}
-    </div>
+    </AppProductDialogShell>
   )
 }

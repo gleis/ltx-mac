@@ -426,6 +426,15 @@ export function formatKeyCombo(combo: KeyCombo): string {
   return parts.join('+')
 }
 
+/**
+ * Combos the app uses for itself, so a user cannot bind them to an action.
+ * Ctrl/Cmd+Shift+L opens the diagnostic logs (see `logs-shortcut.ts`). That listener
+ * runs first and stops the key, so an action bound to it would never run.
+ */
+export function isReservedCombo(combo: KeyCombo): boolean {
+  return combo.key === 'l' && !!(combo.ctrl || combo.meta) && !!combo.shift && !combo.alt
+}
+
 /** Map a physical KeyboardEvent.code to a logical key string matching KeyCombo.key */
 function codeToKey(code: string): string {
   if (code.startsWith('Key')) return code.slice(3).toLowerCase()

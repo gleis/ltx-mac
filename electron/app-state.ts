@@ -6,6 +6,11 @@ export interface AppState {
   analyticsEnabled?: boolean
   installationId?: string
   projectAssetsPath?: string
+  skippedUpdateVersion?: string
+  autoCheckUpdates?: boolean
+  setupComplete?: boolean
+  /** Mirrors the in-app theme preference so Mac glass can follow it on launch. */
+  windowTheme?: 'light' | 'dark' | 'system'
   [key: string]: unknown
 }
 
@@ -49,4 +54,38 @@ export function setProjectAssetsPath(p: string): void {
   const state = readAppState()
   state.projectAssetsPath = resolvedPath
   writeAppState(state)
+}
+
+export function getSkippedUpdateVersion(): string | undefined {
+  return readAppState().skippedUpdateVersion
+}
+
+export function setSkippedUpdateVersion(version: string | undefined): void {
+  const s = readAppState()
+  if (version) s.skippedUpdateVersion = version
+  else delete s.skippedUpdateVersion
+  writeAppState(s)
+}
+
+export function getAutoCheckUpdates(): boolean {
+  // Default ON: existing installs and fresh installs behave as before.
+  return readAppState().autoCheckUpdates ?? true
+}
+
+export function setAutoCheckUpdates(enabled: boolean): void {
+  const s = readAppState()
+  s.autoCheckUpdates = enabled
+  writeAppState(s)
+}
+
+export function getWindowTheme(): 'light' | 'dark' | 'system' | undefined {
+  const theme = readAppState().windowTheme
+  if (theme === 'light' || theme === 'dark' || theme === 'system') return theme
+  return undefined
+}
+
+export function setWindowTheme(theme: 'light' | 'dark' | 'system'): void {
+  const s = readAppState()
+  s.windowTheme = theme
+  writeAppState(s)
 }

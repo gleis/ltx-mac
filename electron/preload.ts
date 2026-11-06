@@ -1,5 +1,10 @@
-import { electronAPISchemas, type BackendHealthStatus } from '../shared/electron-api-schema'
-import { HF_GATING_ENABLED } from '../shared/feature-flags'
+import {
+  electronAPISchemas,
+  type BackendHealthStatus,
+  type UpdateStatePayload,
+} from '../shared/electron-api-schema'
+import type { DeepLinkIntent } from '../shared/deep-link'
+import { attachOptionalPreload } from '@optional/preload'
 
 const { contextBridge, ipcRenderer, webUtils } = require('electron')
 
@@ -25,11 +30,23 @@ api.onBackendHealthStatus = (cb: (data: BackendHealthStatus) => void) => {
   }
 }
 
+api.onUpdateEvent = (cb: (data: UpdateStatePayload) => void) => {
+  const listener = (_: unknown, data: UpdateStatePayload) => cb(data)
+  ipcRenderer.on('update-event', listener)
+  return () => ipcRenderer.removeListener('update-event', listener)
+}
+
+api.onDeepLink = (cb: (data: DeepLinkIntent) => void) => {
+  const listener = (_: unknown, data: DeepLinkIntent) => cb(data)
+  ipcRenderer.on('deep-link', listener)
+  return () => ipcRenderer.removeListener('deep-link', listener)
+}
+
 api.getPathForFile = (file: File) => webUtils.getPathForFile(file)
 
 api.platform = process.platform
 
-api.hfGatingEnabled = HF_GATING_ENABLED
+attachOptionalPreload(api, ipcRenderer)
 
 contextBridge.exposeInMainWorld('electronAPI', api)
 

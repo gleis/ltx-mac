@@ -14,9 +14,13 @@ import tempfile
 import time
 import uuid
 from pathlib import Path
-from typing import Any, ClassVar, Literal, NoReturn
+from typing import Any, ClassVar, Literal, NoReturn, TYPE_CHECKING
 
 from api_types import ImageConditioningInput
+from frame_math import AutoDurationSpec
+
+if TYPE_CHECKING:
+    from ltx_pipelines.utils.types import OffloadMode
 
 logger = logging.getLogger(__name__)
 
@@ -31,8 +35,17 @@ class MLXFastVideoPipeline:
         upsampler_path: str,
         device: object,
         streaming_prefetch_count: int | None,
+        loras: list[tuple[str, float]] | None = None,
+        *,
+        offload_mode: OffloadMode,
+        video_vae_path: str | None = None,
+        audio_vae_path: str | None = None,
+        duration_head_path: str | None = None,
     ) -> "MLXFastVideoPipeline":
+        if loras:
+            raise ValueError("Custom LoRAs are not supported by the pinned MLX runtime")
         del upsampler_path, device, streaming_prefetch_count
+        del offload_mode, video_vae_path, audio_vae_path, duration_head_path
         return MLXFastVideoPipeline(
             model_dir=Path(checkpoint_path),
             gemma_dir=Path(gemma_root) if gemma_root else None,
@@ -315,12 +328,20 @@ class MLXFastVideoPipeline:
         seed: int,
         height: int,
         width: int,
-        num_frames: int,
+        num_frames: int | AutoDurationSpec,
         frame_rate: float,
         images: list[ImageConditioningInput],
         output_path: str,
         speed_mode: Literal["quality", "boost", "turbo"] = "quality",
+        *,
+        guide_all_images: bool = False,
+        skip_stage_2: bool = False,
+        chunk_pixel_frames: int | None = None,
     ) -> None:
+        if isinstance(num_frames, AutoDurationSpec):
+            raise ValueError("Automatic duration is not supported by the pinned MLX runtime")
+        if guide_all_images or skip_stage_2 or chunk_pixel_frames is not None:
+            raise ValueError("Keyframe guidance, stage skipping and chunking require a different runtime")
         image_path = images[0].path if images else None
         # Dev I2V uses guided denoising; distilled acceleration is inapplicable.
         accel = "off" if image_path or speed_mode == "quality" else speed_mode

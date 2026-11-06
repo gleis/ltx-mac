@@ -2,20 +2,31 @@ import { ChildProcess, spawn } from 'child_process'
 import crypto from 'crypto'
 import fs from 'fs'
 import path from 'path'
+import { sendAnalyticsEvent } from './analytics'
+import { startAnalyticsSink, type AnalyticsSink } from './analytics-sink'
 import { getAppDataDir } from './app-paths'
 import { getCurrentDir, isDev } from './config'
-import { HF_GATING_ENABLED } from '../shared/feature-flags'
+import { clearHeartbeatFile, decideThresholdTick, readHeartbeatState } from './liveness-grace'
 import { logger, writeLog } from './logger'
 import { getCurrentLogFilename } from './logging-management'
 import { getPythonDir } from './python-setup'
 import { getMainWindow } from './window'
+import { PY_REMOVE_CWD_FROM_DLL_SEARCH } from './win-dll-search'
 
 let pythonProcess: ChildProcess | null = null
+let analyticsSink: AnalyticsSink | null = null
 let isIntentionalShutdown = false
 let lastCrashTime = 0
 const CRASH_DEBOUNCE_MS = 10_000
 let startPromise: Promise<void> | null = null
 let takeoverInFlight: Promise<void> | null = null
+let startEpoch = 0
+
+function closeAnalyticsSink(): void {
+  const sink = analyticsSink
+  analyticsSink = null
+  if (sink) void sink.close()
+}
 
 // HTTP liveness monitoring: once the backend has answered /health after
 // startup, poll it periodically. On sustained failure, SIGTERM the process so
@@ -24,14 +35,32 @@ const STARTUP_PROBE_TIMEOUT_MS = 30_000
 const STARTUP_PROBE_INTERVAL_MS = 500
 const LIVENESS_POLL_INTERVAL_MS = 10_000
 const LIVENESS_FAILURE_THRESHOLD = 5
+// Kill-grace from the backend's generation proof-of-life file: a GIL-saturated
+// backend can't serve /health but is still progressing, so a fresh heartbeat
+// (refreshed every 15s while any local generation executes) skips the kill.
+// 3 minutes covers the worst observed stall (~70s of MPS model build) with
+// margin. The grace itself is capped: a backend deadlocked with a live writer
+// thread still fails closed to the kill, just late.
+const LIVENESS_GRACE_MAX_HEARTBEAT_AGE_MS = 180_000
+const LIVENESS_GRACE_CAP_MS = 10 * 60_000
 let livenessMonitorTimer: NodeJS.Timeout | null = null
 let livenessFailureCount = 0
+let livenessGraceSince: number | null = null
 
-// Local generations can starve the Python event loop long enough for /health probes to time out.
-// The renderer sets this while a generation request is in flight so the liveness monitor does not
-// kill a busy backend. The timeout prevents a renderer crash from disabling liveness forever.
-const MAX_LIVENESS_SUPPRESSION_MS = 20 * 60_000
+// A local generation can hold the Python process's GIL for long, uninterrupted stretches (MPS
+// PyTorch ops release it far less eagerly than CUDA), which starves the asyncio event loop that
+// would otherwise accept and dispatch the /health request — the backend isn't hung, it's just
+// busy, but the liveness probe can't tell the difference and would otherwise kill it mid-
+// generation. The renderer tells us when one is in flight so we can suspend the kill-on-failure
+// behavior for its duration. Bounded by MAX_SUPPRESSION_MS so a renderer crash/reload that never
+// clears the flag can't permanently disable the safety net for a genuinely hung backend.
+const MAX_SUPPRESSION_MS = 20 * 60_000
 let generationActiveSince: number | null = null
+// Ref-counted: withGenerationActive scopes can overlap (e.g. a second click that 409s fast
+// while the first generation is still running) — a plain boolean would let the loser's exit
+// clear suppression mid-generation. Depth also means only the 0->1 transition stamps
+// generationActiveSince, so an overlapping/looping notification can't keep resetting the
+// MAX_SUPPRESSION_MS clock the comment above promises.
 let activeGenerationCount = 0
 
 export function setGenerationActive(active: boolean): void {
@@ -45,8 +74,12 @@ export function setGenerationActive(active: boolean): void {
   if (activeGenerationCount === 0) generationActiveSince = null
 }
 
+export function isGenerationActive(): boolean {
+  return activeGenerationCount > 0
+}
+
 function isLivenessSuppressed(): boolean {
-  return generationActiveSince != null && Date.now() - generationActiveSince < MAX_LIVENESS_SUPPRESSION_MS
+  return generationActiveSince != null && Date.now() - generationActiveSince < MAX_SUPPRESSION_MS
 }
 
 let backendUrl: string | null = null
@@ -151,27 +184,54 @@ function stopLivenessMonitor(): void {
     livenessMonitorTimer = null
   }
   livenessFailureCount = 0
+  livenessGraceSince = null
 }
 
 function startLivenessMonitor(): void {
   stopLivenessMonitor()
+  // A crashed backend's leftover file must not grace this instance (the pid
+  // check would reject it anyway; this is hygiene for pid reuse).
+  clearHeartbeatFile(getAppDataDir())
   livenessMonitorTimer = setInterval(() => {
     void (async () => {
       if (!pythonProcess || backendOwnership !== 'managed' || isIntentionalShutdown) {
         return
       }
       if (isLivenessSuppressed()) {
+        // Suppression means the renderer attests liveness, so the grace cap
+        // clock must not accrue across it — otherwise a long suppressed run
+        // could exhaust the cap before the first grace check ever runs.
+        livenessGraceSince = null
         return
       }
       const healthy = await probeBackendHealth(2000)
       if (healthy) {
         livenessFailureCount = 0
+        livenessGraceSince = null
         return
       }
       livenessFailureCount += 1
       logger.warn(`Backend liveness probe failed (${livenessFailureCount}/${LIVENESS_FAILURE_THRESHOLD})`)
       if (livenessFailureCount >= LIVENESS_FAILURE_THRESHOLD) {
-        logger.error('Backend liveness probe failed repeatedly — killing process to trigger restart')
+        const outcome = decideThresholdTick({
+          graceSinceMs: livenessGraceSince,
+          heartbeat: readHeartbeatState(getAppDataDir()),
+          backendPid: pythonProcess?.pid,
+          nowMs: Date.now(),
+          graceMaxHeartbeatAgeMs: LIVENESS_GRACE_MAX_HEARTBEAT_AGE_MS,
+          graceCapMs: LIVENESS_GRACE_CAP_MS,
+        })
+        if (outcome.action === 'grace') {
+          livenessGraceSince = outcome.graceSinceMs
+          logger.warn('Backend liveness probe failing but generation heartbeat is fresh — giving it more time')
+          livenessFailureCount = 0
+          return
+        }
+        if (outcome.reason === 'grace-cap-exceeded') {
+          logger.error('Backend liveness probe failing past grace cap despite fresh heartbeat — killing process to trigger restart')
+        } else {
+          logger.error('Backend liveness probe failed repeatedly — killing process to trigger restart')
+        }
         stopLivenessMonitor()
         try {
           pythonProcess?.kill('SIGTERM')
@@ -287,8 +347,25 @@ export async function startPythonBackend(): Promise<void> {
   }
 
   isIntentionalShutdown = false
+  const epoch = startEpoch
 
-  startPromise = new Promise((resolve, reject) => {
+  const openSink: Promise<AnalyticsSink | null> = analyticsSink
+    ? Promise.resolve(analyticsSink)
+    : startAnalyticsSink(sendAnalyticsEvent).catch((error: unknown) => {
+        const message = error instanceof Error ? error.message : String(error)
+        logger.warn(`Analytics sink failed to start; continuing without it: ${message}`)
+        return null
+      })
+
+  startPromise = openSink.then((sink) => new Promise<void>((resolve, reject) => {
+    if (epoch !== startEpoch) {
+      if (sink && sink !== analyticsSink) void sink.close()
+      reject(new Error('Python backend stopped during startup'))
+      return
+    }
+    if (sink) {
+      analyticsSink = sink
+    }
     const pythonPath = getPythonPath()
     const backendPath = getBackendPath()
     const mainPy = path.join(backendPath, 'ltx2_server.py')
@@ -300,7 +377,7 @@ export async function startPythonBackend(): Promise<void> {
     // can't be found. Use a -c wrapper to fix sys.path before running the server.
     let pythonArgs: string[]
     if (!isDev && process.platform === 'win32') {
-      const preamble = `import sys; sys.path.insert(0, r"${backendPath}"); import runpy; runpy.run_path(r"${mainPy}", run_name="__main__")`
+      const preamble = `${PY_REMOVE_CWD_FROM_DLL_SEARCH}import sys; sys.path.insert(0, r"${backendPath}"); import runpy; runpy.run_path(r"${mainPy}", run_name="__main__")`
       pythonArgs = ['-u', '-c', preamble]
     } else {
       pythonArgs = isDev ? ['-Xfrozen_modules=off', '-u', mainPy] : ['-u', mainPy]
@@ -316,14 +393,44 @@ export async function startPythonBackend(): Promise<void> {
         ...process.env,
         PYTHONUNBUFFERED: '1',
         PYTHONNOUSERSITE: '1',
+        // Put the interpreter's bin/ on PATH so torch's C++ extension loader can find
+        // `ninja` — required to load mps-sdpa's zero-copy `mpsgraph_zc` attention
+        // backend on Apple Silicon (even a prebuilt cache needs ninja to load; without
+        // it, mps-sdpa falls back to a Metal-memory-leaking backend). macOS-only so it
+        // can't shadow PATH entries for backend subprocesses on Windows/Linux.
+        ...(process.platform === 'darwin' ? {
+          PATH: `${path.dirname(pythonPath)}${path.delimiter}${process.env.PATH ?? ''}`,
+          // Skip mps-sdpa's import-time microbench: it can cache fused_min_bytes=None
+          // ("always stock"), which routes video-length attention through stock MPS
+          // SDPA and OOMs (https://github.com/Lightricks/LTX-Desktop/issues/161).
+          // Honor an explicit parent value (matches setdefault in ltx2_server.py).
+          MPS_SDPA_SKIP_CALIBRATION: process.env.MPS_SDPA_SKIP_CALIBRATION ?? '1',
+        } : {}),
         // Only pass LTX_PORT when the developer explicitly set it
         ...(process.env.LTX_PORT ? { LTX_PORT: process.env.LTX_PORT } : {}),
+        ...(process.env.LTX_REMOTE_PORT ? { LTX_REMOTE_PORT: process.env.LTX_REMOTE_PORT } : {}),
+        ...(process.env.LTX_REMOTE_CLIENT_DIR ? { LTX_REMOTE_CLIENT_DIR: process.env.LTX_REMOTE_CLIENT_DIR } : {}),
+        ...(!isDev ? {
+          LTX_REMOTE_CLIENT_DIR: process.env.LTX_REMOTE_CLIENT_DIR
+            ?? path.join(process.resourcesPath, 'dist-remote'),
+        } : {}),
         LTX_AUTH_TOKEN: authToken,
         LTX_ADMIN_TOKEN: adminToken,
         LTX_LOG_FILE: getCurrentLogFilename(),
         LTX_APP_DATA_DIR: getAppDataDir(),
         LTX_DEV_MODE: isDev ? '1' : '0',
-        LTX_HF_GATING_ENABLED: HF_GATING_ENABLED ? '1' : '0',
+        LTX_ANALYTICS_SINK_URL: sink?.url ?? '',
+        LTX_ANALYTICS_TOKEN: sink?.token ?? '',
+        // Explore UI is gated on local_viable; designers on low-RAM Macs still need
+        // to iterate in pnpm dev without closing every other app first.
+        // Honor an explicit parent value: LTX_DEV_FORCE_LOCAL_VIABLE=0 turns the
+        // override off, so a developer can see the real "unsupported" state.
+        ...(isDev ? { LTX_DEV_FORCE_LOCAL_VIABLE: process.env.LTX_DEV_FORCE_LOCAL_VIABLE ?? '1' } : {}),
+        // Bundled prebuilt mps-sdpa zero-copy extension cache (macOS). Lives inside
+        // python-embed (→ resources/python) so it rides the CI python-embed cache. The
+        // backend direct-imports the .so from here (mps_prebuilt_ext.py), no copy step;
+        // ignored if absent (dev, where torch JIT-builds it instead).
+        LTX_MPS_EXT_PREBUILT_DIR: path.join(getPythonDir(), 'mps-ext-prebuilt', 'mps_sdpa_zc_ext'),
         PYTORCH_ENABLE_MPS_FALLBACK: '1',
         // Set PYTHONHOME for bundled Python on macOS so it finds its stdlib
         ...(!isDev && process.platform !== 'win32' ? {
@@ -386,13 +493,6 @@ export async function startPythonBackend(): Promise<void> {
         backendUrl = readyMatch[1]
         probeGateStarted = true
         void gateAliveOnProbe()
-      } else if (output.includes('Uvicorn running')) {
-        // Fallback for legacy/dev uvicorn output — no parseable URL, so we
-        // can't HTTP-probe. Publish alive on the log signal alone.
-        started = true
-        backendOwnership = 'managed'
-        publishBackendHealthStatus({ status: 'alive' })
-        settleResolve()
       }
     }
 
@@ -425,8 +525,8 @@ export async function startPythonBackend(): Promise<void> {
       }
     })
 
-    pythonProcess.on('exit', async (code) => {
-      logger.info(`Python backend exited with code ${code}`)
+    pythonProcess.on('exit', async (code, signal) => {
+      logger.info(`Python backend exited with code ${code} signal ${signal}`)
       stopLivenessMonitor()
       pythonProcess = null
       backendUrl = null
@@ -437,6 +537,7 @@ export async function startPythonBackend(): Promise<void> {
         if (isIntentionalShutdown) {
           isIntentionalShutdown = false
           backendOwnership = null
+          closeAnalyticsSink()
           settleReject(new Error('Python backend stopped during startup'))
           return
         }
@@ -463,6 +564,7 @@ export async function startPythonBackend(): Promise<void> {
       if (isIntentionalShutdown) {
         isIntentionalShutdown = false
         backendOwnership = null
+        closeAnalyticsSink()
         return
       }
 
@@ -497,7 +599,7 @@ export async function startPythonBackend(): Promise<void> {
       publishBackendHealthStatus({ status: 'dead' })
       settleReject(new Error('Python backend failed to start within 5 minutes'))
     }, 300000)
-  })
+  }))
 
   try {
     await startPromise
@@ -507,6 +609,8 @@ export async function startPythonBackend(): Promise<void> {
 }
 
 export function stopPythonBackend(): void {
+  startEpoch += 1
+
   if (pythonProcess) {
     isIntentionalShutdown = true
     stopLivenessMonitor()
@@ -527,6 +631,8 @@ export function stopPythonBackend(): void {
     }
     return
   }
+
+  closeAnalyticsSink()
 
   if (backendOwnership === 'adopted') {
     backendOwnership = null

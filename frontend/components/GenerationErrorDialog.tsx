@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { AlertCircle, ChevronDown, ChevronRight, X } from 'lucide-react'
-import type { GenerationError } from '../lib/generation-errors'
+import { LOCAL_GENERATION_RAM_SHORTFALL, LOCAL_GENERATION_UNSUPPORTED, LTX_API_KEY_MISSING, LTX_INVALID_API_KEY, isActionableLocalCode, type GenerationError } from '../lib/generation-errors'
+import { LTX_KEY_REQUIRED_SETTINGS_DETAIL } from '../lib/open-ltx-api-key-settings'
 
 interface GenerationErrorDialogProps {
   error: GenerationError
@@ -34,12 +35,18 @@ function getGenericHumanMessage(message: string): string {
   return 'Something went wrong during generation. Please try again.'
 }
 
+const DEFAULT_DISMISS_LABEL = 'Try Again'
+
 function getDialogModel(error: GenerationError): {
   humanMessage: string
   technicalDetails: string
+  /** Label for the dismiss button. Retrying cannot help for some codes. */
+  dismissLabel: string
   primaryAction?: {
     label: string
     onClick: () => void
+    /** Close the dialog after the action. Buy Credits leaves it open. */
+    dismissAfter?: boolean
   }
 } {
   switch (error.status) {
@@ -49,6 +56,7 @@ function getDialogModel(error: GenerationError): {
           return {
             humanMessage: 'Your LTX API credits are insufficient for this generation. Buy more credits in LTX and try again.',
             technicalDetails: JSON.stringify(error.error, null, 2),
+            dismissLabel: DEFAULT_DISMISS_LABEL,
             primaryAction: {
               label: 'Buy Credits',
               onClick: () => {
@@ -61,9 +69,43 @@ function getDialogModel(error: GenerationError): {
     case '4XX':
     case '5XX':
     case 'default':
+      if (
+        error.error.code === LTX_INVALID_API_KEY ||
+        error.error.code === LTX_API_KEY_MISSING
+      ) {
+        return {
+          humanMessage: error.error.message,
+          technicalDetails: JSON.stringify(error.error, null, 2),
+          dismissLabel: 'Close',
+          primaryAction: {
+            label: 'API Keys',
+            dismissAfter: true,
+            onClick: () => {
+              window.dispatchEvent(new CustomEvent('open-settings', {
+                detail: LTX_KEY_REQUIRED_SETTINGS_DETAIL,
+              }))
+            },
+          },
+        }
+      }
+      if (isActionableLocalCode(error.error.code)) {
+        return {
+          humanMessage: error.error.message,
+          technicalDetails: JSON.stringify(error.error, null, 2),
+          // The too-large codes clear by changing resolution or duration; unsupported
+          // hardware and RAM shortfall do not, so retrying is the one thing that
+          // cannot work.
+          dismissLabel:
+            error.error.code === LOCAL_GENERATION_UNSUPPORTED ||
+            error.error.code === LOCAL_GENERATION_RAM_SHORTFALL
+              ? 'Close'
+              : DEFAULT_DISMISS_LABEL,
+        }
+      }
       return {
         humanMessage: getGenericHumanMessage(error.error.message),
         technicalDetails: JSON.stringify(error.error, null, 2),
+        dismissLabel: DEFAULT_DISMISS_LABEL,
       }
     default:
       return assertNever(error)
@@ -117,12 +159,15 @@ export function GenerationErrorDialog({ error, onDismiss }: GenerationErrorDialo
               onClick={onDismiss}
               className="px-4 py-2 bg-zinc-800 text-zinc-100 text-sm font-medium rounded-lg hover:bg-zinc-700 transition-colors"
             >
-              Try Again
+              {dialogModel.dismissLabel}
             </button>
           ) : null}
           {dialogModel.primaryAction ? (
             <button
-              onClick={dialogModel.primaryAction.onClick}
+              onClick={() => {
+                dialogModel.primaryAction?.onClick()
+                if (dialogModel.primaryAction?.dismissAfter) onDismiss()
+              }}
               className="px-4 py-2 bg-zinc-100 text-zinc-900 text-sm font-medium rounded-lg hover:bg-white transition-colors"
             >
               {dialogModel.primaryAction.label}
@@ -132,7 +177,7 @@ export function GenerationErrorDialog({ error, onDismiss }: GenerationErrorDialo
               onClick={onDismiss}
               className="px-4 py-2 bg-zinc-100 text-zinc-900 text-sm font-medium rounded-lg hover:bg-white transition-colors"
             >
-              Try Again
+              {dialogModel.dismissLabel}
             </button>
           )}
         </div>

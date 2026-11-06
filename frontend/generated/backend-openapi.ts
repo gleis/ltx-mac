@@ -4,6 +4,369 @@
  */
 
 export interface paths {
+    "/api/assets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Route List Assets */
+        get: operations["route_list_assets"];
+        put?: never;
+        /** Route Ingest Asset */
+        post: operations["route_ingest_asset_api_assets_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/assets/{asset_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Route Get Asset */
+        get: operations["route_get_asset_api_assets__asset_id__get"];
+        put?: never;
+        post?: never;
+        /** Route Delete Asset */
+        delete: operations["route_delete_asset"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/assets/{asset_id}/bytes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Route Desktop Asset Bytes */
+        get: operations["route_desktop_asset_bytes"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        /** Route Desktop Asset Bytes */
+        head: operations["route_desktop_asset_bytes_api_assets__asset_id__bytes_head"];
+        patch?: never;
+        trace?: never;
+    };
+    "/api/assets/{asset_id}/extract-audio": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Route Extract Audio */
+        post: operations["route_extract_audio_api_assets__asset_id__extract_audio_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/assets/{asset_id}/thumbnail/bytes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Route Desktop Asset Thumbnail Bytes */
+        get: operations["route_desktop_asset_thumbnail_bytes"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        /** Route Desktop Asset Thumbnail Bytes */
+        head: operations["route_desktop_asset_thumbnail_bytes_api_assets__asset_id__thumbnail_bytes_head"];
+        patch?: never;
+        trace?: never;
+    };
+    "/api/assets/{asset_id}/trim-audio": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Route Trim Audio */
+        post: operations["route_trim_audio_api_assets__asset_id__trim_audio_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/assets/{asset_id}/trim-video": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Route Trim Video */
+        post: operations["route_trim_video_api_assets__asset_id__trim_video_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/assistant/conversations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Conversations */
+        get: operations["list_conversations_api_assistant_conversations_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/assistant/conversations/{conversation_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Conversation */
+        get: operations["get_conversation_api_assistant_conversations__conversation_id__get"];
+        put?: never;
+        post?: never;
+        /** Delete Conversation */
+        delete: operations["delete_conversation_api_assistant_conversations__conversation_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/assistant/conversations/{conversation_id}/queue": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Enqueue Message */
+        post: operations["enqueue_message_api_assistant_conversations__conversation_id__queue_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/assistant/conversations/{conversation_id}/queue/release": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Release Queue */
+        post: operations["release_queue_api_assistant_conversations__conversation_id__queue_release_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/assistant/conversations/{conversation_id}/queue/{item_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove Queued Message */
+        delete: operations["remove_queued_message_api_assistant_conversations__conversation_id__queue__item_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/assistant/models": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Assistant Models */
+        get: operations["assistant_models_api_assistant_models_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/assistant/models/delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Delete Assistant Model */
+        post: operations["delete_assistant_model_api_assistant_models_delete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/assistant/models/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Download Assistant Model */
+        post: operations["download_assistant_model_api_assistant_models_download_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/assistant/runs/{run_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Assistant Run */
+        get: operations["assistant_run_api_assistant_runs__run_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/assistant/runs/{run_id}/continue": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Continue Assistant */
+        post: operations["continue_assistant_api_assistant_runs__run_id__continue_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/assistant/runs/{run_id}/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Assistant Events */
+        get: operations["assistant_events_api_assistant_runs__run_id__events_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/assistant/runs/{run_id}/stop": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Stop Assistant */
+        post: operations["stop_assistant_api_assistant_runs__run_id__stop_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/assistant/selection": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Assistant Selection */
+        get: operations["assistant_selection_api_assistant_selection_get"];
+        /** Set Assistant Selection */
+        put: operations["set_assistant_selection_api_assistant_selection_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/assistant/turn": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Assistant Turn */
+        post: operations["assistant_turn_api_assistant_turn_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/auth/huggingface/callback": {
         parameters: {
             query?: never;
@@ -72,6 +435,61 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/enhance-prompt": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Route Enhance Prompt
+         * @description POST /api/enhance-prompt.
+         */
+        post: operations["route_enhance_prompt_api_enhance_prompt_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/extend": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Route Extend */
+        post: operations["route_extend_api_extend_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/feature-flags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Route Get Feature Flags */
+        get: operations["route_get_feature_flags_api_feature_flags_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Route Update Feature Flags */
+        patch: operations["route_update_feature_flags_api_feature_flags_patch"];
+        trace?: never;
+    };
     "/api/generate": {
         parameters: {
             query?: never;
@@ -132,6 +550,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/generate/estimate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Route Generate Estimate
+         * @description POST /api/generate/estimate — pre-generate wall-time estimate for one cell.
+         *
+         *     Kept intentionally: no current in-repo callers, but this is the
+         *     foundation for post-V1 ETA work. Do not remove as dead surface.
+         */
+        post: operations["route_generate_estimate_api_generate_estimate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/generate/models-specs": {
         parameters: {
             query?: never;
@@ -146,6 +587,126 @@ export interface paths {
         get: operations["route_generate_model_specs_api_generate_models_specs_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/generation-queue": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Route Get Generation Queue */
+        get: operations["route_get_generation_queue_api_generation_queue_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/generation-queue/done/clear": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Route Clear Generation Queue Done */
+        post: operations["route_clear_generation_queue_done_api_generation_queue_done_clear_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/generation-queue/done/{generation_id}/dismiss": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Route Dismiss Generation Queue Done */
+        post: operations["route_dismiss_generation_queue_done_api_generation_queue_done__generation_id__dismiss_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/generation-queue/done/{generation_id}/seen": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Route Mark Generation Queue Done Seen */
+        post: operations["route_mark_generation_queue_done_seen_api_generation_queue_done__generation_id__seen_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/generation-queue/failed/clear": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Route Clear Generation Queue Failed */
+        post: operations["route_clear_generation_queue_failed_api_generation_queue_failed_clear_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/generation-queue/reorder": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Route Reorder Generation Queue */
+        post: operations["route_reorder_generation_queue_api_generation_queue_reorder_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/generation-seed": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Route Get Generation Seed */
+        get: operations["route_get_generation_seed_api_generation_seed_get"];
+        put?: never;
+        /** Route Post Generation Seed */
+        post: operations["route_post_generation_seed_api_generation_seed_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -172,6 +733,231 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/generations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Route List Generations */
+        get: operations["route_list_generations_api_generations_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/generations/audio-to-video": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Route Create Audio To Video */
+        post: operations["route_create_audio_to_video_api_generations_audio_to_video_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/generations/edit/preflight": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Route Preflight Edit */
+        post: operations["route_preflight_edit_api_generations_edit_preflight_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/generations/extend": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Route Create Extend */
+        post: operations["route_create_extend_api_generations_extend_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/generations/ic-lora-recipes/{recipe_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Route Create Ic Lora Recipe */
+        post: operations["route_create_ic_lora_recipe_api_generations_ic_lora_recipes__recipe_id__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/generations/image-to-video": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Route Create Image To Video */
+        post: operations["route_create_image_to_video_api_generations_image_to_video_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/generations/recent-features": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Route List Recent Features
+         * @description Distinct Explore features, newest generation first. Same list as remote.
+         */
+        get: operations["route_list_recent_features_api_generations_recent_features_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/generations/recipes/{recipe_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Route Create Lora Recipe */
+        post: operations["route_create_lora_recipe_api_generations_recipes__recipe_id__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/generations/retake": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Route Create Retake */
+        post: operations["route_create_retake_api_generations_retake_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/generations/text-to-video": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Route Create Text To Video */
+        post: operations["route_create_text_to_video_api_generations_text_to_video_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/generations/{generation_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Route Get Generation */
+        get: operations["route_get_generation_api_generations__generation_id__get"];
+        put?: never;
+        post?: never;
+        /** Route Delete Generation */
+        delete: operations["route_delete_generation_api_generations__generation_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/generations/{generation_id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Route Cancel Generation */
+        post: operations["route_cancel_generation_api_generations__generation_id__cancel_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/generations/{generation_id}/retry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Route Retry Generation */
+        post: operations["route_retry_generation_api_generations__generation_id__retry_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/gpu-info": {
         parameters: {
             query?: never;
@@ -181,6 +967,23 @@ export interface paths {
         };
         /** Route Gpu Info */
         get: operations["route_gpu_info_api_gpu_info_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/gpu-info/mps": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Route Mps Memory */
+        get: operations["route_mps_memory_api_gpu_info_mps_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -223,6 +1026,231 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/ic-lora/preflight": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Route Ic Lora Preflight */
+        post: operations["route_ic_lora_preflight_api_ic_lora_preflight_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/ic-loras": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Route List Ic Loras */
+        get: operations["route_list_ic_loras_api_ic_loras_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/ic-loras/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Route Ic Lora Download */
+        post: operations["route_ic_lora_download_api_ic_loras_download_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/ic-loras/download/active": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Route Ic Lora Download Active */
+        get: operations["route_ic_lora_download_active_api_ic_loras_download_active_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/ic-loras/download/progress": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Route Ic Lora Download Progress */
+        get: operations["route_ic_lora_download_progress_api_ic_loras_download_progress_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/ic-loras/installation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Route Delete Ic Lora Installation */
+        delete: operations["route_delete_ic_lora_installation_api_ic_loras_installation_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/loras": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Route List Loras */
+        get: operations["route_list_loras_api_loras_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/loras/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Route Lora Download */
+        post: operations["route_lora_download_api_loras_download_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/loras/download/active": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Route Lora Download Active */
+        get: operations["route_lora_download_active_api_loras_download_active_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/loras/download/progress": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Route Lora Download Progress */
+        get: operations["route_lora_download_progress_api_loras_download_progress_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/loras/installation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Route Delete Lora Installation */
+        delete: operations["route_delete_lora_installation_api_loras_installation_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/models": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Route List Models
+         * @description Return installed model files. ?type=lora -> regular LoRAs only;
+         *     ?type=ic-lora -> IC-LoRAs only; no type -> all installed models.
+         */
+        get: operations["route_list_models_api_models_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/models/active-ltx-model": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Route Set Active Ltx Model */
+        post: operations["route_set_active_ltx_model_api_models_active_ltx_model_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/models/check-access": {
         parameters: {
             query?: never;
@@ -257,6 +1285,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/models/describe": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Route Describe Checkpoints */
+        post: operations["route_describe_checkpoints_api_models_describe_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/models/download": {
         parameters: {
             query?: never;
@@ -268,6 +1313,23 @@ export interface paths {
         put?: never;
         /** Route Model Download */
         post: operations["route_model_download_api_models_download_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/models/download/active": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Route Active Download */
+        get: operations["route_active_download_api_models_download_active_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -342,6 +1404,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/models/ltx-versions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Route Ltx Versions */
+        get: operations["route_ltx_versions_api_models_ltx_versions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/models/text-encoder-recommendation": {
         parameters: {
             query?: never;
@@ -351,6 +1430,77 @@ export interface paths {
         };
         /** Route Text Encoder Recommendation */
         get: operations["route_text_encoder_recommendation_api_models_text_encoder_recommendation_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/prompt-enhancer": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Route Prompt Enhancer
+         * @description GET /api/prompt-enhancer.
+         */
+        get: operations["route_prompt_enhancer_api_prompt_enhancer_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/remote/devices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Route List Remote Devices */
+        get: operations["route_list_remote_devices_api_remote_devices_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/remote/devices/{device_id}/revoke": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Route Revoke Remote Device */
+        post: operations["route_revoke_remote_device_api_remote_devices__device_id__revoke_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/remote/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Route Remote Status */
+        get: operations["route_remote_status_api_remote_status_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -405,6 +1555,58 @@ export interface paths {
         put?: never;
         /** Route Post Settings */
         post: operations["route_post_settings_api_settings_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/settings/gemini-models": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Route List Gemini Models */
+        get: operations["route_list_gemini_models_api_settings_gemini_models_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stats/activity-dashboard-selections": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Route Get Dashboard Selection */
+        get: operations["route_get_dashboard_selection_api_stats_activity_dashboard_selections_get"];
+        put?: never;
+        /** Route Post Dashboard Selection */
+        post: operations["route_post_dashboard_selection_api_stats_activity_dashboard_selections_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stats/dashboard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Route Dashboard */
+        get: operations["route_dashboard_api_stats_dashboard_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -466,12 +1668,63 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** ActiveDownloadResponse */
+        ActiveDownloadResponse: {
+            /** Cp Ids */
+            cp_ids: ("ltx-2.3-22b-distilled" | "ltx-2.3-mlx-q4" | "ltx-2.3-22b-distilled-1.1" | "ltx-2.3-spatial-upscaler-x2-1.0" | "ltx-2.3-spatial-upscaler-x2-1.1" | "ltx-2.3-22b-ic-lora-union-control-ref0.5" | "ltx-2.5-22b-distilled" | "ltx-2.5-spatial-upscaler-x2-1.0" | "ltx-2.5-video-vae" | "ltx-2.5-video-vae-conv" | "ltx-2.5-audio-vae" | "ltx-2.5-duration-head" | "dpt-hybrid-midas" | "yolox-l-torchscript" | "dw-ll-ucoco-384-bs5" | "gemma-3-12b-it-qat-q4_0-unquantized" | "gemma-3-12b-it-4bit" | "gemma4-12b-with-proj-ltx-2.5" | "gemma-4-e2b-it" | "z-image-turbo")[];
+            /** Session Id */
+            session_id: string | null;
+        };
+        /** ActiveIcLoraDownloadResponse */
+        ActiveIcLoraDownloadResponse: {
+            /** Ic Lora Id */
+            ic_lora_id: string | null;
+            /** Progress */
+            progress?: number | null;
+            /** Session Id */
+            session_id: string | null;
+        };
+        /** ActiveLoraDownloadResponse */
+        ActiveLoraDownloadResponse: {
+            /** Lora Id */
+            lora_id: string | null;
+            /** Progress */
+            progress?: number | null;
+            /** Session Id */
+            session_id: string | null;
+        };
+        /** ActivityDay */
+        ActivityDay: {
+            /** Counts */
+            counts: {
+                [key: string]: number;
+            };
+            /** Day */
+            day: string;
+        };
         /** AppSettingsPatch */
         AppSettingsPatch: {
+            /** Activeltxmodelid */
+            activeLtxModelId?: ("ltx-2.3-mlx-q4" | "ltx-2.5-22b-distilled" | "ltx-2.3-22b-distilled-1.1" | "ltx-2.3-22b-distilled") | null;
+            activityDashboardSelections?: components["schemas"]["DashboardSelectionPatch"] | null;
+            /** Assistantlocalmodel */
+            assistantLocalModel?: "qwen3.5:9b" | null;
+            /** Assistantparallelgemini */
+            assistantParallelGemini?: boolean | null;
+            /** Assistantprovider */
+            assistantProvider?: ("gemini" | "local") | null;
+            /** Budgetmode */
+            budgetMode?: ("standard" | "reckless") | null;
+            /** Diffusionstagecacheenabled */
+            diffusionStageCacheEnabled?: boolean | null;
+            /** Exploreautoenhanceprompts */
+            exploreAutoEnhancePrompts?: boolean | null;
             /** Falapikey */
             falApiKey?: string | null;
             /** Geminiapikey */
             geminiApiKey?: string | null;
+            /** Geminimodel */
+            geminiModel?: string | null;
             /** Localmlxspeedmode */
             localMlxSpeedMode?: ("quality" | "boost" | "turbo") | null;
             /** Lockedseed */
@@ -482,18 +1735,336 @@ export interface components {
             modelsDir?: string | null;
             /** Promptcachesize */
             promptCacheSize?: number | null;
-            /** Promptenhancerenabledi2V */
-            promptEnhancerEnabledI2V?: boolean | null;
-            /** Promptenhancerenabledt2V */
-            promptEnhancerEnabledT2V?: boolean | null;
+            /** Promptenhancerenabled */
+            promptEnhancerEnabled?: boolean | null;
+            /** Promptenhancerproviderpreference */
+            promptEnhancerProviderPreference?: ("local" | "api") | null;
+            /** Remoteexposure */
+            remoteExposure?: ("off" | "lan") | null;
             /** Seedlocked */
             seedLocked?: boolean | null;
+            /** Useconvvae */
+            useConvVae?: boolean | null;
             /** Uselocaltextencoder */
             useLocalTextEncoder?: boolean | null;
             /** Usetorchcompile */
             useTorchCompile?: boolean | null;
+            /** Userprefersfalapiimagegenerations */
+            userPrefersFalApiImageGenerations?: boolean | null;
             /** Userprefersltxapivideogenerations */
             userPrefersLtxApiVideoGenerations?: boolean | null;
+        };
+        /** Asset */
+        Asset: {
+            /** Created At */
+            created_at: number;
+            /** Id */
+            id: string;
+            /**
+             * Media Kind
+             * @enum {string}
+             */
+            media_kind: "image" | "video" | "audio";
+            /** Metadata */
+            metadata: components["schemas"]["ImageAssetMetadata"] | components["schemas"]["VideoAssetMetadata"] | components["schemas"]["AudioAssetMetadata"];
+            /** Mime Type */
+            mime_type: string;
+            /** Name */
+            name: string;
+            /**
+             * Origin
+             * @enum {string}
+             */
+            origin: "uploaded" | "generated";
+            /** Path */
+            path: string;
+            /** Thumbnail Path */
+            thumbnail_path?: string | null;
+        };
+        /** AssetListItem */
+        AssetListItem: {
+            /** Created At */
+            created_at: number;
+            /** Id */
+            id: string;
+            /** In Use */
+            in_use: boolean;
+            /**
+             * Media Kind
+             * @enum {string}
+             */
+            media_kind: "image" | "video" | "audio";
+            /** Metadata */
+            metadata: components["schemas"]["ImageAssetMetadata"] | components["schemas"]["VideoAssetMetadata"] | components["schemas"]["AudioAssetMetadata"];
+            /** Mime Type */
+            mime_type: string;
+            /** Name */
+            name: string;
+            /**
+             * Origin
+             * @enum {string}
+             */
+            origin: "uploaded" | "generated";
+            /** Path */
+            path: string;
+            /** Thumbnail Path */
+            thumbnail_path?: string | null;
+        };
+        /** AssetListResponse */
+        AssetListResponse: {
+            /** Items */
+            items: components["schemas"]["AssetListItem"][];
+            /** Next Cursor */
+            next_cursor?: string | null;
+        };
+        /** AssistantConversation */
+        AssistantConversation: {
+            /** Conversation Id */
+            conversation_id: string;
+            /** Queue */
+            queue?: components["schemas"]["AssistantQueuedMessage"][];
+            /**
+             * Queue On Hold
+             * @default false
+             */
+            queue_on_hold: boolean;
+            /** Turns */
+            turns: components["schemas"]["AssistantConversationTurn"][];
+        };
+        /** AssistantConversationSummary */
+        AssistantConversationSummary: {
+            /** Conversation Id */
+            conversation_id: string;
+            /** Title */
+            title: string;
+            /** Updated At */
+            updated_at: number;
+        };
+        /** AssistantConversationTurn */
+        AssistantConversationTurn: {
+            /**
+             * Model
+             * @default
+             */
+            model: string;
+            /** Provider */
+            provider?: ("gemini" | "local") | null;
+            request: components["schemas"]["AssistantTurnRequest"];
+            response: components["schemas"]["AssistantTurnResponse"] | null;
+            /**
+             * Running
+             * @default false
+             */
+            running: boolean;
+        };
+        /** AssistantModelDownloadProgress */
+        AssistantModelDownloadProgress: {
+            /**
+             * Downloaded Bytes
+             * @default 0
+             */
+            downloaded_bytes: number;
+            /** Error */
+            error?: string | null;
+            /**
+             * Expected Bytes
+             * @default 0
+             */
+            expected_bytes: number;
+            /**
+             * Model
+             * @constant
+             */
+            model: "qwen3.5:9b";
+            /**
+             * Progress
+             * @default 0
+             */
+            progress: number;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "downloading" | "complete" | "error";
+        };
+        /** AssistantModelDownloadRequest */
+        AssistantModelDownloadRequest: {
+            /**
+             * Model
+             * @constant
+             */
+            model: "qwen3.5:9b";
+        };
+        /** AssistantModelItem */
+        AssistantModelItem: {
+            /** Installed */
+            installed: boolean;
+            /**
+             * Model
+             * @constant
+             */
+            model: "qwen3.5:9b";
+            /** Name */
+            name: string;
+            /** Size Bytes */
+            size_bytes: number;
+        };
+        /** AssistantModelsResponse */
+        AssistantModelsResponse: {
+            /** Available */
+            available: boolean;
+            download?: components["schemas"]["AssistantModelDownloadProgress"] | null;
+            /** Error */
+            error?: string | null;
+            /** Models */
+            models: components["schemas"]["AssistantModelItem"][];
+        };
+        /**
+         * AssistantQueueRequest
+         * @description A message for the chat's queue. `id` becomes the turn's request id when it starts.
+         */
+        AssistantQueueRequest: {
+            /** Asset Ids */
+            asset_ids?: string[];
+            /** Id */
+            id: string;
+            /** Model */
+            model?: string | null;
+            /** Provider */
+            provider?: ("gemini" | "local") | null;
+            /** Text */
+            text: string;
+        };
+        /** AssistantQueuedMessage */
+        AssistantQueuedMessage: {
+            /** Asset Ids */
+            asset_ids: string[];
+            /** Error */
+            error?: string | null;
+            /** Id */
+            id: string;
+            /** Model */
+            model?: string | null;
+            /** Provider */
+            provider?: ("gemini" | "local") | null;
+            /** Text */
+            text: string;
+        };
+        /**
+         * AssistantSelection
+         * @description The Desktop's assistant choice, readable by Remote, which cannot open Settings.
+         */
+        AssistantSelection: {
+            /** Gemini Model */
+            gemini_model: string;
+            /** Has Gemini Api Key */
+            has_gemini_api_key: boolean;
+            /**
+             * Local Model
+             * @constant
+             */
+            local_model: "qwen3.5:9b";
+            /**
+             * Provider
+             * @enum {string}
+             */
+            provider: "gemini" | "local";
+        };
+        /**
+         * AssistantSelectionRequest
+         * @description The one assistant choice Desktop Settings and both composers share.
+         */
+        AssistantSelectionRequest: {
+            /** Local Model */
+            local_model?: "qwen3.5:9b" | null;
+            /**
+             * Provider
+             * @enum {string}
+             */
+            provider: "gemini" | "local";
+        };
+        /** AssistantTurnRequest */
+        AssistantTurnRequest: {
+            /** Asset Ids */
+            asset_ids?: string[];
+            /** Conversation Id */
+            conversation_id: string;
+            /** Model */
+            model?: string | null;
+            /** Provider */
+            provider?: ("gemini" | "local") | null;
+            /** Request Id */
+            request_id: string;
+            /** Text */
+            text: string;
+        };
+        /** AssistantTurnResponse */
+        AssistantTurnResponse: {
+            /** Asset Ids */
+            asset_ids?: string[];
+            /** Generation Ids */
+            generation_ids?: string[];
+            /** Run Id */
+            run_id: string;
+            /**
+             * Status
+             * @default complete
+             * @enum {string}
+             */
+            status: "waiting" | "paused" | "complete" | "stopped";
+            /** Text */
+            text: string;
+        };
+        /** AudioAssetMetadata */
+        AudioAssetMetadata: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            mediaType: "audio";
+            metadata: components["schemas"]["AudioMeta"];
+        };
+        /** AudioMeta */
+        AudioMeta: {
+            /** Bitrate */
+            bitrate?: number | null;
+            /** Durationms */
+            durationMs: number;
+        } & {
+            [key: string]: unknown;
+        };
+        /** AudioToVideoInputs */
+        AudioToVideoInputs: {
+            audio: components["schemas"]["InputAssetRef"];
+            startFrame?: components["schemas"]["InputAssetRef"] | null;
+        };
+        /** AuthorSpec */
+        AuthorSpec: {
+            /**
+             * Affiliation
+             * @default community
+             * @enum {string}
+             */
+            affiliation: "ltx" | "community";
+            /** Name */
+            name: string;
+            /** Url */
+            url?: string | null;
+        };
+        /**
+         * BudgetReadout
+         * @description Need and have for a picker badge. The sentence stays on ``message``.
+         */
+        BudgetReadout: {
+            /** Have Gb */
+            have_gb?: number | null;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "gpu" | "gpu_busy" | "mac" | "ram" | "tight" | "untested";
+            /** Need Gb */
+            need_gb?: number | null;
         };
         /** CancelCancellingResponse */
         CancelCancellingResponse: {
@@ -513,10 +2084,17 @@ export interface components {
              */
             status: "no_active_generation";
         };
+        /** CatalogDownloadStartResponse */
+        CatalogDownloadStartResponse: {
+            /** Sessionid */
+            sessionId: string;
+            /** Status */
+            status: string;
+        };
         /** CheckModelAccessRequest */
         CheckModelAccessRequest: {
             /** Cp Ids */
-            cp_ids?: ("ltx-2.3-22b-distilled" | "ltx-2.3-mlx-q4" | "ltx-2.3-spatial-upscaler-x2-1.0" | "ltx-2.3-22b-ic-lora-union-control-ref0.5" | "dpt-hybrid-midas" | "yolox-l-torchscript" | "dw-ll-ucoco-384-bs5" | "gemma-3-12b-it-qat-q4_0-unquantized" | "gemma-3-12b-it-4bit" | "z-image-turbo")[];
+            cp_ids?: ("ltx-2.3-22b-distilled" | "ltx-2.3-mlx-q4" | "ltx-2.3-22b-distilled-1.1" | "ltx-2.3-spatial-upscaler-x2-1.0" | "ltx-2.3-spatial-upscaler-x2-1.1" | "ltx-2.3-22b-ic-lora-union-control-ref0.5" | "ltx-2.5-22b-distilled" | "ltx-2.5-spatial-upscaler-x2-1.0" | "ltx-2.5-video-vae" | "ltx-2.5-video-vae-conv" | "ltx-2.5-audio-vae" | "ltx-2.5-duration-head" | "dpt-hybrid-midas" | "yolox-l-torchscript" | "dw-ll-ucoco-384-bs5" | "gemma-3-12b-it-qat-q4_0-unquantized" | "gemma-3-12b-it-4bit" | "gemma4-12b-with-proj-ltx-2.5" | "gemma-4-e2b-it" | "z-image-turbo")[];
         };
         /** CheckModelAccessResponse */
         CheckModelAccessResponse: {
@@ -524,6 +2102,287 @@ export interface components {
             access: {
                 [key: string]: "authorized" | "not_authorized";
             };
+        };
+        /** CheckpointDescriptor */
+        CheckpointDescriptor: {
+            /**
+             * Cp Id
+             * @enum {string}
+             */
+            cp_id: "ltx-2.3-22b-distilled" | "ltx-2.3-mlx-q4" | "ltx-2.3-22b-distilled-1.1" | "ltx-2.3-spatial-upscaler-x2-1.0" | "ltx-2.3-spatial-upscaler-x2-1.1" | "ltx-2.3-22b-ic-lora-union-control-ref0.5" | "ltx-2.5-22b-distilled" | "ltx-2.5-spatial-upscaler-x2-1.0" | "ltx-2.5-video-vae" | "ltx-2.5-video-vae-conv" | "ltx-2.5-audio-vae" | "ltx-2.5-duration-head" | "dpt-hybrid-midas" | "yolox-l-torchscript" | "dw-ll-ucoco-384-bs5" | "gemma-3-12b-it-qat-q4_0-unquantized" | "gemma-3-12b-it-4bit" | "gemma4-12b-with-proj-ltx-2.5" | "gemma-4-e2b-it" | "z-image-turbo";
+            /** Downloaded */
+            downloaded: boolean;
+            /** Name */
+            name: string;
+            /**
+             * Role
+             * @enum {string}
+             */
+            role: "base" | "upscaler" | "text_encoder" | "vae" | "image" | "support" | "prompt_enhancer";
+            /** Size Bytes */
+            size_bytes: number;
+        };
+        /**
+         * ChunkedFastCell
+         * @description One kept cell the local budget runs in overlapping windows, not one pass.
+         *
+         *     The picker tells the user it takes longer. ``windows`` is the job's window count and
+         *     ``window_frames`` the pixel frames of one window. A cell that loads in a single pass never
+         *     appears. Same ``audio`` split as the warned cells (A2V rides its own grid).
+         */
+        ChunkedFastCell: {
+            /** Audio */
+            audio: boolean;
+            /**
+             * Duration
+             * @enum {integer}
+             */
+            duration: 2 | 3 | 4 | 5 | 6 | 8 | 10 | 12 | 14 | 16 | 18 | 20;
+            /**
+             * Fps
+             * @enum {integer}
+             */
+            fps: 24 | 25 | 48 | 50;
+            /**
+             * Resolution
+             * @enum {string}
+             */
+            resolution: "270p" | "360p" | "540p" | "720p" | "1080p" | "1440p" | "2160p";
+            /** Window Frames */
+            window_frames: number;
+            /** Windows */
+            windows: number;
+        };
+        /**
+         * CreateAudioToVideoParams
+         * @description Public non-media A2V inputs; the server derives inference frames from audio.
+         */
+        CreateAudioToVideoParams: {
+            /**
+             * Aspectratio
+             * @default 16:9
+             * @enum {string}
+             */
+            aspectRatio: "auto" | "21:9" | "16:9" | "3:2" | "4:3" | "1:1" | "4:5" | "9:16";
+            /**
+             * Cameramotion
+             * @default none
+             * @enum {string}
+             */
+            cameraMotion: "none" | "dolly_in" | "dolly_out" | "dolly_left" | "dolly_right" | "jib_up" | "jib_down" | "static" | "focus_shift";
+            /**
+             * Fps
+             * @default 24
+             * @enum {integer}
+             */
+            fps: 24 | 25 | 48 | 50;
+            /**
+             * Model
+             * @enum {string}
+             */
+            model: "ltx-2.3-fast" | "ltx-2.5-fast";
+            /**
+             * Negativeprompt
+             * @default
+             */
+            negativePrompt: string;
+            /** Prompt */
+            prompt: string;
+            /**
+             * Promptprovenance
+             * @default typed
+             * @enum {string}
+             */
+            promptProvenance: "typed" | "enhanced";
+            /**
+             * Resolution
+             * @default 540p
+             * @enum {string}
+             */
+            resolution: "270p" | "360p" | "540p" | "720p" | "1080p" | "1440p" | "2160p";
+            /** Seed */
+            seed?: number | null;
+        };
+        /** CreateAudioToVideoRequest */
+        CreateAudioToVideoRequest: {
+            /**
+             * Contract Version
+             * @default 1
+             */
+            contract_version: number;
+            inputs: components["schemas"]["AudioToVideoInputs"];
+            params: components["schemas"]["CreateAudioToVideoParams"];
+        };
+        /** CreateExtendRequest */
+        CreateExtendRequest: {
+            /**
+             * Contract Version
+             * @default 1
+             */
+            contract_version: number;
+            inputs: components["schemas"]["ExtendInputs"];
+            params: components["schemas"]["ExtendParams"];
+        };
+        /** CreateIcLoraRecipeRequest */
+        CreateIcLoraRecipeRequest: {
+            /**
+             * Contract Version
+             * @default 1
+             */
+            contract_version: number;
+            inputs: components["schemas"]["IcLoraRecipeInputs"];
+            params: components["schemas"]["IcLoraVideoRecipeParams"];
+        };
+        /** CreateIcLoraSheetRequest */
+        CreateIcLoraSheetRequest: {
+            /**
+             * Contract Version
+             * @default 1
+             */
+            contract_version: number;
+            inputs: components["schemas"]["IcLoraSheetInputs"];
+            params: components["schemas"]["IcLoraSheetParams"];
+        };
+        /** CreateIcLoraTrackRequest */
+        CreateIcLoraTrackRequest: {
+            /**
+             * Contract Version
+             * @default 1
+             */
+            contract_version: number;
+            inputs: components["schemas"]["IcLoraTrackInputs"];
+            params: components["schemas"]["IcLoraTrackParams"];
+        };
+        /** CreateImageToVideoRequest */
+        CreateImageToVideoRequest: {
+            /**
+             * Contract Version
+             * @default 1
+             */
+            contract_version: number;
+            inputs: components["schemas"]["ImageToVideoInputs"];
+            params: components["schemas"]["ImageToVideoParams"];
+        };
+        /** CreateLoraRecipeRequest */
+        CreateLoraRecipeRequest: {
+            /**
+             * Contract Version
+             * @default 1
+             */
+            contract_version: number;
+            inputs?: components["schemas"]["LoraRecipeInputs"] | null;
+            params: components["schemas"]["LoraRecipeParams"];
+        };
+        /** CreateRetakeRequest */
+        CreateRetakeRequest: {
+            /**
+             * Contract Version
+             * @default 1
+             */
+            contract_version: number;
+            inputs: components["schemas"]["RetakeInputs"];
+            params: components["schemas"]["RetakeRequestParams"];
+        };
+        /** CreateTextToVideoRequest */
+        CreateTextToVideoRequest: {
+            /**
+             * Contract Version
+             * @default 1
+             */
+            contract_version: number;
+            params: components["schemas"]["TextToVideoParams"];
+        };
+        /** DashboardKpis */
+        DashboardKpis: {
+            /** Cancelled */
+            cancelled: number;
+            /** Content Count */
+            content_count: number;
+            /** Failed */
+            failed: number;
+            /** Footage S */
+            footage_s: number;
+            /** Gpu Ms */
+            gpu_ms: number;
+            /** Succeeded */
+            succeeded: number;
+            /** Success Rate */
+            success_rate?: number | null;
+        };
+        /**
+         * DashboardSelection
+         * @description Activity Dashboard view. An empty list means Any.
+         */
+        DashboardSelection: {
+            /** Aspectratios */
+            aspectRatios?: string[];
+            /** Fps */
+            fps?: string[];
+            /** Models */
+            models?: string[];
+            /**
+             * Range
+             * @default 7d
+             * @enum {string}
+             */
+            range: "7d" | "30d" | "all";
+            /** Resolutions */
+            resolutions?: string[];
+        };
+        /** DashboardSelectionPatch */
+        DashboardSelectionPatch: {
+            /** Aspectratios */
+            aspectRatios?: string[] | null;
+            /** Fps */
+            fps?: string[] | null;
+            /** Models */
+            models?: string[] | null;
+            /** Range */
+            range?: ("7d" | "30d" | "all") | null;
+            /** Resolutions */
+            resolutions?: string[] | null;
+        };
+        /** DashboardSnapshot */
+        DashboardSnapshot: {
+            /** Activity */
+            activity: components["schemas"]["ActivityDay"][];
+            /** Aspect Ratios */
+            aspect_ratios: string[];
+            /** Empty */
+            empty: boolean;
+            /** Failures */
+            failures: components["schemas"]["FailureRow"][];
+            /** Fps Values */
+            fps_values: number[];
+            /** Has History */
+            has_history: boolean;
+            keep_rate: components["schemas"]["KeepRate"];
+            kpis: components["schemas"]["DashboardKpis"];
+            loras: components["schemas"]["LoraPanel"];
+            /**
+             * Range
+             * @enum {string}
+             */
+            range: "7d" | "30d" | "all";
+            /** Render */
+            render: components["schemas"]["RenderCell"][];
+            /** Render By Feature */
+            render_by_feature: components["schemas"]["FeatureRenderCell"][];
+            /** Render By Fps */
+            render_by_fps: components["schemas"]["FpsRenderCell"][];
+            /** Tz */
+            tz: string;
+            usual?: components["schemas"]["UsualSettings"] | null;
+        };
+        /** DescribeCheckpointsRequest */
+        DescribeCheckpointsRequest: {
+            /** Cp Ids */
+            cp_ids: ("ltx-2.3-22b-distilled" | "ltx-2.3-mlx-q4" | "ltx-2.3-22b-distilled-1.1" | "ltx-2.3-spatial-upscaler-x2-1.0" | "ltx-2.3-spatial-upscaler-x2-1.1" | "ltx-2.3-22b-ic-lora-union-control-ref0.5" | "ltx-2.5-22b-distilled" | "ltx-2.5-spatial-upscaler-x2-1.0" | "ltx-2.5-video-vae" | "ltx-2.5-video-vae-conv" | "ltx-2.5-audio-vae" | "ltx-2.5-duration-head" | "dpt-hybrid-midas" | "yolox-l-torchscript" | "dw-ll-ucoco-384-bs5" | "gemma-3-12b-it-qat-q4_0-unquantized" | "gemma-3-12b-it-4bit" | "gemma4-12b-with-proj-ltx-2.5" | "gemma-4-e2b-it" | "z-image-turbo")[];
+        };
+        /** DescribeCheckpointsResponse */
+        DescribeCheckpointsResponse: {
+            /** Checkpoints */
+            checkpoints: components["schemas"]["CheckpointDescriptor"][];
         };
         /** DownloadProgressCompleteResponse */
         DownloadProgressCompleteResponse: {
@@ -546,11 +2405,11 @@ export interface components {
         /** DownloadProgressRunningResponse */
         DownloadProgressRunningResponse: {
             /** All Files */
-            all_files: ("ltx-2.3-22b-distilled" | "ltx-2.3-mlx-q4" | "ltx-2.3-spatial-upscaler-x2-1.0" | "ltx-2.3-22b-ic-lora-union-control-ref0.5" | "dpt-hybrid-midas" | "yolox-l-torchscript" | "dw-ll-ucoco-384-bs5" | "gemma-3-12b-it-qat-q4_0-unquantized" | "gemma-3-12b-it-4bit" | "z-image-turbo")[];
+            all_files: ("ltx-2.3-22b-distilled" | "ltx-2.3-mlx-q4" | "ltx-2.3-22b-distilled-1.1" | "ltx-2.3-spatial-upscaler-x2-1.0" | "ltx-2.3-spatial-upscaler-x2-1.1" | "ltx-2.3-22b-ic-lora-union-control-ref0.5" | "ltx-2.5-22b-distilled" | "ltx-2.5-spatial-upscaler-x2-1.0" | "ltx-2.5-video-vae" | "ltx-2.5-video-vae-conv" | "ltx-2.5-audio-vae" | "ltx-2.5-duration-head" | "dpt-hybrid-midas" | "yolox-l-torchscript" | "dw-ll-ucoco-384-bs5" | "gemma-3-12b-it-qat-q4_0-unquantized" | "gemma-3-12b-it-4bit" | "gemma4-12b-with-proj-ltx-2.5" | "gemma-4-e2b-it" | "z-image-turbo")[];
             /** Completed Files */
-            completed_files: ("ltx-2.3-22b-distilled" | "ltx-2.3-mlx-q4" | "ltx-2.3-spatial-upscaler-x2-1.0" | "ltx-2.3-22b-ic-lora-union-control-ref0.5" | "dpt-hybrid-midas" | "yolox-l-torchscript" | "dw-ll-ucoco-384-bs5" | "gemma-3-12b-it-qat-q4_0-unquantized" | "gemma-3-12b-it-4bit" | "z-image-turbo")[];
+            completed_files: ("ltx-2.3-22b-distilled" | "ltx-2.3-mlx-q4" | "ltx-2.3-22b-distilled-1.1" | "ltx-2.3-spatial-upscaler-x2-1.0" | "ltx-2.3-spatial-upscaler-x2-1.1" | "ltx-2.3-22b-ic-lora-union-control-ref0.5" | "ltx-2.5-22b-distilled" | "ltx-2.5-spatial-upscaler-x2-1.0" | "ltx-2.5-video-vae" | "ltx-2.5-video-vae-conv" | "ltx-2.5-audio-vae" | "ltx-2.5-duration-head" | "dpt-hybrid-midas" | "yolox-l-torchscript" | "dw-ll-ucoco-384-bs5" | "gemma-3-12b-it-qat-q4_0-unquantized" | "gemma-3-12b-it-4bit" | "gemma4-12b-with-proj-ltx-2.5" | "gemma-4-e2b-it" | "z-image-turbo")[];
             /** Current Downloading File */
-            current_downloading_file: ("ltx-2.3-22b-distilled" | "ltx-2.3-mlx-q4" | "ltx-2.3-spatial-upscaler-x2-1.0" | "ltx-2.3-22b-ic-lora-union-control-ref0.5" | "dpt-hybrid-midas" | "yolox-l-torchscript" | "dw-ll-ucoco-384-bs5" | "gemma-3-12b-it-qat-q4_0-unquantized" | "gemma-3-12b-it-4bit" | "z-image-turbo") | null;
+            current_downloading_file: ("ltx-2.3-22b-distilled" | "ltx-2.3-mlx-q4" | "ltx-2.3-22b-distilled-1.1" | "ltx-2.3-spatial-upscaler-x2-1.0" | "ltx-2.3-spatial-upscaler-x2-1.1" | "ltx-2.3-22b-ic-lora-union-control-ref0.5" | "ltx-2.5-22b-distilled" | "ltx-2.5-spatial-upscaler-x2-1.0" | "ltx-2.5-video-vae" | "ltx-2.5-video-vae-conv" | "ltx-2.5-audio-vae" | "ltx-2.5-duration-head" | "dpt-hybrid-midas" | "yolox-l-torchscript" | "dw-ll-ucoco-384-bs5" | "gemma-3-12b-it-qat-q4_0-unquantized" | "gemma-3-12b-it-4bit" | "gemma4-12b-with-proj-ltx-2.5" | "gemma-4-e2b-it" | "z-image-turbo") | null;
             /** Current File Progress */
             current_file_progress: number;
             /** Error */
@@ -568,6 +2427,579 @@ export interface components {
             total_downloaded_bytes: number;
             /** Total Progress */
             total_progress: number;
+        };
+        /**
+         * DownloadSpec
+         * @description HF download location for a catalog item.
+         *
+         *     ``variants`` is always non-empty. The first entry is the default checkpoint
+         *     (preferred for generation / omit-``variant_id`` downloads). See the comment on
+         *     ``LoraCatalogHandler`` listing helpers.
+         */
+        DownloadSpec: {
+            /** Repo Id */
+            repo_id: string;
+            /** Variants */
+            variants: components["schemas"]["DownloadVariant"][];
+        };
+        /**
+         * DownloadVariant
+         * @description One downloadable weights file under a catalog item (e.g. strong vs light).
+         */
+        DownloadVariant: {
+            /**
+             * Base Model
+             * @enum {string}
+             */
+            base_model: "LTX-2" | "LTX-2.3" | "LTX-2.5";
+            /** Filename */
+            filename: string;
+            /** Id */
+            id: string;
+            /** Label */
+            label: string;
+            /** Repo Id */
+            repo_id?: string | null;
+            /** Size Bytes */
+            size_bytes: number;
+        };
+        /**
+         * DownloadedLocalVideoGenerationModelSpecItem
+         * @description One downloaded offering. `local_models` stays active-pipeline-shaped.
+         */
+        DownloadedLocalVideoGenerationModelSpecItem: {
+            /**
+             * Model
+             * @enum {string}
+             */
+            model: "ltx-2.3-fast" | "ltx-2.5-fast";
+            /**
+             * Pipeline
+             * @enum {string}
+             */
+            pipeline: "fast" | "pro" | "fast-2.5" | "pro-2.5";
+            spec: components["schemas"]["LTXVideoGenerationSpec"];
+        };
+        /**
+         * DroppedFastAspectCell
+         * @description One anchor-kept cell a wider shape cannot run, with its refusal.
+         *
+         *     The grid (``fps_to_durations`` + ``dropped_cells``) is priced at the 16:9
+         *     anchor: a kept duration runs at 16:9. Only a wider frame (21:9 today) can
+         *     exceed the anchor, so these rows name exactly those (cell, shape) pairs —
+         *     same refusal Generate would return — for disabled-with-tooltip aspect
+         *     pickers. Never emitted for the anchor itself or for an anchor-dropped cell.
+         */
+        DroppedFastAspectCell: {
+            /**
+             * Aspectratio
+             * @enum {string}
+             */
+            aspectRatio: "21:9" | "16:9" | "3:2" | "4:3" | "1:1" | "4:5" | "9:16";
+            /** Audio */
+            audio: boolean;
+            /**
+             * Duration
+             * @enum {integer}
+             */
+            duration: 2 | 3 | 4 | 5 | 6 | 8 | 10 | 12 | 14 | 16 | 18 | 20;
+            /**
+             * Fps
+             * @enum {integer}
+             */
+            fps: 24 | 25 | 48 | 50;
+            /** Message */
+            message: string;
+            /** Over Gib */
+            over_gib?: number | null;
+            /** Over Ram Gb */
+            over_ram_gb?: number | null;
+            readout?: components["schemas"]["BudgetReadout"] | null;
+            /**
+             * Reason
+             * @enum {string}
+             */
+            reason: "stream_over" | "unsupported" | "ram_shortfall" | "mps_sequence_over" | "unmeasured_cell";
+            /**
+             * Resolution
+             * @enum {string}
+             */
+            resolution: "270p" | "360p" | "540p" | "720p" | "1080p" | "1440p" | "2160p";
+            /** Shortfall Kind */
+            shortfall_kind?: ("total" | "free") | null;
+        };
+        /**
+         * DroppedFastCell
+         * @description One static grid cell the budget withheld, with its refusal to show.
+         *
+         *     Kept + dropped reconstruct the full grid for disabled-with-tooltip
+         *     pickers. ``message`` is backend-composed (same builder as the 422s), so
+         *     list-time and request-time refusals read identically. ``audio`` selects
+         *     the A2V matrix, whose durations differ from the plain one.
+         */
+        DroppedFastCell: {
+            /** Audio */
+            audio: boolean;
+            /**
+             * Duration
+             * @enum {integer}
+             */
+            duration: 2 | 3 | 4 | 5 | 6 | 8 | 10 | 12 | 14 | 16 | 18 | 20;
+            /**
+             * Fps
+             * @enum {integer}
+             */
+            fps: 24 | 25 | 48 | 50;
+            /** Message */
+            message: string;
+            /** Over Gib */
+            over_gib?: number | null;
+            /** Over Ram Gb */
+            over_ram_gb?: number | null;
+            readout?: components["schemas"]["BudgetReadout"] | null;
+            /**
+             * Reason
+             * @enum {string}
+             */
+            reason: "stream_over" | "unsupported" | "ram_shortfall" | "mps_sequence_over" | "unmeasured_cell";
+            /**
+             * Resolution
+             * @enum {string}
+             */
+            resolution: "270p" | "360p" | "540p" | "720p" | "1080p" | "1440p" | "2160p";
+            /** Shortfall Kind */
+            shortfall_kind?: ("total" | "free") | null;
+            /** Window Frames */
+            window_frames?: number | null;
+            /** Windows */
+            windows?: number | null;
+        };
+        /**
+         * DroppedIcLoraDuration
+         * @description One duration option the list-time budget withheld, with its refusal.
+         *
+         *     Advisory: list-time filtering previews a mid-size canvas without the user
+         *     image, so a dropped duration may still pass on a small source (generate
+         *     re-decides on real pixels). ``options`` stays filtered; kept + dropped
+         *     reconstruct the catalog grid for tooltip pickers.
+         */
+        DroppedIcLoraDuration: {
+            /** Message */
+            message: string;
+            /** Over Gib */
+            over_gib?: number | null;
+            /** Over Ram Gb */
+            over_ram_gb?: number | null;
+            readout?: components["schemas"]["BudgetReadout"] | null;
+            /**
+             * Reason
+             * @enum {string}
+             */
+            reason: "stream_over" | "unsupported" | "ram_shortfall" | "mps_sequence_over" | "unmeasured_cell" | "spatial" | "two_stage_over_measured" | "mac_two_stage_unmeasured" | "refine_decode_floor";
+            /** Shortfall Kind */
+            shortfall_kind?: ("total" | "free") | null;
+            /** Tier */
+            tier?: ("over" | "unmeasured") | null;
+            /** Value */
+            value: number;
+        };
+        /**
+         * EditPreflightCandidate
+         * @description One resolution tier the UI displays, echoed back by key.
+         *
+         *     ``width``/``height`` None selects the source size ("original"); otherwise
+         *     both must be set. The backend resolves each exactly like a create's
+         *     ``params.resolution`` (1080p cap, then the ÷32 snap), so verdicts match
+         *     what Generate would do.
+         */
+        EditPreflightCandidate: {
+            /** Height */
+            height?: number | null;
+            /** Key */
+            key: string;
+            /** Width */
+            width?: number | null;
+        };
+        /**
+         * EditPreflightCell
+         * @description Verdict for one (candidate, duration) cell. ``message``/``code`` are None
+         *     when ``ok``; otherwise the exact refusal Generate would return.
+         */
+        EditPreflightCell: {
+            /** Code */
+            code?: string | null;
+            /** Duration */
+            duration: number;
+            /** Key */
+            key: string;
+            /** Message */
+            message?: string | null;
+            /** Ok */
+            ok: boolean;
+            /** Over Gib */
+            over_gib?: number | null;
+            /** Over Ram Gb */
+            over_ram_gb?: number | null;
+            readout?: components["schemas"]["BudgetReadout"] | null;
+            /** Shortfall Kind */
+            shortfall_kind?: ("total" | "free") | null;
+            /** Tier */
+            tier?: ("over" | "unmeasured") | null;
+        };
+        /**
+         * EditPreflightRequest
+         * @description Advisory per-cell verdicts for Home retake/extend pickers.
+         *
+         *     ``durations`` always includes the smallest selectable duration (extend
+         *     presets, retake minimum) so every candidate has an exact resolution-level
+         *     verdict; callers add the durations they display (extend presets, retake
+         *     current selection) for exact per-cell messages. ``startTime`` only affects
+         *     retake windowing, ``mode`` only extend stitching; both default so each
+         *     feature sends what it needs.
+         */
+        EditPreflightRequest: {
+            /** Assetid */
+            assetId: string;
+            /** Candidates */
+            candidates: components["schemas"]["EditPreflightCandidate"][];
+            /** Durations */
+            durations: number[];
+            /**
+             * Feature
+             * @enum {string}
+             */
+            feature: "retake" | "extend";
+            /**
+             * Mode
+             * @default end
+             * @enum {string}
+             */
+            mode: "start" | "end";
+            /**
+             * Starttime
+             * @default 0
+             */
+            startTime: number;
+        };
+        /**
+         * EditPreflightResolution
+         * @description Per-candidate summary. ``width``/``height`` is the resolved encode size.
+         *
+         *     ``maxDurationSeconds`` is the longest duration that passes at this size,
+         *     floored to 0.5s for slider clamps; 0 when even the smallest requested
+         *     duration fails. Authoritative per-cell verdicts live in ``cells`` — this
+         *     row never overrides them.
+         */
+        EditPreflightResolution: {
+            /** Height */
+            height: number;
+            /** Key */
+            key: string;
+            /** Maxdurationseconds */
+            maxDurationSeconds: number;
+            /** Width */
+            width: number;
+        };
+        /**
+         * EditPreflightResponse
+         * @description Path-free (asset dims + verdicts only), so the Remote router reuses it.
+         */
+        EditPreflightResponse: {
+            /**
+             * Budgetmode
+             * @default standard
+             * @enum {string}
+             */
+            budgetMode: "standard" | "reckless";
+            /** Cells */
+            cells: components["schemas"]["EditPreflightCell"][];
+            /** Resolutions */
+            resolutions: components["schemas"]["EditPreflightResolution"][];
+            source: components["schemas"]["EditPreflightSource"];
+        };
+        /** EditPreflightSource */
+        EditPreflightSource: {
+            /** Durationseconds */
+            durationSeconds: number;
+            /** Fps */
+            fps: number;
+            /** Frames */
+            frames: number;
+            /** Height */
+            height: number;
+            /** Width */
+            width: number;
+        };
+        /**
+         * EnhancePromptRequest
+         * @description Regular-LoRA, IC-LoRA, and built-in conditioning-type selection are mutually exclusive UI
+         *     surfaces — a request never carries more than one of loraCatalogIds/icLoraId/conditioningType.
+         */
+        EnhancePromptRequest: {
+            /** Aspectratio */
+            aspectRatio?: ("21:9" | "16:9" | "3:2" | "4:3" | "1:1" | "4:5" | "9:16") | null;
+            /** Conditioningtype */
+            conditioningType?: ("canny" | "depth") | null;
+            /** Duration */
+            duration?: number | null;
+            /** Fps */
+            fps?: number | null;
+            /** Icloraid */
+            icLoraId?: string | null;
+            /** Imageassetid */
+            imageAssetId?: string | null;
+            /** Imageassetids */
+            imageAssetIds?: string[];
+            /** Imagepath */
+            imagePath?: string | null;
+            /** Imagepaths */
+            imagePaths?: string[];
+            /** Keyframes */
+            keyframes?: components["schemas"]["KeyframeInput"][];
+            /** Lastimageassetid */
+            lastImageAssetId?: string | null;
+            /** Lastimagepath */
+            lastImagePath?: string | null;
+            /** Loracatalogids */
+            loraCatalogIds?: string[];
+            /**
+             * Mediatype
+             * @default video
+             * @enum {string}
+             */
+            mediaType: "video" | "image";
+            /** Prompt */
+            prompt: string;
+            /**
+             * Provider
+             * @default local
+             * @enum {string}
+             */
+            provider: "local" | "api";
+            replacedWindow?: components["schemas"]["ReplacedWindow"] | null;
+            /** Resolution */
+            resolution?: ("270p" | "360p" | "540p" | "720p" | "1080p" | "1440p" | "2160p") | null;
+            /** Videoassetid */
+            videoAssetId?: string | null;
+            /** Videopath */
+            videoPath?: string | null;
+        };
+        /** EnhancePromptResponse */
+        EnhancePromptResponse: {
+            /** Enhancedprompt */
+            enhancedPrompt: string;
+        };
+        /** EstimateVideoRequest */
+        EstimateVideoRequest: {
+            /**
+             * Aspectratio
+             * @default 16:9
+             * @enum {string}
+             */
+            aspectRatio: "21:9" | "16:9" | "3:2" | "4:3" | "1:1" | "4:5" | "9:16";
+            /**
+             * Duration
+             * @default 5
+             */
+            duration: (2 | 3 | 4 | 5 | 6 | 8 | 10 | 12 | 14 | 16 | 18 | 20) | null;
+            /**
+             * Feature
+             * @default t2v
+             * @enum {string}
+             */
+            feature: "t2v" | "i2v" | "a2v";
+            /**
+             * Fps
+             * @default 24
+             * @enum {integer}
+             */
+            fps: 24 | 25 | 48 | 50;
+            /**
+             * Resolution
+             * @default 1080p
+             * @enum {string}
+             */
+            resolution: "270p" | "360p" | "540p" | "720p" | "1080p" | "1440p" | "2160p";
+        };
+        /** EstimateVideoResponse */
+        EstimateVideoResponse: {
+            estimate?: components["schemas"]["WallTimeEstimateResponse"] | null;
+            risk?: components["schemas"]["GenerationRisk"] | null;
+        };
+        /** ExtendInputs */
+        ExtendInputs: {
+            video: components["schemas"]["InputAssetRef"];
+        };
+        /**
+         * ExtendParams
+         * @description Queued Home/Remote extend.
+         *
+         *     ``resolution`` omitted keeps the source size. Either way the picture is
+         *     capped at the local 1080p cell. The model encodes a black-bar letterbox
+         *     up to the next multiple of 32, and the stitch crops back to this picture.
+         */
+        ExtendParams: {
+            /** Duration */
+            duration: number;
+            /**
+             * Mode
+             * @default end
+             * @enum {string}
+             */
+            mode: "start" | "end";
+            /**
+             * Model
+             * @enum {string}
+             */
+            model: "ltx-2.3-fast" | "ltx-2.5-fast";
+            /**
+             * Prompt
+             * @default
+             */
+            prompt: string;
+            /**
+             * Promptprovenance
+             * @default typed
+             * @enum {string}
+             */
+            promptProvenance: "typed" | "enhanced";
+            resolution?: components["schemas"]["TargetResolution"] | null;
+            /** Seed */
+            seed?: number | null;
+        };
+        /** ExtendRequest */
+        ExtendRequest: {
+            /** Duration */
+            duration: number;
+            /**
+             * Mode
+             * @default end
+             * @enum {string}
+             */
+            mode: "start" | "end";
+            /**
+             * Model
+             * @default pro
+             * @constant
+             */
+            model: "pro";
+            /**
+             * Prompt
+             * @default
+             */
+            prompt: string;
+            /**
+             * Prompt Provenance
+             * @default typed
+             * @enum {string}
+             */
+            prompt_provenance: "typed" | "enhanced";
+            resolution?: components["schemas"]["TargetResolution"] | null;
+            /** Video Path */
+            video_path: string;
+        };
+        /** FailureRow */
+        FailureRow: {
+            /** Count */
+            count: number;
+            /** Error Code */
+            error_code: string;
+        };
+        /**
+         * FeatureFlags
+         * @description Dev feature flags, persisted in feature_flags.json. Adding a flag = one field here.
+         */
+        FeatureFlags: {
+            /**
+             * Advancedicloracontrols
+             * @default false
+             */
+            advancedIcLoraControls: boolean;
+            /**
+             * Customiclora
+             * @default false
+             */
+            customIcLora: boolean;
+            /**
+             * Highresvideotovideo
+             * @default false
+             */
+            highResVideoToVideo: boolean;
+        };
+        /**
+         * FeatureFlagsPatch
+         * @description Partial update: only the fields present in the body are applied.
+         */
+        FeatureFlagsPatch: {
+            /** Advancedicloracontrols */
+            advancedIcLoraControls?: boolean | null;
+            /** Customiclora */
+            customIcLora?: boolean | null;
+            /** Highresvideotovideo */
+            highResVideoToVideo?: boolean | null;
+        };
+        /**
+         * FeatureRenderCell
+         * @description Retake, extend, or one IC-LoRA recipe. `duration_s` is the edited span, or the output length for IC-LoRA.
+         */
+        FeatureRenderCell: {
+            /** Aspect Ratio */
+            aspect_ratio: string;
+            /** Count */
+            count: number;
+            /** Duration S */
+            duration_s: number;
+            /** Feature */
+            feature: string;
+            /** Median Ms */
+            median_ms: number;
+            /** Model */
+            model: string;
+            /** P90 Ms */
+            p90_ms: number;
+            /** Resolution */
+            resolution: string;
+        };
+        /**
+         * FpsRenderCell
+         * @description One render cell limited to a single frame rate. The pooled `render` list has no fps.
+         */
+        FpsRenderCell: {
+            /** Aspect Ratio */
+            aspect_ratio: string;
+            /** Count */
+            count: number;
+            /** Duration S */
+            duration_s: number;
+            /** Fps */
+            fps: number;
+            /** Median Ms */
+            median_ms: number;
+            /** Model */
+            model: string;
+            /** P90 Ms */
+            p90_ms: number;
+            /** Resolution */
+            resolution: string;
+        };
+        /** GeminiModelOptionPayload */
+        GeminiModelOptionPayload: {
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /** Displayname */
+            displayName: string;
+            /** Id */
+            id: string;
+        };
+        /** GeminiModelsResponsePayload */
+        GeminiModelsResponsePayload: {
+            /** Models */
+            models: components["schemas"]["GeminiModelOptionPayload"][];
+            /** Resolvedmodel */
+            resolvedModel: string;
         };
         /** GenerateImageCancelledResponse */
         GenerateImageCancelledResponse: {
@@ -594,6 +3026,8 @@ export interface components {
              * @default 1024
              */
             height: number;
+            /** Imagepath */
+            imagePath?: string | null;
             /**
              * Numimages
              * @default 1
@@ -607,6 +3041,11 @@ export interface components {
             /** Prompt */
             prompt: string;
             /**
+             * Strength
+             * @default 0.6
+             */
+            strength: number;
+            /**
              * Width
              * @default 1024
              */
@@ -614,6 +3053,10 @@ export interface components {
         };
         /** GenerateVideoCancelledResponse */
         GenerateVideoCancelledResponse: {
+            /** Load Mode */
+            load_mode?: ("full_models_loading" | "streaming_models_loading" | "mac_mlx_q4") | null;
+            /** Offload Mode */
+            offload_mode?: ("NONE" | "CPU" | "DISK") | null;
             /**
              * Status
              * @constant
@@ -622,6 +3065,10 @@ export interface components {
         };
         /** GenerateVideoCompleteResponse */
         GenerateVideoCompleteResponse: {
+            /** Load Mode */
+            load_mode?: ("full_models_loading" | "streaming_models_loading" | "mac_mlx_q4") | null;
+            /** Offload Mode */
+            offload_mode?: ("NONE" | "CPU" | "DISK") | null;
             /**
              * Status
              * @constant
@@ -632,10 +3079,31 @@ export interface components {
         };
         /** GenerateVideoModelsSpecsResponse */
         GenerateVideoModelsSpecsResponse: {
+            /** Active Offering */
+            active_offering?: ("ltx-2.3-fast" | "ltx-2.5-fast") | null;
             /** Api Models */
             api_models: components["schemas"]["LTXVideoGenerationModelSpecItem"][];
+            /**
+             * Budgetmode
+             * @default standard
+             * @enum {string}
+             */
+            budgetMode: "standard" | "reckless";
+            /** Downloaded Local Models */
+            downloaded_local_models?: components["schemas"]["DownloadedLocalVideoGenerationModelSpecItem"][];
             /** Local Models */
             local_models: components["schemas"]["LTXVideoGenerationModelSpecItem"][];
+            /** Local Unavailable Detected Ram Gb */
+            local_unavailable_detected_ram_gb?: number | null;
+            /** Local Unavailable Reason */
+            local_unavailable_reason?: ("stream_over" | "unsupported" | "ram_shortfall" | "mps_sequence_over" | "unmeasured_cell") | null;
+            /** Local Unavailable Required Ram Gb */
+            local_unavailable_required_ram_gb?: number | null;
+            /**
+             * Low Performance Machine
+             * @default false
+             */
+            low_performance_machine: boolean;
         };
         /** GenerateVideoRequest */
         GenerateVideoRequest: {
@@ -644,7 +3112,7 @@ export interface components {
              * @default 16:9
              * @enum {string}
              */
-            aspectRatio: "16:9" | "9:16";
+            aspectRatio: "21:9" | "16:9" | "3:2" | "4:3" | "1:1" | "4:5" | "9:16";
             /**
              * Audio
              * @default false
@@ -661,9 +3129,8 @@ export interface components {
             /**
              * Duration
              * @default 5
-             * @enum {integer}
              */
-            duration: 5 | 6 | 8 | 10 | 12 | 14 | 16 | 18 | 20;
+            duration: (2 | 3 | 4 | 5 | 6 | 8 | 10 | 12 | 14 | 16 | 18 | 20) | null;
             /**
              * Fps
              * @default 24
@@ -672,12 +3139,18 @@ export interface components {
             fps: 24 | 25 | 48 | 50;
             /** Imagepath */
             imagePath?: string | null;
+            /** Keyframes */
+            keyframes?: components["schemas"]["KeyframeInput"][];
+            /** Lastimagepath */
+            lastImagePath?: string | null;
+            /** Loras */
+            loras?: components["schemas"]["LoraEntry"][];
             /**
              * Model
              * @default fast
              * @enum {string}
              */
-            model: "fast" | "pro";
+            model: "fast" | "pro" | "fast-2.5" | "pro-2.5";
             /**
              * Negativeprompt
              * @default
@@ -685,6 +3158,12 @@ export interface components {
             negativePrompt: string;
             /** Prompt */
             prompt: string;
+            /**
+             * Promptprovenance
+             * @default typed
+             * @enum {string}
+             */
+            promptProvenance: "typed" | "enhanced";
             /** Referenceimagepaths */
             referenceImagePaths?: string[];
             /** Referenceimages */
@@ -694,12 +3173,50 @@ export interface components {
              * @default 1080p
              * @enum {string}
              */
-            resolution: "540p" | "720p" | "1080p" | "1440p" | "2160p";
+            resolution: "270p" | "360p" | "540p" | "720p" | "1080p" | "1440p" | "2160p";
+            /** Seed */
+            seed?: number | null;
+        };
+        /** Generation */
+        Generation: {
+            /** Attempt Count */
+            attempt_count: number;
+            /** Contract Version */
+            contract_version: number;
+            /** Created At */
+            created_at: number;
+            /** Error Code */
+            error_code?: ("INTERRUPTED" | "INPUT_MISSING" | "OUTPUT_MISSING" | "OUTPUT_UNREADABLE" | "EXECUTOR_FAILED" | "CUDA_OOM" | "JOB_TOO_LARGE" | "CAPABILITY_FAILED" | "LTX_INVALID_API_KEY" | "LTX_API_PROMPT_EMBEDDING_FAILED") | null;
+            /** Feature */
+            feature: string;
+            /** Finished At */
+            finished_at?: number | null;
+            /** Id */
+            id: string;
+            /** Outputs */
+            outputs: components["schemas"]["Asset"][];
+            /** Queued At */
+            queued_at: number;
+            risk?: components["schemas"]["GenerationRisk"] | null;
+            /** Spec */
+            spec: {
+                [key: string]: components["schemas"]["JsonValue"];
+            };
+            /** Started At */
+            started_at?: number | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "queued" | "running" | "cancelling" | "succeeded" | "failed" | "cancelled";
         };
         /** GenerationProgressResponse */
         GenerationProgressResponse: {
+            /** Cancellable */
+            cancellable: boolean;
             /** Currentstep */
             currentStep: number | null;
+            estimate?: components["schemas"]["WallTimeEstimateResponse"] | null;
             /** Id */
             id?: string | null;
             /** Phase */
@@ -716,10 +3233,60 @@ export interface components {
             /** Totalsteps */
             totalSteps: number | null;
         };
+        /**
+         * GenerationRisk
+         * @description Create-time snapshot of the bet a reckless job took.
+         *
+         *     Stored privately as spec["_risk"] (no store migration), promoted to this
+         *     typed field on every read. Drives the queue badge and the failure backstop
+         *     copy. An `over` tier also waives a later memory miss at execute. An
+         *     `unmeasured` tier does not. `over_gib`/`over_ram_gb` mirror the dropped-
+         *     cell figure semantics; `message` is the snapshotted tier line.
+         */
+        GenerationRisk: {
+            /** Message */
+            message: string;
+            /** Over Gib */
+            over_gib?: number | null;
+            /** Over Ram Gb */
+            over_ram_gb?: number | null;
+            readout?: components["schemas"]["BudgetReadout"] | null;
+            /** Shortfall Kind */
+            shortfall_kind?: ("total" | "free") | null;
+            /**
+             * Tier
+             * @enum {string}
+             */
+            tier: "over" | "unmeasured";
+        };
+        /**
+         * GenerationSeed
+         * @description The seed every generate surface shares. `seed` is the next seed to use.
+         */
+        GenerationSeed: {
+            /** Locked */
+            locked: boolean;
+            /** Seed */
+            seed: number;
+        };
+        /**
+         * GenerationSeedUpdate
+         * @description Partial update: a client can flip the lock without touching the seed.
+         */
+        GenerationSeedUpdate: {
+            /** Locked */
+            locked?: boolean | null;
+            /** Seed */
+            seed?: number | null;
+        };
         /** GpuInfoResponse */
         GpuInfoResponse: {
+            /** Checkpoint Drive Type */
+            checkpoint_drive_type?: ("nvme" | "ssd" | "hdd") | null;
             /** Cuda Available */
             cuda_available: boolean;
+            /** Free Vram Bytes */
+            free_vram_bytes?: number | null;
             /**
              * Gpu Available
              * @default false
@@ -733,6 +3300,14 @@ export interface components {
              * @default false
              */
             mps_available: boolean;
+            /** Mps Pool Bytes */
+            mps_pool_bytes?: number | null;
+            /** System */
+            system?: string | null;
+            /** Total Ram Bytes */
+            total_ram_bytes?: number | null;
+            /** Total Vram Bytes */
+            total_vram_bytes?: number | null;
             /** Vram Gb */
             vram_gb: number | null;
         };
@@ -800,6 +3375,148 @@ export interface components {
              */
             status: "logged_out";
         };
+        /**
+         * IcLoraCatalogItem
+         * @description IC-LoRA — base plus IC-specific preprocessing / controls / default settings.
+         *
+         *     IC-LoRAs always take a driving image/video; `input` is required in practice (the base
+         *     field is optional for plain LoRAs). Enforced by the validator below, so handlers can rely
+         *     on it being present.
+         */
+        IcLoraCatalogItem: {
+            /**
+             * Allows Empty Prompt
+             * @default false
+             */
+            allows_empty_prompt: boolean;
+            /**
+             * Allows Reference Image
+             * @default false
+             */
+            allows_reference_image: boolean;
+            author?: components["schemas"]["AuthorSpec"] | null;
+            /** Base Model */
+            base_model?: string | null;
+            /** Controls */
+            controls?: components["schemas"]["IcLoraControl"][];
+            /** Created At */
+            created_at?: string | null;
+            default_settings?: components["schemas"]["IcLoraSettings"];
+            /** Description */
+            description: string;
+            download: components["schemas"]["DownloadSpec"];
+            /** Enhancement Examples */
+            enhancement_examples?: string[];
+            /** Id */
+            id: string;
+            input?: components["schemas"]["InputSpec"] | null;
+            /** Instructions */
+            instructions?: components["schemas"]["InstructionSection"][];
+            license?: components["schemas"]["LicenseSpec"] | null;
+            media?: components["schemas"]["MediaSpec"] | null;
+            /** Name */
+            name: string;
+            /** Preprocessing */
+            preprocessing?: components["schemas"]["PreprocessingStep"][];
+            prompt_template?: components["schemas"]["PromptTemplateSpec"] | null;
+            /** Recommended Strength */
+            recommended_strength?: number | null;
+            /** Reference Image Frame */
+            reference_image_frame?: number | null;
+            /**
+             * Reference Image Required
+             * @default false
+             */
+            reference_image_required: boolean;
+            /** Requires Checkpoints */
+            requires_checkpoints?: ("ltx-2.3-22b-distilled" | "ltx-2.3-mlx-q4" | "ltx-2.3-22b-distilled-1.1" | "ltx-2.3-spatial-upscaler-x2-1.0" | "ltx-2.3-spatial-upscaler-x2-1.1" | "ltx-2.3-22b-ic-lora-union-control-ref0.5" | "ltx-2.5-22b-distilled" | "ltx-2.5-spatial-upscaler-x2-1.0" | "ltx-2.5-video-vae" | "ltx-2.5-video-vae-conv" | "ltx-2.5-audio-vae" | "ltx-2.5-duration-head" | "dpt-hybrid-midas" | "yolox-l-torchscript" | "dw-ll-ucoco-384-bs5" | "gemma-3-12b-it-qat-q4_0-unquantized" | "gemma-3-12b-it-4bit" | "gemma4-12b-with-proj-ltx-2.5" | "gemma-4-e2b-it" | "z-image-turbo")[];
+            /** Requires Hf Login */
+            requires_hf_login: boolean;
+            /** Supported Models */
+            supported_models?: ("LTX-2.3" | "LTX-2.5")[];
+            /** Tags */
+            tags?: string[];
+            /** Trigger */
+            trigger?: string | null;
+            /** Trigger Placement */
+            trigger_placement?: ("first_token" | "anywhere") | null;
+        };
+        /** IcLoraControl */
+        IcLoraControl: {
+            /** Default */
+            default?: number | string | null;
+            /** Dropped Options */
+            dropped_options?: components["schemas"]["DroppedIcLoraDuration"][] | null;
+            /** Id */
+            id: string;
+            /**
+             * Kind
+             * @default int
+             * @enum {string}
+             */
+            kind: "int" | "select" | "position_canvas";
+            /** Label */
+            label: string;
+            /** Options */
+            options?: number[] | string[] | null;
+            /** Unit */
+            unit?: string | null;
+            /** Value Labels */
+            value_labels?: {
+                [key: string]: string;
+            } | null;
+        };
+        /** IcLoraDeleteRequest */
+        IcLoraDeleteRequest: {
+            /** Ic Lora Id */
+            ic_lora_id: string;
+            /** Variant Id */
+            variant_id?: string | null;
+        };
+        /** IcLoraDownloadProgressResponse */
+        IcLoraDownloadProgressResponse: {
+            /**
+             * Downloaded Bytes
+             * @default 0
+             */
+            downloaded_bytes: number;
+            /** Error */
+            error?: string | null;
+            /**
+             * Expected Bytes
+             * @default 0
+             */
+            expected_bytes: number;
+            /** Ic Lora Id */
+            ic_lora_id?: string | null;
+            /**
+             * Progress
+             * @default 0
+             */
+            progress: number;
+            /**
+             * Speed Bytes Per Sec
+             * @default 0
+             */
+            speed_bytes_per_sec: number;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "downloading" | "complete" | "error";
+        };
+        /** IcLoraDownloadRequest */
+        IcLoraDownloadRequest: {
+            /** Ic Lora Id */
+            ic_lora_id: string;
+            /**
+             * Use Hf Auth
+             * @default false
+             */
+            use_hf_auth: boolean;
+            /** Variant Id */
+            variant_id?: string | null;
+        };
         /** IcLoraExtractRequest */
         IcLoraExtractRequest: {
             /**
@@ -850,23 +3567,42 @@ export interface components {
         };
         /** IcLoraGenerateRequest */
         IcLoraGenerateRequest: {
+            /** Audio Mode */
+            audio_mode?: ("source" | "generated" | "off") | null;
             /**
              * Cfg Guidance Scale
              * @default 1
              */
             cfg_guidance_scale: number;
-            /**
-             * Conditioning Strength
-             * @default 1
-             */
-            conditioning_strength: number;
+            /** Conditioning Strength */
+            conditioning_strength?: number | null;
             /**
              * Conditioning Type
              * @enum {string}
              */
-            conditioning_type: "canny" | "depth";
+            conditioning_type: "canny" | "depth" | "custom";
+            /** Control Values */
+            control_values?: {
+                [key: string]: number | string;
+            };
+            /** Control Video Path */
+            control_video_path?: string | null;
+            /** Custom Lora Ref */
+            custom_lora_ref?: string | null;
+            /** Fps Override */
+            fps_override?: number | null;
+            /** Ic Lora Id */
+            ic_lora_id?: string | null;
             /** Images */
             images?: components["schemas"]["IcLoraImageInput"][];
+            /** Input Path */
+            input_path?: string | null;
+            /** Loop Fps */
+            loop_fps?: number | null;
+            /** Loop Seconds */
+            loop_seconds?: (2 | 3 | 4 | 5 | 6 | 8 | 10 | 12 | 14 | 16 | 18 | 20) | null;
+            /** Lora Strength */
+            lora_strength?: number | null;
             /**
              * Negative Prompt
              * @default
@@ -877,9 +3613,28 @@ export interface components {
              * @default 30
              */
             num_inference_steps: number;
+            outpaint_pads?: components["schemas"]["OutpaintPads"] | null;
             /** Prompt */
             prompt: string;
-            /** Video Path */
+            /**
+             * Prompt Provenance
+             * @default typed
+             * @enum {string}
+             */
+            prompt_provenance: "typed" | "enhanced";
+            resolution?: components["schemas"]["TargetResolution"] | null;
+            /** Resolution Factor */
+            resolution_factor?: number | null;
+            /** Skip Stage 2 */
+            skip_stage_2?: boolean | null;
+            /** Use Lora In Stage 2 */
+            use_lora_in_stage_2?: boolean | null;
+            /** Variant Id */
+            variant_id?: string | null;
+            /**
+             * Video Path
+             * @default
+             */
             video_path: string;
         };
         /** IcLoraImageInput */
@@ -897,10 +3652,525 @@ export interface components {
              */
             strength: number;
         };
+        /** IcLoraListItem */
+        IcLoraListItem: {
+            /** Downloaded */
+            downloaded: boolean;
+            /** Downloaded Variant Ids */
+            downloaded_variant_ids?: string[];
+            ic_lora: components["schemas"]["IcLoraCatalogItem"];
+        };
+        /** IcLoraListResponse */
+        IcLoraListResponse: {
+            /**
+             * Budgetmode
+             * @default standard
+             * @enum {string}
+             */
+            budgetMode: "standard" | "reckless";
+            /** Ic Loras */
+            ic_loras: components["schemas"]["IcLoraListItem"][];
+        };
+        /**
+         * IcLoraPreflightCell
+         * @description Verdict for one duration. ``message``/``code`` are None when ``ok``;
+         *     otherwise the exact refusal Generate would return for this input.
+         */
+        IcLoraPreflightCell: {
+            /** Code */
+            code?: string | null;
+            /** Duration */
+            duration: number;
+            /** Message */
+            message?: string | null;
+            /** Ok */
+            ok: boolean;
+            /** Over Gib */
+            over_gib?: number | null;
+            /** Over Ram Gb */
+            over_ram_gb?: number | null;
+            readout?: components["schemas"]["BudgetReadout"] | null;
+            /** Shortfall Kind */
+            shortfall_kind?: ("total" | "free") | null;
+            /** Tier */
+            tier?: ("over" | "unmeasured") | null;
+        };
+        /**
+         * IcLoraPreflightRequest
+         * @description Advisory verdicts for a catalog IC-LoRA input before Generate.
+         *
+         *     Mirrors the generate probe check (source pixels → output canvas → budget)
+         *     without preprocessing or loading weights. ``durations`` lists the seconds
+         *     to verdict for image-input entries; video-input entries transform the
+         *     whole clip, so requested durations are ignored and one cell at the clip
+         *     length is returned. Sizing overrides mirror the generate request (None
+         *     keeps the entry default); ``fps_override`` is intentionally absent —
+         *     generate ignores it on the catalog probe path, and preflight must agree.
+         */
+        IcLoraPreflightRequest: {
+            /** Durations */
+            durations: number[];
+            /** Ic Lora Id */
+            ic_lora_id: string;
+            /** Input Path */
+            input_path: string;
+            resolution?: components["schemas"]["TargetResolution"] | null;
+            /** Resolution Factor */
+            resolution_factor?: number | null;
+            /** Skip Stage 2 */
+            skip_stage_2?: boolean | null;
+        };
+        /**
+         * IcLoraPreflightResponse
+         * @description Source dims + verdicts only; the input path is never echoed.
+         */
+        IcLoraPreflightResponse: {
+            /**
+             * Budgetmode
+             * @default standard
+             * @enum {string}
+             */
+            budgetMode: "standard" | "reckless";
+            /** Cells */
+            cells: components["schemas"]["IcLoraPreflightCell"][];
+            source: components["schemas"]["IcLoraPreflightSource"];
+        };
+        /**
+         * IcLoraPreflightSource
+         * @description Probed source dims. ``frames`` is the snapped clip length for video
+         *     inputs; images have no source frames, so it rides None there.
+         */
+        IcLoraPreflightSource: {
+            /** Fps */
+            fps: number;
+            /** Frames */
+            frames?: number | null;
+            /** Height */
+            height: number;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "image" | "video";
+            /** Width */
+            width: number;
+        };
+        /** IcLoraRecipeInputs */
+        IcLoraRecipeInputs: {
+            image?: components["schemas"]["InputAssetRef"] | null;
+            video: components["schemas"]["InputAssetRef"];
+        };
+        /** IcLoraSettings */
+        IcLoraSettings: {
+            /**
+             * Audio Mode
+             * @default generated
+             * @enum {string}
+             */
+            audio_mode: "source" | "generated" | "off";
+            /**
+             * Conditioning Strength
+             * @default 1
+             */
+            conditioning_strength: number;
+            /**
+             * Lora Strength
+             * @default 1
+             */
+            lora_strength: number;
+            /**
+             * Resolution Factor
+             * @default 2
+             */
+            resolution_factor: number;
+            /**
+             * Skip Stage 2
+             * @default false
+             */
+            skip_stage_2: boolean;
+            /**
+             * Stage 2 Ic Lora
+             * @default false
+             */
+            stage_2_ic_lora: boolean;
+            tiling?: components["schemas"]["IcLoraTiling"] | null;
+            /**
+             * Use Lora In Stage 2
+             * @default false
+             */
+            use_lora_in_stage_2: boolean;
+        };
+        /** IcLoraSheetInputs */
+        IcLoraSheetInputs: {
+            /** Images */
+            images: components["schemas"]["InputAssetRef"][];
+        };
+        /**
+         * IcLoraSheetParams
+         * @description Params of an image-list recipe (Ingredients). An omitted ``fps`` is the catalog rate.
+         */
+        IcLoraSheetParams: {
+            /**
+             * Aspectratio
+             * @enum {string}
+             */
+            aspectRatio: "21:9" | "16:9" | "3:2" | "4:3" | "1:1" | "4:5" | "9:16";
+            /** Audiomode */
+            audioMode?: ("source" | "generated" | "off") | null;
+            /**
+             * Duration
+             * @enum {integer}
+             */
+            duration: 2 | 3 | 4 | 5 | 6 | 8 | 10 | 12 | 14 | 16 | 18 | 20;
+            /** Fps */
+            fps?: number | null;
+            /**
+             * Model
+             * @enum {string}
+             */
+            model: "ltx-2.3-fast" | "ltx-2.5-fast";
+            /**
+             * Prompt
+             * @default
+             */
+            prompt: string;
+            /**
+             * Promptprovenance
+             * @default typed
+             * @enum {string}
+             */
+            promptProvenance: "typed" | "enhanced";
+            /**
+             * Resolution
+             * @default 720p
+             * @enum {string}
+             */
+            resolution: "270p" | "360p" | "540p" | "720p" | "1080p" | "1440p" | "2160p";
+            /** Scale */
+            scale?: number | null;
+            /** Seed */
+            seed?: number | null;
+            /** Variantid */
+            variantId?: string | null;
+        };
+        /**
+         * IcLoraTiling
+         * @description Tile size of a catalog IC-LoRA, and an optional fixed temporal window.
+         *
+         *     ``long_side`` and ``short_side`` are given for a landscape canvas. A portrait canvas
+         *     swaps them (Refine Details card: "1024x576, or 576x1024 portrait").
+         *
+         *     ``window_frames`` is set when the LoRA drifts over a longer clip (Restore: past 97
+         *     frames detail is lost and colour drifts). A clip longer than the window always runs
+         *     in windows of this length. None leaves the choice to the job budget.
+         *
+         *     ``carry_frames`` is the part of a window that the next window re-renders and pins at
+         *     its start. It needs a ``window_frames``. None keeps ``DEFAULT_CARRY_FRAMES``.
+         *
+         *     ``max_output_long_side`` and ``max_output_short_side`` raise the spatial cap of the
+         *     job for this LoRA. The transformer sees one tile at a time, so the output can be
+         *     larger than the local 1080p cell. None keeps that cell.
+         */
+        IcLoraTiling: {
+            /** Carry Frames */
+            carry_frames?: number | null;
+            /** Long Side */
+            long_side: number;
+            /** Max Output Long Side */
+            max_output_long_side?: number | null;
+            /** Max Output Short Side */
+            max_output_short_side?: number | null;
+            /** Short Side */
+            short_side: number;
+            /** Window Frames */
+            window_frames?: number | null;
+        };
+        /** IcLoraTrackInputs */
+        IcLoraTrackInputs: {
+            image: components["schemas"]["InputAssetRef"];
+            /** Paths */
+            paths: components["schemas"]["MotionPath"][];
+        };
+        /**
+         * IcLoraTrackParams
+         * @description Params of the Motion Track recipe. An omitted ``fps`` is the catalog rate.
+         *
+         *     There is no ``aspectRatio``: create takes the closest ratio from the image.
+         */
+        IcLoraTrackParams: {
+            /** Audiomode */
+            audioMode?: ("source" | "generated" | "off") | null;
+            /**
+             * Duration
+             * @enum {integer}
+             */
+            duration: 2 | 3 | 4 | 5 | 6 | 8 | 10 | 12 | 14 | 16 | 18 | 20;
+            /** Fps */
+            fps?: number | null;
+            /**
+             * Model
+             * @enum {string}
+             */
+            model: "ltx-2.3-fast" | "ltx-2.5-fast";
+            /**
+             * Prompt
+             * @default
+             */
+            prompt: string;
+            /**
+             * Promptprovenance
+             * @default typed
+             * @enum {string}
+             */
+            promptProvenance: "typed" | "enhanced";
+            /**
+             * Resolution
+             * @default 720p
+             * @enum {string}
+             */
+            resolution: "270p" | "360p" | "540p" | "720p" | "1080p" | "1440p" | "2160p";
+            /** Scale */
+            scale?: number | null;
+            /** Seed */
+            seed?: number | null;
+            /** Variantid */
+            variantId?: string | null;
+        };
+        /**
+         * IcLoraVideoRecipeParams
+         * @description Create-body params of a video recipe.
+         */
+        IcLoraVideoRecipeParams: {
+            /** Audiomode */
+            audioMode?: ("source" | "generated" | "off") | null;
+            /** Controltype */
+            controlType?: ("pose" | "depth" | "canny") | null;
+            /** Fps */
+            fps?: number | null;
+            /**
+             * Model
+             * @enum {string}
+             */
+            model: "ltx-2.3-fast" | "ltx-2.5-fast";
+            /**
+             * Prompt
+             * @default
+             */
+            prompt: string;
+            /**
+             * Promptprovenance
+             * @default typed
+             * @enum {string}
+             */
+            promptProvenance: "typed" | "enhanced";
+            /**
+             * Resolution
+             * @default 720p
+             * @enum {string}
+             */
+            resolution: "270p" | "360p" | "540p" | "720p" | "1080p" | "1440p" | "2160p";
+            /** Scale */
+            scale?: number | null;
+            /** Seed */
+            seed?: number | null;
+            /** Variantid */
+            variantId?: string | null;
+        };
+        /** ImageAssetMetadata */
+        ImageAssetMetadata: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            mediaType: "image";
+            metadata: components["schemas"]["ImageMeta"];
+        };
         /** ImageGenRecommendationResponse */
         ImageGenRecommendationResponse: {
             /** Cp To Download */
-            cp_to_download: ("ltx-2.3-22b-distilled" | "ltx-2.3-mlx-q4" | "ltx-2.3-spatial-upscaler-x2-1.0" | "ltx-2.3-22b-ic-lora-union-control-ref0.5" | "dpt-hybrid-midas" | "yolox-l-torchscript" | "dw-ll-ucoco-384-bs5" | "gemma-3-12b-it-qat-q4_0-unquantized" | "gemma-3-12b-it-4bit" | "z-image-turbo") | null;
+            cp_to_download: ("ltx-2.3-22b-distilled" | "ltx-2.3-mlx-q4" | "ltx-2.3-22b-distilled-1.1" | "ltx-2.3-spatial-upscaler-x2-1.0" | "ltx-2.3-spatial-upscaler-x2-1.1" | "ltx-2.3-22b-ic-lora-union-control-ref0.5" | "ltx-2.5-22b-distilled" | "ltx-2.5-spatial-upscaler-x2-1.0" | "ltx-2.5-video-vae" | "ltx-2.5-video-vae-conv" | "ltx-2.5-audio-vae" | "ltx-2.5-duration-head" | "dpt-hybrid-midas" | "yolox-l-torchscript" | "dw-ll-ucoco-384-bs5" | "gemma-3-12b-it-qat-q4_0-unquantized" | "gemma-3-12b-it-4bit" | "gemma4-12b-with-proj-ltx-2.5" | "gemma-4-e2b-it" | "z-image-turbo") | null;
+        };
+        /** ImageMeta */
+        ImageMeta: {
+            /** Height */
+            height: number;
+            /** Width */
+            width: number;
+        } & {
+            [key: string]: unknown;
+        };
+        /** ImageToVideoInputs */
+        ImageToVideoInputs: {
+            endFrame?: components["schemas"]["InputAssetRef"] | null;
+            startFrame: components["schemas"]["InputAssetRef"];
+        };
+        /**
+         * ImageToVideoParams
+         * @description Non-media image-to-video params stored on a generation row.
+         */
+        ImageToVideoParams: {
+            /**
+             * Aspectratio
+             * @default auto
+             * @enum {string}
+             */
+            aspectRatio: "auto" | "21:9" | "16:9" | "3:2" | "4:3" | "1:1" | "4:5" | "9:16";
+            /**
+             * Cameramotion
+             * @default none
+             * @enum {string}
+             */
+            cameraMotion: "none" | "dolly_in" | "dolly_out" | "dolly_left" | "dolly_right" | "jib_up" | "jib_down" | "static" | "focus_shift";
+            /**
+             * Duration
+             * @default 5
+             */
+            duration: (2 | 3 | 4 | 5 | 6 | 8 | 10 | 12 | 14 | 16 | 18 | 20) | null;
+            /**
+             * Fps
+             * @default 24
+             * @enum {integer}
+             */
+            fps: 24 | 25 | 48 | 50;
+            /**
+             * Model
+             * @enum {string}
+             */
+            model: "ltx-2.3-fast" | "ltx-2.5-fast";
+            /**
+             * Negativeprompt
+             * @default
+             */
+            negativePrompt: string;
+            /** Prompt */
+            prompt: string;
+            /**
+             * Promptprovenance
+             * @default typed
+             * @enum {string}
+             */
+            promptProvenance: "typed" | "enhanced";
+            /**
+             * Resolution
+             * @default 1080p
+             * @enum {string}
+             */
+            resolution: "270p" | "360p" | "540p" | "720p" | "1080p" | "1440p" | "2160p";
+            /** Seed */
+            seed?: number | null;
+        };
+        /** IngestAssetRequest */
+        IngestAssetRequest: {
+            /** Path */
+            path: string;
+        };
+        /** InputAssetRef */
+        InputAssetRef: {
+            /** Assetid */
+            assetId: string;
+        };
+        /** InputSpec */
+        InputSpec: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "image" | "video";
+            /** Max Count */
+            max_count?: number | null;
+            /**
+             * Optional
+             * @default false
+             */
+            optional: boolean;
+        };
+        /** InstalledModelResponse */
+        InstalledModelResponse: {
+            /** Is Ic Lora */
+            is_ic_lora: boolean;
+            /** Is Lora */
+            is_lora: boolean;
+            /** Kind */
+            kind: string;
+            /** Name */
+            name: string;
+            /** Path */
+            path: string;
+            /** Size Bytes */
+            size_bytes: number;
+        };
+        /** InstalledModelsResponse */
+        InstalledModelsResponse: {
+            /** Models */
+            models: components["schemas"]["InstalledModelResponse"][];
+        };
+        /** InstructionSection */
+        InstructionSection: {
+            /** Body */
+            body: string | string[];
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "summary" | "prompting" | "tips" | "input";
+            /**
+             * Title
+             * @enum {string}
+             */
+            title: "What it does" | "Input" | "Prompt" | "Tips" | "Notes";
+        };
+        JsonValue: unknown;
+        /** KeepRate */
+        KeepRate: {
+            /** Kept */
+            kept: number;
+            /** Rate */
+            rate?: number | null;
+            /** Total */
+            total: number;
+        };
+        /**
+         * KeyframeInput
+         * @description CamelCase of LTXV keyframe-edit `{image_uri, frame_index, strength}`.
+         */
+        KeyframeInput: {
+            /** Frameindex */
+            frameIndex: number;
+            /** Imagepath */
+            imagePath: string;
+            /**
+             * Strength
+             * @default 1
+             */
+            strength: number;
+        };
+        /**
+         * LTXOfferingCapabilitiesSpec
+         * @description Feature flags for one local model or API pipeline. Pixel maps stay backend-only.
+         */
+        LTXOfferingCapabilitiesSpec: {
+            /** A2V */
+            a2v: boolean;
+            /** Auto Duration */
+            auto_duration: boolean;
+            /** Camera Motion */
+            camera_motion: boolean;
+            /** Extend */
+            extend: boolean;
+            /** I2V */
+            i2v: boolean;
+            /** Ic Lora */
+            ic_lora: boolean;
+            /** Multi Keyframe */
+            multi_keyframe: boolean;
+            /** Multi Keyframe Max Count */
+            multi_keyframe_max_count: number;
+            /** Retake */
+            retake: boolean;
+            /** T2V */
+            t2v: boolean;
+            /** User Loras */
+            user_loras: boolean;
         };
         /** LTXVideoGenerationModelSpecItem */
         LTXVideoGenerationModelSpecItem: {
@@ -908,14 +4178,16 @@ export interface components {
              * Pipeline
              * @enum {string}
              */
-            pipeline: "fast" | "pro";
+            pipeline: "fast" | "pro" | "fast-2.5" | "pro-2.5";
             spec: components["schemas"]["LTXVideoGenerationSpec"];
         };
         /** LTXVideoGenerationResolutionSpec */
         LTXVideoGenerationResolutionSpec: {
+            /** Aspect Ratios */
+            aspect_ratios: ("21:9" | "16:9" | "3:2" | "4:3" | "1:1" | "4:5" | "9:16")[];
             /** Fps To Durations */
             fps_to_durations: {
-                [key: string]: (5 | 6 | 8 | 10 | 12 | 14 | 16 | 18 | 20)[];
+                [key: string]: (2 | 3 | 4 | 5 | 6 | 8 | 10 | 12 | 14 | 16 | 18 | 20)[];
             };
         };
         /** LTXVideoGenerationSpec */
@@ -924,17 +4196,269 @@ export interface components {
             a2v_supported_resolutions_durations?: {
                 [key: string]: components["schemas"]["LTXVideoGenerationResolutionSpec"];
             } | null;
+            capabilities?: components["schemas"]["LTXOfferingCapabilitiesSpec"] | null;
+            /** Chunked Cells */
+            chunked_cells?: components["schemas"]["ChunkedFastCell"][] | null;
             /** Display Name */
             display_name: string;
+            /** Dropped Aspect Cells */
+            dropped_aspect_cells?: components["schemas"]["DroppedFastAspectCell"][] | null;
+            /** Dropped Cells */
+            dropped_cells?: components["schemas"]["DroppedFastCell"][] | null;
             /** Supported Resolutions Durations */
             supported_resolutions_durations: {
                 [key: string]: components["schemas"]["LTXVideoGenerationResolutionSpec"];
             };
+            /** Warned Aspect Cells */
+            warned_aspect_cells?: components["schemas"]["WarnedFastAspectCell"][] | null;
+            /** Warned Cells */
+            warned_cells?: components["schemas"]["WarnedFastCell"][] | null;
+        };
+        /** LicenseSpec */
+        LicenseSpec: {
+            /** Name */
+            name: string;
+            /** Url */
+            url?: string | null;
+        };
+        /**
+         * LoraCatalogItem
+         * @description Base catalog entry — used as-is for a plain LoRA.
+         */
+        LoraCatalogItem: {
+            /**
+             * Allows Empty Prompt
+             * @default false
+             */
+            allows_empty_prompt: boolean;
+            author?: components["schemas"]["AuthorSpec"] | null;
+            /** Base Model */
+            base_model?: string | null;
+            /** Created At */
+            created_at?: string | null;
+            /** Description */
+            description: string;
+            download: components["schemas"]["DownloadSpec"];
+            /** Enhancement Examples */
+            enhancement_examples?: string[];
+            /** Id */
+            id: string;
+            input?: components["schemas"]["InputSpec"] | null;
+            /** Instructions */
+            instructions?: components["schemas"]["InstructionSection"][];
+            license?: components["schemas"]["LicenseSpec"] | null;
+            media?: components["schemas"]["MediaSpec"] | null;
+            /** Name */
+            name: string;
+            prompt_template?: components["schemas"]["PromptTemplateSpec"] | null;
+            /** Recommended Strength */
+            recommended_strength?: number | null;
+            /** Requires Checkpoints */
+            requires_checkpoints?: ("ltx-2.3-22b-distilled" | "ltx-2.3-mlx-q4" | "ltx-2.3-22b-distilled-1.1" | "ltx-2.3-spatial-upscaler-x2-1.0" | "ltx-2.3-spatial-upscaler-x2-1.1" | "ltx-2.3-22b-ic-lora-union-control-ref0.5" | "ltx-2.5-22b-distilled" | "ltx-2.5-spatial-upscaler-x2-1.0" | "ltx-2.5-video-vae" | "ltx-2.5-video-vae-conv" | "ltx-2.5-audio-vae" | "ltx-2.5-duration-head" | "dpt-hybrid-midas" | "yolox-l-torchscript" | "dw-ll-ucoco-384-bs5" | "gemma-3-12b-it-qat-q4_0-unquantized" | "gemma-3-12b-it-4bit" | "gemma4-12b-with-proj-ltx-2.5" | "gemma-4-e2b-it" | "z-image-turbo")[];
+            /** Requires Hf Login */
+            requires_hf_login: boolean;
+            /** Supported Models */
+            supported_models?: ("LTX-2.3" | "LTX-2.5")[];
+            /** Tags */
+            tags?: string[];
+            /** Trigger */
+            trigger?: string | null;
+            /** Trigger Placement */
+            trigger_placement?: ("first_token" | "anywhere") | null;
+        };
+        /** LoraDeleteRequest */
+        LoraDeleteRequest: {
+            /** Lora Id */
+            lora_id: string;
+            /** Variant Id */
+            variant_id?: string | null;
+        };
+        /** LoraDownloadProgressResponse */
+        LoraDownloadProgressResponse: {
+            /**
+             * Downloaded Bytes
+             * @default 0
+             */
+            downloaded_bytes: number;
+            /** Error */
+            error?: string | null;
+            /**
+             * Expected Bytes
+             * @default 0
+             */
+            expected_bytes: number;
+            /** Lora Id */
+            lora_id?: string | null;
+            /**
+             * Progress
+             * @default 0
+             */
+            progress: number;
+            /**
+             * Speed Bytes Per Sec
+             * @default 0
+             */
+            speed_bytes_per_sec: number;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "downloading" | "complete" | "error";
+        };
+        /** LoraDownloadRequest */
+        LoraDownloadRequest: {
+            /** Lora Id */
+            lora_id: string;
+            /**
+             * Use Hf Auth
+             * @default false
+             */
+            use_hf_auth: boolean;
+            /** Variant Id */
+            variant_id?: string | null;
+        };
+        /** LoraEntry */
+        LoraEntry: {
+            /** Catalogid */
+            catalogId?: string | null;
+            /** Displayname */
+            displayName?: string | null;
+            /** Ref */
+            ref: string;
+            /**
+             * Scale
+             * @default 1
+             */
+            scale: number;
+            /** Variantid */
+            variantId?: string | null;
+        };
+        /** LoraListItem */
+        LoraListItem: {
+            /** Downloaded */
+            downloaded: boolean;
+            /** Downloaded Variant Ids */
+            downloaded_variant_ids?: string[];
+            lora: components["schemas"]["LoraCatalogItem"];
+        };
+        /** LoraListResponse */
+        LoraListResponse: {
+            /** Loras */
+            loras: components["schemas"]["LoraListItem"][];
+        };
+        /** LoraPanel */
+        LoraPanel: {
+            /** Share */
+            share?: number | null;
+            /** Top */
+            top: components["schemas"]["LoraUsage"][];
+        };
+        /**
+         * LoraRecipeInputs
+         * @description Start frame for an i2v LoRA recipe. t2v recipes omit this object.
+         *
+         *     ``endFrame`` is only valid for recipes that require it (Transition).
+         */
+        LoraRecipeInputs: {
+            endFrame?: components["schemas"]["InputAssetRef"] | null;
+            startFrame: components["schemas"]["InputAssetRef"];
+        };
+        /**
+         * LoraRecipeParams
+         * @description Create-body params for a LoRA recipe.
+         *
+         *     The client sends the catalog id + scale of the recipe's adapter, never a
+         *     filesystem ``ref``. Create stores ``loras: [{ ref: "", scale, catalogId }]``;
+         *     execute hydrates the installed path (see ``make_recipe_lora_resolver``).
+         *     ``prompt`` is the raw user scene; the recipe's prompt scaffold is applied at
+         *     execution time. ``aspectRatio`` includes ``auto`` for i2v recipes (resolved
+         *     from the start frame at execute); t2v recipes reject ``auto``.
+         */
+        LoraRecipeParams: {
+            /**
+             * Aspectratio
+             * @default 16:9
+             * @enum {string}
+             */
+            aspectRatio: "auto" | "21:9" | "16:9" | "3:2" | "4:3" | "1:1" | "4:5" | "9:16";
+            /**
+             * Cameramotion
+             * @default none
+             * @enum {string}
+             */
+            cameraMotion: "none" | "dolly_in" | "dolly_out" | "dolly_left" | "dolly_right" | "jib_up" | "jib_down" | "static" | "focus_shift";
+            /** Catalogid */
+            catalogId: string;
+            /**
+             * Duration
+             * @default 5
+             */
+            duration: (2 | 3 | 4 | 5 | 6 | 8 | 10 | 12 | 14 | 16 | 18 | 20) | null;
+            /**
+             * Fps
+             * @default 24
+             * @enum {integer}
+             */
+            fps: 24 | 25 | 48 | 50;
+            /**
+             * Model
+             * @enum {string}
+             */
+            model: "ltx-2.3-fast" | "ltx-2.5-fast";
+            /**
+             * Negativeprompt
+             * @default
+             */
+            negativePrompt: string;
+            /** Prompt */
+            prompt: string;
+            /**
+             * Promptprovenance
+             * @default typed
+             * @enum {string}
+             */
+            promptProvenance: "typed" | "enhanced";
+            /**
+             * Resolution
+             * @default 1080p
+             * @enum {string}
+             */
+            resolution: "270p" | "360p" | "540p" | "720p" | "1080p" | "1440p" | "2160p";
+            /**
+             * Scale
+             * @default 1
+             */
+            scale: number;
+            /** Seed */
+            seed?: number | null;
+            /** Variantid */
+            variantId?: string | null;
+        };
+        /** LoraUsage */
+        LoraUsage: {
+            /** Feature */
+            feature: string;
+            /** Keep Rate */
+            keep_rate?: number | null;
+            /** Name */
+            name: string;
+            /** Runs */
+            runs: number;
         };
         /** LtxDownloadRecommendationResponse */
         LtxDownloadRecommendationResponse: {
             /** Cps To Download */
-            cps_to_download: ("ltx-2.3-22b-distilled" | "ltx-2.3-mlx-q4" | "ltx-2.3-spatial-upscaler-x2-1.0" | "ltx-2.3-22b-ic-lora-union-control-ref0.5" | "dpt-hybrid-midas" | "yolox-l-torchscript" | "dw-ll-ucoco-384-bs5" | "gemma-3-12b-it-qat-q4_0-unquantized" | "gemma-3-12b-it-4bit" | "z-image-turbo")[];
+            cps_to_download: ("ltx-2.3-22b-distilled" | "ltx-2.3-mlx-q4" | "ltx-2.3-22b-distilled-1.1" | "ltx-2.3-spatial-upscaler-x2-1.0" | "ltx-2.3-spatial-upscaler-x2-1.1" | "ltx-2.3-22b-ic-lora-union-control-ref0.5" | "ltx-2.5-22b-distilled" | "ltx-2.5-spatial-upscaler-x2-1.0" | "ltx-2.5-video-vae" | "ltx-2.5-video-vae-conv" | "ltx-2.5-audio-vae" | "ltx-2.5-duration-head" | "dpt-hybrid-midas" | "yolox-l-torchscript" | "dw-ll-ucoco-384-bs5" | "gemma-3-12b-it-qat-q4_0-unquantized" | "gemma-3-12b-it-4bit" | "gemma4-12b-with-proj-ltx-2.5" | "gemma-4-e2b-it" | "z-image-turbo")[];
+            /**
+             * Optional Cp Ids
+             * @default []
+             */
+            optional_cp_ids: ("ltx-2.3-22b-distilled" | "ltx-2.3-mlx-q4" | "ltx-2.3-22b-distilled-1.1" | "ltx-2.3-spatial-upscaler-x2-1.0" | "ltx-2.3-spatial-upscaler-x2-1.1" | "ltx-2.3-22b-ic-lora-union-control-ref0.5" | "ltx-2.5-22b-distilled" | "ltx-2.5-spatial-upscaler-x2-1.0" | "ltx-2.5-video-vae" | "ltx-2.5-video-vae-conv" | "ltx-2.5-audio-vae" | "ltx-2.5-duration-head" | "dpt-hybrid-midas" | "yolox-l-torchscript" | "dw-ll-ucoco-384-bs5" | "gemma-3-12b-it-qat-q4_0-unquantized" | "gemma-3-12b-it-4bit" | "gemma4-12b-with-proj-ltx-2.5" | "gemma-4-e2b-it" | "z-image-turbo")[];
+            /**
+             * Recommended Quality Cp Ids
+             * @default []
+             */
+            recommended_quality_cp_ids: ("ltx-2.3-22b-distilled" | "ltx-2.3-mlx-q4" | "ltx-2.3-22b-distilled-1.1" | "ltx-2.3-spatial-upscaler-x2-1.0" | "ltx-2.3-spatial-upscaler-x2-1.1" | "ltx-2.3-22b-ic-lora-union-control-ref0.5" | "ltx-2.5-22b-distilled" | "ltx-2.5-spatial-upscaler-x2-1.0" | "ltx-2.5-video-vae" | "ltx-2.5-video-vae-conv" | "ltx-2.5-audio-vae" | "ltx-2.5-duration-head" | "dpt-hybrid-midas" | "yolox-l-torchscript" | "dw-ll-ucoco-384-bs5" | "gemma-3-12b-it-qat-q4_0-unquantized" | "gemma-3-12b-it-4bit" | "gemma4-12b-with-proj-ltx-2.5" | "gemma-4-e2b-it" | "z-image-turbo")[];
             /**
              * Status
              * @constant
@@ -944,7 +4468,12 @@ export interface components {
         /** LtxIcLoraRecommendationResponse */
         LtxIcLoraRecommendationResponse: {
             /** Cps To Download */
-            cps_to_download: ("ltx-2.3-22b-distilled" | "ltx-2.3-mlx-q4" | "ltx-2.3-spatial-upscaler-x2-1.0" | "ltx-2.3-22b-ic-lora-union-control-ref0.5" | "dpt-hybrid-midas" | "yolox-l-torchscript" | "dw-ll-ucoco-384-bs5" | "gemma-3-12b-it-qat-q4_0-unquantized" | "gemma-3-12b-it-4bit" | "z-image-turbo")[];
+            cps_to_download: ("ltx-2.3-22b-distilled" | "ltx-2.3-mlx-q4" | "ltx-2.3-22b-distilled-1.1" | "ltx-2.3-spatial-upscaler-x2-1.0" | "ltx-2.3-spatial-upscaler-x2-1.1" | "ltx-2.3-22b-ic-lora-union-control-ref0.5" | "ltx-2.5-22b-distilled" | "ltx-2.5-spatial-upscaler-x2-1.0" | "ltx-2.5-video-vae" | "ltx-2.5-video-vae-conv" | "ltx-2.5-audio-vae" | "ltx-2.5-duration-head" | "dpt-hybrid-midas" | "yolox-l-torchscript" | "dw-ll-ucoco-384-bs5" | "gemma-3-12b-it-qat-q4_0-unquantized" | "gemma-3-12b-it-4bit" | "gemma4-12b-with-proj-ltx-2.5" | "gemma-4-e2b-it" | "z-image-turbo")[];
+            /**
+             * Supported
+             * @default true
+             */
+            supported: boolean;
         };
         /** LtxInsufficientFundsErrorResponse */
         LtxInsufficientFundsErrorResponse: {
@@ -955,6 +4484,36 @@ export interface components {
             code: "LTX_INSUFFICIENT_FUNDS";
             /** Message */
             message: string;
+        };
+        /** LtxModelVersionItem */
+        LtxModelVersionItem: {
+            /** Active */
+            active: boolean;
+            /** Cps To Download */
+            cps_to_download: ("ltx-2.3-22b-distilled" | "ltx-2.3-mlx-q4" | "ltx-2.3-22b-distilled-1.1" | "ltx-2.3-spatial-upscaler-x2-1.0" | "ltx-2.3-spatial-upscaler-x2-1.1" | "ltx-2.3-22b-ic-lora-union-control-ref0.5" | "ltx-2.5-22b-distilled" | "ltx-2.5-spatial-upscaler-x2-1.0" | "ltx-2.5-video-vae" | "ltx-2.5-video-vae-conv" | "ltx-2.5-audio-vae" | "ltx-2.5-duration-head" | "dpt-hybrid-midas" | "yolox-l-torchscript" | "dw-ll-ucoco-384-bs5" | "gemma-3-12b-it-qat-q4_0-unquantized" | "gemma-3-12b-it-4bit" | "gemma4-12b-with-proj-ltx-2.5" | "gemma-4-e2b-it" | "z-image-turbo")[];
+            /** Installed */
+            installed: boolean;
+            /** Is Newest */
+            is_newest: boolean;
+            /** Label */
+            label: string;
+            /**
+             * Model Cp
+             * @enum {string}
+             */
+            model_cp: "ltx-2.3-22b-distilled" | "ltx-2.3-mlx-q4" | "ltx-2.3-22b-distilled-1.1" | "ltx-2.3-spatial-upscaler-x2-1.0" | "ltx-2.3-spatial-upscaler-x2-1.1" | "ltx-2.3-22b-ic-lora-union-control-ref0.5" | "ltx-2.5-22b-distilled" | "ltx-2.5-spatial-upscaler-x2-1.0" | "ltx-2.5-video-vae" | "ltx-2.5-video-vae-conv" | "ltx-2.5-audio-vae" | "ltx-2.5-duration-head" | "dpt-hybrid-midas" | "yolox-l-torchscript" | "dw-ll-ucoco-384-bs5" | "gemma-3-12b-it-qat-q4_0-unquantized" | "gemma-3-12b-it-4bit" | "gemma4-12b-with-proj-ltx-2.5" | "gemma-4-e2b-it" | "z-image-turbo";
+            /**
+             * Model Id
+             * @enum {string}
+             */
+            model_id: "ltx-2.3-mlx-q4" | "ltx-2.5-22b-distilled" | "ltx-2.3-22b-distilled-1.1" | "ltx-2.3-22b-distilled";
+            /** Size Bytes */
+            size_bytes: number;
+        };
+        /** LtxModelVersionsResponse */
+        LtxModelVersionsResponse: {
+            /** Versions */
+            versions: components["schemas"]["LtxModelVersionItem"][];
         };
         /** LtxOkRecommendationResponse */
         LtxOkRecommendationResponse: {
@@ -967,14 +4526,24 @@ export interface components {
         /** LtxUpgradeRecommendationResponse */
         LtxUpgradeRecommendationResponse: {
             /** Cps To Delete */
-            cps_to_delete: ("ltx-2.3-22b-distilled" | "ltx-2.3-mlx-q4" | "ltx-2.3-spatial-upscaler-x2-1.0" | "ltx-2.3-22b-ic-lora-union-control-ref0.5" | "dpt-hybrid-midas" | "yolox-l-torchscript" | "dw-ll-ucoco-384-bs5" | "gemma-3-12b-it-qat-q4_0-unquantized" | "gemma-3-12b-it-4bit" | "z-image-turbo")[];
+            cps_to_delete: ("ltx-2.3-22b-distilled" | "ltx-2.3-mlx-q4" | "ltx-2.3-22b-distilled-1.1" | "ltx-2.3-spatial-upscaler-x2-1.0" | "ltx-2.3-spatial-upscaler-x2-1.1" | "ltx-2.3-22b-ic-lora-union-control-ref0.5" | "ltx-2.5-22b-distilled" | "ltx-2.5-spatial-upscaler-x2-1.0" | "ltx-2.5-video-vae" | "ltx-2.5-video-vae-conv" | "ltx-2.5-audio-vae" | "ltx-2.5-duration-head" | "dpt-hybrid-midas" | "yolox-l-torchscript" | "dw-ll-ucoco-384-bs5" | "gemma-3-12b-it-qat-q4_0-unquantized" | "gemma-3-12b-it-4bit" | "gemma4-12b-with-proj-ltx-2.5" | "gemma-4-e2b-it" | "z-image-turbo")[];
             /** Cps To Download */
-            cps_to_download: ("ltx-2.3-22b-distilled" | "ltx-2.3-mlx-q4" | "ltx-2.3-spatial-upscaler-x2-1.0" | "ltx-2.3-22b-ic-lora-union-control-ref0.5" | "dpt-hybrid-midas" | "yolox-l-torchscript" | "dw-ll-ucoco-384-bs5" | "gemma-3-12b-it-qat-q4_0-unquantized" | "gemma-3-12b-it-4bit" | "z-image-turbo")[];
+            cps_to_download: ("ltx-2.3-22b-distilled" | "ltx-2.3-mlx-q4" | "ltx-2.3-22b-distilled-1.1" | "ltx-2.3-spatial-upscaler-x2-1.0" | "ltx-2.3-spatial-upscaler-x2-1.1" | "ltx-2.3-22b-ic-lora-union-control-ref0.5" | "ltx-2.5-22b-distilled" | "ltx-2.5-spatial-upscaler-x2-1.0" | "ltx-2.5-video-vae" | "ltx-2.5-video-vae-conv" | "ltx-2.5-audio-vae" | "ltx-2.5-duration-head" | "dpt-hybrid-midas" | "yolox-l-torchscript" | "dw-ll-ucoco-384-bs5" | "gemma-3-12b-it-qat-q4_0-unquantized" | "gemma-3-12b-it-4bit" | "gemma4-12b-with-proj-ltx-2.5" | "gemma-4-e2b-it" | "z-image-turbo")[];
+            /**
+             * Loses Built In Control
+             * @default false
+             */
+            loses_built_in_control: boolean;
             /**
              * Ltx Model Id
              * @enum {string}
              */
-            ltx_model_id: "ltx-2.3-22b-distilled" | "ltx-2.3-mlx-q4";
+            ltx_model_id: "ltx-2.3-mlx-q4" | "ltx-2.5-22b-distilled" | "ltx-2.3-22b-distilled-1.1" | "ltx-2.3-22b-distilled";
+            /**
+             * Recommended Quality Cp Ids
+             * @default []
+             */
+            recommended_quality_cp_ids: ("ltx-2.3-22b-distilled" | "ltx-2.3-mlx-q4" | "ltx-2.3-22b-distilled-1.1" | "ltx-2.3-spatial-upscaler-x2-1.0" | "ltx-2.3-spatial-upscaler-x2-1.1" | "ltx-2.3-22b-ic-lora-union-control-ref0.5" | "ltx-2.5-22b-distilled" | "ltx-2.5-spatial-upscaler-x2-1.0" | "ltx-2.5-video-vae" | "ltx-2.5-video-vae-conv" | "ltx-2.5-audio-vae" | "ltx-2.5-duration-head" | "dpt-hybrid-midas" | "yolox-l-torchscript" | "dw-ll-ucoco-384-bs5" | "gemma-3-12b-it-qat-q4_0-unquantized" | "gemma-3-12b-it-4bit" | "gemma4-12b-with-proj-ltx-2.5" | "gemma-4-e2b-it" | "z-image-turbo")[];
             /**
              * Status
              * @constant
@@ -983,15 +4552,22 @@ export interface components {
             /** Upgrade Message */
             upgrade_message?: string | null;
         };
+        /** MediaSpec */
+        MediaSpec: {
+            /** Demo Video */
+            demo_video?: string | null;
+            /** Thumbnail */
+            thumbnail?: string | null;
+        };
         /** ModelDeleteRequest */
         ModelDeleteRequest: {
             /** Cp Ids */
-            cp_ids?: ("ltx-2.3-22b-distilled" | "ltx-2.3-mlx-q4" | "ltx-2.3-spatial-upscaler-x2-1.0" | "ltx-2.3-22b-ic-lora-union-control-ref0.5" | "dpt-hybrid-midas" | "yolox-l-torchscript" | "dw-ll-ucoco-384-bs5" | "gemma-3-12b-it-qat-q4_0-unquantized" | "gemma-3-12b-it-4bit" | "z-image-turbo")[];
+            cp_ids?: ("ltx-2.3-22b-distilled" | "ltx-2.3-mlx-q4" | "ltx-2.3-22b-distilled-1.1" | "ltx-2.3-spatial-upscaler-x2-1.0" | "ltx-2.3-spatial-upscaler-x2-1.1" | "ltx-2.3-22b-ic-lora-union-control-ref0.5" | "ltx-2.5-22b-distilled" | "ltx-2.5-spatial-upscaler-x2-1.0" | "ltx-2.5-video-vae" | "ltx-2.5-video-vae-conv" | "ltx-2.5-audio-vae" | "ltx-2.5-duration-head" | "dpt-hybrid-midas" | "yolox-l-torchscript" | "dw-ll-ucoco-384-bs5" | "gemma-3-12b-it-qat-q4_0-unquantized" | "gemma-3-12b-it-4bit" | "gemma4-12b-with-proj-ltx-2.5" | "gemma-4-e2b-it" | "z-image-turbo")[];
         };
         /** ModelDownloadRequest */
         ModelDownloadRequest: {
             /** Cp Ids */
-            cp_ids?: ("ltx-2.3-22b-distilled" | "ltx-2.3-mlx-q4" | "ltx-2.3-spatial-upscaler-x2-1.0" | "ltx-2.3-22b-ic-lora-union-control-ref0.5" | "dpt-hybrid-midas" | "yolox-l-torchscript" | "dw-ll-ucoco-384-bs5" | "gemma-3-12b-it-qat-q4_0-unquantized" | "gemma-3-12b-it-4bit" | "z-image-turbo")[];
+            cp_ids?: ("ltx-2.3-22b-distilled" | "ltx-2.3-mlx-q4" | "ltx-2.3-22b-distilled-1.1" | "ltx-2.3-spatial-upscaler-x2-1.0" | "ltx-2.3-spatial-upscaler-x2-1.1" | "ltx-2.3-22b-ic-lora-union-control-ref0.5" | "ltx-2.5-22b-distilled" | "ltx-2.5-spatial-upscaler-x2-1.0" | "ltx-2.5-video-vae" | "ltx-2.5-video-vae-conv" | "ltx-2.5-audio-vae" | "ltx-2.5-duration-head" | "dpt-hybrid-midas" | "yolox-l-torchscript" | "dw-ll-ucoco-384-bs5" | "gemma-3-12b-it-qat-q4_0-unquantized" | "gemma-3-12b-it-4bit" | "gemma4-12b-with-proj-ltx-2.5" | "gemma-4-e2b-it" | "z-image-turbo")[];
             /**
              * Type
              * @default download
@@ -1022,6 +4598,179 @@ export interface components {
             /** Name */
             name: string;
         };
+        /**
+         * MotionPath
+         * @description The path the Motion Track dot follows. Each segment is a cubic Bézier.
+         */
+        MotionPath: {
+            /**
+             * Easing
+             * @default easeInOut
+             * @enum {string}
+             */
+            easing: "linear" | "easeIn" | "easeOut" | "easeInOut" | "easeInBack" | "easeOutBack" | "easeInOutBack" | "gentle" | "quick" | "bouncy" | "slow";
+            /**
+             * Endholdsec
+             * @default 0
+             */
+            endHoldSec: number;
+            /** Points */
+            points: components["schemas"]["MotionPathPoint"][];
+            /**
+             * Startholdsec
+             * @default 0
+             */
+            startHoldSec: number;
+        };
+        /**
+         * MotionPathPoint
+         * @description A path anchor in frame-normalized coordinates. Handles are offsets from the anchor.
+         */
+        MotionPathPoint: {
+            handleIn?: components["schemas"]["MotionPathVec2"] | null;
+            handleOut?: components["schemas"]["MotionPathVec2"] | null;
+            /** X */
+            x: number;
+            /** Y */
+            y: number;
+        };
+        /** MotionPathVec2 */
+        MotionPathVec2: {
+            /** X */
+            x: number;
+            /** Y */
+            y: number;
+        };
+        /**
+         * MpsMemoryResponse
+         * @description Read-only Apple Silicon MPS memory snapshot, MiB. Fields are None off MPS.
+         */
+        MpsMemoryResponse: {
+            /** Allocated Mib */
+            allocated_mib?: number | null;
+            /** Available */
+            available: boolean;
+            /** Driver Mib */
+            driver_mib?: number | null;
+            /** Recommended Max Mib */
+            recommended_max_mib?: number | null;
+        };
+        /**
+         * OutpaintPads
+         * @description Per-edge pixels to add around the source video (extend-only, so all ≥ 0).
+         *
+         *     The +100% cap (each ≤ the source's axis size) needs the source dimensions, so it's enforced
+         *     in `_outpaint_canvas`, not here.
+         */
+        OutpaintPads: {
+            /** Bottom */
+            bottom: number;
+            /** Left */
+            left: number;
+            /** Right */
+            right: number;
+            /** Top */
+            top: number;
+        };
+        /** PairedDevicePublic */
+        PairedDevicePublic: {
+            /** Created At */
+            created_at: number;
+            /** Id */
+            id: string;
+            /** Ip */
+            ip?: string | null;
+            /** Last Seen At */
+            last_seen_at: number;
+            /** Name */
+            name: string;
+            /** Revoked At */
+            revoked_at?: number | null;
+        };
+        /** PreprocessingStep */
+        PreprocessingStep: {
+            /** Params */
+            params?: {
+                [key: string]: components["schemas"]["JsonValue"];
+            };
+            /** Utility */
+            utility: string;
+        };
+        /**
+         * PromptEnhancerStatusResponse
+         * @description Availability for the Explore Enhance control. Does not expose API keys or paths.
+         */
+        PromptEnhancerStatusResponse: {
+            /** Cantoggleprovider */
+            canToggleProvider: boolean;
+            /**
+             * Defaultprovider
+             * @enum {string}
+             */
+            defaultProvider: "local" | "api";
+            /** Exploreautoenhanceprompts */
+            exploreAutoEnhancePrompts: boolean;
+            /** Hasgeminiapikey */
+            hasGeminiApiKey: boolean;
+            /** Localenhancementsupported */
+            localEnhancementSupported: boolean;
+            /** Showmanualenhance */
+            showManualEnhance: boolean;
+        };
+        /** PromptTemplatePlaceholder */
+        PromptTemplatePlaceholder: {
+            /** Choices */
+            choices?: string[] | null;
+        };
+        /**
+         * PromptTemplateSpec
+         * @description A fixed prompt structure a LoRA/IC-LoRA requires verbatim (e.g. a two-part
+         *     "Reference shows X. Edited shows Y." restore template, or crossview's enum-constrained
+         *     camera vocabulary). `template` contains `{name}` placeholders; each must have a matching
+         *     entry in `placeholders`. A degenerate template with no placeholders (e.g. "upscale") is a
+         *     fixed, non-generated prompt.
+         */
+        PromptTemplateSpec: {
+            /** Placeholders */
+            placeholders?: {
+                [key: string]: components["schemas"]["PromptTemplatePlaceholder"];
+            };
+            /** Template */
+            template: string;
+        };
+        /** QueueEntry */
+        QueueEntry: {
+            generation: components["schemas"]["Generation"];
+            /** Input Assets */
+            input_assets: components["schemas"]["Asset"][];
+            progress?: components["schemas"]["QueueProgress"] | null;
+        };
+        /**
+         * QueueProgress
+         * @description Live progress for the persisted active queue entry.
+         */
+        QueueProgress: {
+            /** Currentstep */
+            currentStep: number | null;
+            /** Phase */
+            phase: string;
+            /** Progress */
+            progress: number;
+            /** Totalsteps */
+            totalSteps: number | null;
+        };
+        /** QueueSnapshot */
+        QueueSnapshot: {
+            active: components["schemas"]["QueueEntry"] | null;
+            /** Done */
+            done?: components["schemas"]["QueueEntry"][];
+            /** Failed */
+            failed?: components["schemas"]["QueueEntry"][];
+            /** Queued */
+            queued: components["schemas"]["QueueEntry"][];
+            /** Unseen Ids */
+            unseen_ids?: string[];
+        };
         /** ReferenceImageInput */
         ReferenceImageInput: {
             /** Path */
@@ -1033,6 +4782,57 @@ export interface components {
              */
             role: "character" | "location" | "style" | "keyframe";
         };
+        /** RemoteStatusResponse */
+        RemoteStatusResponse: {
+            /** Lanurl */
+            lanUrl?: string | null;
+            /** Localurl */
+            localUrl?: string | null;
+            /** Mode */
+            mode?: ("off" | "lan") | null;
+            /** Permitted */
+            permitted: boolean;
+            /** Reason */
+            reason?: string | null;
+            /** Serving */
+            serving: boolean;
+            /** Url */
+            url?: string | null;
+        };
+        /** RenderCell */
+        RenderCell: {
+            /** Aspect Ratio */
+            aspect_ratio: string;
+            /** Count */
+            count: number;
+            /** Duration S */
+            duration_s: number;
+            /** Median Ms */
+            median_ms: number;
+            /** Model */
+            model: string;
+            /** P90 Ms */
+            p90_ms: number;
+            /** Resolution */
+            resolution: string;
+        };
+        /** ReorderGenerationQueueRequest */
+        ReorderGenerationQueueRequest: {
+            /** Before Generation Id */
+            before_generation_id?: string | null;
+            /** Generation Id */
+            generation_id: string;
+        };
+        /**
+         * ReplacedWindow
+         * @description Seconds ``start`` to ``end`` of a source video that the job replaces (a Retake selection).
+         */
+        ReplacedWindow: {
+            /** End */
+            end: number;
+            /** Start */
+            start: number;
+        };
         /** RetakeCancelledResponse */
         RetakeCancelledResponse: {
             /**
@@ -1040,6 +4840,10 @@ export interface components {
              * @constant
              */
             status: "cancelled";
+        };
+        /** RetakeInputs */
+        RetakeInputs: {
+            video: components["schemas"]["InputAssetRef"];
         };
         /** RetakePayloadResponse */
         RetakePayloadResponse: {
@@ -1064,14 +4868,62 @@ export interface components {
              */
             mode: "replace_audio_and_video" | "replace_video" | "replace_audio";
             /**
+             * Model
+             * @default pro
+             * @constant
+             */
+            model: "pro";
+            /**
              * Prompt
              * @default
              */
             prompt: string;
+            /**
+             * Prompt Provenance
+             * @default typed
+             * @enum {string}
+             */
+            prompt_provenance: "typed" | "enhanced";
+            resolution?: components["schemas"]["TargetResolution"] | null;
             /** Start Time */
             start_time: number;
             /** Video Path */
             video_path: string;
+        };
+        /**
+         * RetakeRequestParams
+         * @description New retakes only: specs queued before the cap still parse as ``RetakeParams``.
+         */
+        RetakeRequestParams: {
+            /** Duration */
+            duration: number;
+            /**
+             * Mode
+             * @default replace_audio_and_video
+             * @enum {string}
+             */
+            mode: "replace_audio_and_video" | "replace_video" | "replace_audio";
+            /**
+             * Model
+             * @enum {string}
+             */
+            model: "ltx-2.3-fast" | "ltx-2.5-fast";
+            /**
+             * Prompt
+             * @default
+             */
+            prompt: string;
+            /**
+             * Promptprovenance
+             * @default typed
+             * @enum {string}
+             */
+            promptProvenance: "typed" | "enhanced";
+            resolution?: components["schemas"]["TargetResolution"] | null;
+            /** Seed */
+            seed?: number | null;
+            /** Starttime */
+            startTime: number;
         };
         /** RetakeVideoResponse */
         RetakeVideoResponse: {
@@ -1087,9 +4939,60 @@ export interface components {
         RuntimePolicyResponse: {
             /** Force Api Generations */
             force_api_generations: boolean;
+            /** Local Viable */
+            local_viable: boolean;
+        };
+        /** SetActiveLtxModelRequest */
+        SetActiveLtxModelRequest: {
+            /**
+             * Model Id
+             * @enum {string}
+             */
+            model_id: "ltx-2.3-mlx-q4" | "ltx-2.5-22b-distilled" | "ltx-2.3-22b-distilled-1.1" | "ltx-2.3-22b-distilled";
         };
         /** SettingsResponse */
         SettingsResponse: {
+            /** Activeltxmodelid */
+            activeLtxModelId?: ("ltx-2.3-mlx-q4" | "ltx-2.5-22b-distilled" | "ltx-2.3-22b-distilled-1.1" | "ltx-2.3-22b-distilled") | null;
+            activityDashboardSelections?: components["schemas"]["DashboardSelection"];
+            /**
+             * Assistantlocalmodel
+             * @default qwen3.5:9b
+             * @constant
+             */
+            assistantLocalModel: "qwen3.5:9b";
+            /**
+             * Assistantparallelgemini
+             * @default false
+             */
+            assistantParallelGemini: boolean;
+            /**
+             * Assistantprovider
+             * @default gemini
+             * @enum {string}
+             */
+            assistantProvider: "gemini" | "local";
+            /**
+             * Budgetmode
+             * @default reckless
+             * @enum {string}
+             */
+            budgetMode: "standard" | "reckless";
+            /**
+             * Diffusionstagecacheenabled
+             * @default false
+             */
+            diffusionStageCacheEnabled: boolean;
+            /**
+             * Exploreautoenhanceprompts
+             * @default true
+             */
+            exploreAutoEnhancePrompts: boolean;
+            /**
+             * Geminimodel
+             * @default
+             */
+            geminiModel: string;
             /**
              * Hasfalapikey
              * @default false
@@ -1127,20 +5030,28 @@ export interface components {
              */
             promptCacheSize: number;
             /**
-             * Promptenhancerenabledi2V
-             * @default false
-             */
-            promptEnhancerEnabledI2V: boolean;
-            /**
-             * Promptenhancerenabledt2V
+             * Promptenhancerenabled
              * @default true
              */
-            promptEnhancerEnabledT2V: boolean;
+            promptEnhancerEnabled: boolean;
+            /** Promptenhancerproviderpreference */
+            promptEnhancerProviderPreference?: ("local" | "api") | null;
+            /**
+             * Remoteexposure
+             * @default off
+             * @enum {string}
+             */
+            remoteExposure: "off" | "lan";
             /**
              * Seedlocked
              * @default false
              */
             seedLocked: boolean;
+            /**
+             * Useconvvae
+             * @default false
+             */
+            useConvVae: boolean;
             /**
              * Uselocaltextencoder
              * @default false
@@ -1151,6 +5062,11 @@ export interface components {
              * @default false
              */
             useTorchCompile: boolean;
+            /**
+             * Userprefersfalapiimagegenerations
+             * @default false
+             */
+            userPrefersFalApiImageGenerations: boolean;
             /**
              * Userprefersltxapivideogenerations
              * @default false
@@ -1203,14 +5119,238 @@ export interface components {
             /** Suggested Prompt */
             suggested_prompt: string;
         };
+        /**
+         * TargetResolution
+         * @description Desired output resolution for a local generation. The backend corrects it to the
+         *     nearest valid size (snapped down to a multiple of 32, never above the source).
+         */
+        TargetResolution: {
+            /** Height */
+            height: number;
+            /** Width */
+            width: number;
+        };
         /** TextEncoderRecommendationResponse */
         TextEncoderRecommendationResponse: {
+            /** Active Local Enhancer Cp */
+            active_local_enhancer_cp: ("ltx-2.3-22b-distilled" | "ltx-2.3-mlx-q4" | "ltx-2.3-22b-distilled-1.1" | "ltx-2.3-spatial-upscaler-x2-1.0" | "ltx-2.3-spatial-upscaler-x2-1.1" | "ltx-2.3-22b-ic-lora-union-control-ref0.5" | "ltx-2.5-22b-distilled" | "ltx-2.5-spatial-upscaler-x2-1.0" | "ltx-2.5-video-vae" | "ltx-2.5-video-vae-conv" | "ltx-2.5-audio-vae" | "ltx-2.5-duration-head" | "dpt-hybrid-midas" | "yolox-l-torchscript" | "dw-ll-ucoco-384-bs5" | "gemma-3-12b-it-qat-q4_0-unquantized" | "gemma-3-12b-it-4bit" | "gemma4-12b-with-proj-ltx-2.5" | "gemma-4-e2b-it" | "z-image-turbo") | null;
+            /** Active Local Text Encoder Cp */
+            active_local_text_encoder_cp?: ("ltx-2.3-22b-distilled" | "ltx-2.3-mlx-q4" | "ltx-2.3-22b-distilled-1.1" | "ltx-2.3-spatial-upscaler-x2-1.0" | "ltx-2.3-spatial-upscaler-x2-1.1" | "ltx-2.3-22b-ic-lora-union-control-ref0.5" | "ltx-2.5-22b-distilled" | "ltx-2.5-spatial-upscaler-x2-1.0" | "ltx-2.5-video-vae" | "ltx-2.5-video-vae-conv" | "ltx-2.5-audio-vae" | "ltx-2.5-duration-head" | "dpt-hybrid-midas" | "yolox-l-torchscript" | "dw-ll-ucoco-384-bs5" | "gemma-3-12b-it-qat-q4_0-unquantized" | "gemma-3-12b-it-4bit" | "gemma4-12b-with-proj-ltx-2.5" | "gemma-4-e2b-it" | "z-image-turbo") | null;
+            /** Api Encoding Supported */
+            api_encoding_supported: boolean;
             /** Cp To Download */
-            cp_to_download: ("ltx-2.3-22b-distilled" | "ltx-2.3-mlx-q4" | "ltx-2.3-spatial-upscaler-x2-1.0" | "ltx-2.3-22b-ic-lora-union-control-ref0.5" | "dpt-hybrid-midas" | "yolox-l-torchscript" | "dw-ll-ucoco-384-bs5" | "gemma-3-12b-it-qat-q4_0-unquantized" | "gemma-3-12b-it-4bit" | "z-image-turbo") | null;
+            cp_to_download: ("ltx-2.3-22b-distilled" | "ltx-2.3-mlx-q4" | "ltx-2.3-22b-distilled-1.1" | "ltx-2.3-spatial-upscaler-x2-1.0" | "ltx-2.3-spatial-upscaler-x2-1.1" | "ltx-2.3-22b-ic-lora-union-control-ref0.5" | "ltx-2.5-22b-distilled" | "ltx-2.5-spatial-upscaler-x2-1.0" | "ltx-2.5-video-vae" | "ltx-2.5-video-vae-conv" | "ltx-2.5-audio-vae" | "ltx-2.5-duration-head" | "dpt-hybrid-midas" | "yolox-l-torchscript" | "dw-ll-ucoco-384-bs5" | "gemma-3-12b-it-qat-q4_0-unquantized" | "gemma-3-12b-it-4bit" | "gemma4-12b-with-proj-ltx-2.5" | "gemma-4-e2b-it" | "z-image-turbo") | null;
             /** Expected Size Bytes */
             expected_size_bytes: number;
             /** Expected Size Gb */
             expected_size_gb: number;
+            /** Local Enhancement Supported */
+            local_enhancement_supported: boolean;
+            /** Local Enhancer Cp */
+            local_enhancer_cp: ("ltx-2.3-22b-distilled" | "ltx-2.3-mlx-q4" | "ltx-2.3-22b-distilled-1.1" | "ltx-2.3-spatial-upscaler-x2-1.0" | "ltx-2.3-spatial-upscaler-x2-1.1" | "ltx-2.3-22b-ic-lora-union-control-ref0.5" | "ltx-2.5-22b-distilled" | "ltx-2.5-spatial-upscaler-x2-1.0" | "ltx-2.5-video-vae" | "ltx-2.5-video-vae-conv" | "ltx-2.5-audio-vae" | "ltx-2.5-duration-head" | "dpt-hybrid-midas" | "yolox-l-torchscript" | "dw-ll-ucoco-384-bs5" | "gemma-3-12b-it-qat-q4_0-unquantized" | "gemma-3-12b-it-4bit" | "gemma4-12b-with-proj-ltx-2.5" | "gemma-4-e2b-it" | "z-image-turbo") | null;
+            /** Local Enhancer Expected Size Gb */
+            local_enhancer_expected_size_gb: number | null;
+            /**
+             * Local Text Encoder Removable
+             * @default false
+             */
+            local_text_encoder_removable: boolean;
+            /** Ltx Version Label */
+            ltx_version_label: string;
+        };
+        /**
+         * TextToVideoParams
+         * @description Non-media text-to-video params stored on a generation row.
+         */
+        TextToVideoParams: {
+            /**
+             * Aspectratio
+             * @default 16:9
+             * @enum {string}
+             */
+            aspectRatio: "21:9" | "16:9" | "3:2" | "4:3" | "1:1" | "4:5" | "9:16";
+            /**
+             * Cameramotion
+             * @default none
+             * @enum {string}
+             */
+            cameraMotion: "none" | "dolly_in" | "dolly_out" | "dolly_left" | "dolly_right" | "jib_up" | "jib_down" | "static" | "focus_shift";
+            /**
+             * Duration
+             * @default 5
+             */
+            duration: (2 | 3 | 4 | 5 | 6 | 8 | 10 | 12 | 14 | 16 | 18 | 20) | null;
+            /**
+             * Fps
+             * @default 24
+             * @enum {integer}
+             */
+            fps: 24 | 25 | 48 | 50;
+            /** Loras */
+            loras?: components["schemas"]["LoraEntry"][];
+            /**
+             * Model
+             * @enum {string}
+             */
+            model: "ltx-2.3-fast" | "ltx-2.5-fast";
+            /**
+             * Negativeprompt
+             * @default
+             */
+            negativePrompt: string;
+            /** Prompt */
+            prompt: string;
+            /**
+             * Promptprovenance
+             * @default typed
+             * @enum {string}
+             */
+            promptProvenance: "typed" | "enhanced";
+            /**
+             * Resolution
+             * @default 1080p
+             * @enum {string}
+             */
+            resolution: "270p" | "360p" | "540p" | "720p" | "1080p" | "1440p" | "2160p";
+            /** Seed */
+            seed?: number | null;
+        };
+        /** TrimMediaRequest */
+        TrimMediaRequest: {
+            /** Endsec */
+            endSec: number;
+            /** Startsec */
+            startSec: number;
+        };
+        /** UsualSettings */
+        UsualSettings: {
+            /** Aspect Ratio */
+            aspect_ratio: string;
+            /** Duration S */
+            duration_s: number;
+            /** Fps */
+            fps: number;
+            /** Model */
+            model: string;
+            /** Resolution */
+            resolution: string;
+        };
+        /** VideoAssetMetadata */
+        VideoAssetMetadata: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            mediaType: "video";
+            metadata: components["schemas"]["VideoMeta"];
+        };
+        /** VideoMeta */
+        VideoMeta: {
+            /** Audiostreamcount */
+            audioStreamCount: number;
+            /** Durationms */
+            durationMs: number;
+            /** Fps */
+            fps?: number | null;
+            /** Height */
+            height: number;
+            /** Sizebytes */
+            sizeBytes: number;
+            /** Width */
+            width: number;
+        } & {
+            [key: string]: unknown;
+        };
+        /** WallTimeEstimateResponse */
+        WallTimeEstimateResponse: {
+            /**
+             * Basis
+             * @enum {string}
+             */
+            basis: "measured" | "scaled";
+            /** Seconds */
+            seconds: number;
+            /** T2Vreuse */
+            t2vReuse: boolean;
+        };
+        /**
+         * WarnedFastAspectCell
+         * @description One kept (cell, wider shape) pair carrying a warning tier. Same
+         *     contract as WarnedFastCell; aspect pickers read this, the
+         *     resolution/fps/duration pickers never do.
+         */
+        WarnedFastAspectCell: {
+            /**
+             * Aspectratio
+             * @enum {string}
+             */
+            aspectRatio: "21:9" | "16:9" | "3:2" | "4:3" | "1:1" | "4:5" | "9:16";
+            /** Audio */
+            audio: boolean;
+            /**
+             * Duration
+             * @enum {integer}
+             */
+            duration: 2 | 3 | 4 | 5 | 6 | 8 | 10 | 12 | 14 | 16 | 18 | 20;
+            /**
+             * Fps
+             * @enum {integer}
+             */
+            fps: 24 | 25 | 48 | 50;
+            /** Headroom Gib */
+            headroom_gib?: number | null;
+            /** Message */
+            message: string;
+            readout?: components["schemas"]["BudgetReadout"] | null;
+            /**
+             * Resolution
+             * @enum {string}
+             */
+            resolution: "270p" | "360p" | "540p" | "720p" | "1080p" | "1440p" | "2160p";
+            /**
+             * Tier
+             * @enum {string}
+             */
+            tier: "tight" | "unmeasured";
+        };
+        /**
+         * WarnedFastCell
+         * @description One kept grid cell carrying a warning tier (tight fit or unmeasured).
+         *
+         *     Kept + warned render the full grid for warned-with-tooltip pickers:
+         *     ``fps_to_durations`` stays the kept set, this list marks the risky subset.
+         *     ``headroom_gib`` is set on tight cells only (unmeasured compares nothing).
+         *     ``message`` is backend-composed, same builder as the create annotation, so
+         *     the picker tooltip and the queue badge read identically.
+         */
+        WarnedFastCell: {
+            /** Audio */
+            audio: boolean;
+            /**
+             * Duration
+             * @enum {integer}
+             */
+            duration: 2 | 3 | 4 | 5 | 6 | 8 | 10 | 12 | 14 | 16 | 18 | 20;
+            /**
+             * Fps
+             * @enum {integer}
+             */
+            fps: 24 | 25 | 48 | 50;
+            /** Headroom Gib */
+            headroom_gib?: number | null;
+            /** Message */
+            message: string;
+            readout?: components["schemas"]["BudgetReadout"] | null;
+            /**
+             * Resolution
+             * @enum {string}
+             */
+            resolution: "270p" | "360p" | "540p" | "720p" | "1080p" | "1440p" | "2160p";
+            /**
+             * Tier
+             * @enum {string}
+             */
+            tier: "tight" | "unmeasured";
         };
     };
     responses: never;
@@ -1221,6 +5361,1107 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    route_list_assets: {
+        parameters: {
+            query?: {
+                media_kind?: ("image" | "video" | "audio") | null;
+                sort?: "created_at-desc" | "created_at-asc";
+                q?: string | null;
+                cursor?: string | null;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssetListResponse"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+            /** @description Server Error */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+        };
+    };
+    route_ingest_asset_api_assets_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IngestAssetRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Asset"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+            /** @description Server Error */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+        };
+    };
+    route_get_asset_api_assets__asset_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                asset_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Asset"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+            /** @description Server Error */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+        };
+    };
+    route_delete_asset: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                asset_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StatusResponse"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+            /** @description Server Error */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+        };
+    };
+    route_desktop_asset_bytes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                asset_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+            /** @description Server Error */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+        };
+    };
+    route_desktop_asset_bytes_api_assets__asset_id__bytes_head: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                asset_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+            /** @description Server Error */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+        };
+    };
+    route_extract_audio_api_assets__asset_id__extract_audio_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                asset_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Asset"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+            /** @description Server Error */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+        };
+    };
+    route_desktop_asset_thumbnail_bytes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                asset_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+            /** @description Server Error */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+        };
+    };
+    route_desktop_asset_thumbnail_bytes_api_assets__asset_id__thumbnail_bytes_head: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                asset_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+            /** @description Server Error */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+        };
+    };
+    route_trim_audio_api_assets__asset_id__trim_audio_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                asset_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TrimMediaRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Asset"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+            /** @description Server Error */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+        };
+    };
+    route_trim_video_api_assets__asset_id__trim_video_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                asset_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TrimMediaRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Asset"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+            /** @description Server Error */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+        };
+    };
+    list_conversations_api_assistant_conversations_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssistantConversationSummary"][];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+            /** @description Server Error */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+        };
+    };
+    get_conversation_api_assistant_conversations__conversation_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                conversation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssistantConversation"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+            /** @description Server Error */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+        };
+    };
+    delete_conversation_api_assistant_conversations__conversation_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                conversation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StatusResponse"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+            /** @description Server Error */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+        };
+    };
+    enqueue_message_api_assistant_conversations__conversation_id__queue_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                conversation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AssistantQueueRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssistantConversation"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+            /** @description Server Error */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+        };
+    };
+    release_queue_api_assistant_conversations__conversation_id__queue_release_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                conversation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssistantConversation"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+            /** @description Server Error */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+        };
+    };
+    remove_queued_message_api_assistant_conversations__conversation_id__queue__item_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                conversation_id: string;
+                item_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssistantConversation"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+            /** @description Server Error */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+        };
+    };
+    assistant_models_api_assistant_models_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssistantModelsResponse"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+            /** @description Server Error */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+        };
+    };
+    delete_assistant_model_api_assistant_models_delete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AssistantModelDownloadRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StatusResponse"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+            /** @description Server Error */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+        };
+    };
+    download_assistant_model_api_assistant_models_download_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AssistantModelDownloadRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StatusResponse"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+            /** @description Server Error */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+        };
+    };
+    assistant_run_api_assistant_runs__run_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssistantTurnResponse"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+            /** @description Server Error */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+        };
+    };
+    continue_assistant_api_assistant_runs__run_id__continue_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssistantTurnResponse"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+            /** @description Server Error */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+        };
+    };
+    assistant_events_api_assistant_runs__run_id__events_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+            /** @description Server Error */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+        };
+    };
+    stop_assistant_api_assistant_runs__run_id__stop_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssistantTurnResponse"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+            /** @description Server Error */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+        };
+    };
+    assistant_selection_api_assistant_selection_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssistantSelection"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+            /** @description Server Error */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+        };
+    };
+    set_assistant_selection_api_assistant_selection_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AssistantSelectionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssistantSelection"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+            /** @description Server Error */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+        };
+    };
+    assistant_turn_api_assistant_turn_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AssistantTurnRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssistantTurnResponse"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+            /** @description Server Error */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+        };
+    };
     route_hf_callback_api_auth_huggingface_callback_get: {
         parameters: {
             query?: {
@@ -1377,6 +6618,170 @@ export interface operations {
             };
         };
     };
+    route_enhance_prompt_api_enhance_prompt_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EnhancePromptRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EnhancePromptResponse"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+            /** @description Server Error */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+        };
+    };
+    route_extend_api_extend_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExtendRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RetakeVideoResponse"] | components["schemas"]["RetakePayloadResponse"] | components["schemas"]["RetakeCancelledResponse"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+            /** @description Server Error */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+        };
+    };
+    route_get_feature_flags_api_feature_flags_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FeatureFlags"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+            /** @description Server Error */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+        };
+    };
+    route_update_feature_flags_api_feature_flags_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FeatureFlagsPatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FeatureFlags"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+            /** @description Server Error */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+        };
+    };
     route_generate_api_generate_post: {
         parameters: {
             query?: never;
@@ -1508,6 +6913,48 @@ export interface operations {
             };
         };
     };
+    route_generate_estimate_api_generate_estimate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EstimateVideoRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EstimateVideoResponse"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+            /** @description Server Error */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+        };
+    };
     route_generate_model_specs_api_generate_models_specs_get: {
         parameters: {
             query?: never;
@@ -1524,6 +6971,322 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GenerateVideoModelsSpecsResponse"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+            /** @description Server Error */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+        };
+    };
+    route_get_generation_queue_api_generation_queue_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QueueSnapshot"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+            /** @description Server Error */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+        };
+    };
+    route_clear_generation_queue_done_api_generation_queue_done_clear_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QueueSnapshot"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+            /** @description Server Error */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+        };
+    };
+    route_dismiss_generation_queue_done_api_generation_queue_done__generation_id__dismiss_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                generation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QueueSnapshot"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+            /** @description Server Error */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+        };
+    };
+    route_mark_generation_queue_done_seen_api_generation_queue_done__generation_id__seen_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                generation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QueueSnapshot"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+            /** @description Server Error */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+        };
+    };
+    route_clear_generation_queue_failed_api_generation_queue_failed_clear_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QueueSnapshot"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+            /** @description Server Error */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+        };
+    };
+    route_reorder_generation_queue_api_generation_queue_reorder_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReorderGenerationQueueRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QueueSnapshot"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+            /** @description Server Error */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+        };
+    };
+    route_get_generation_seed_api_generation_seed_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GenerationSeed"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+            /** @description Server Error */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+        };
+    };
+    route_post_generation_seed_api_generation_seed_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GenerationSeedUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GenerationSeed"];
                 };
             };
             /** @description Client Error */
@@ -1584,6 +7347,586 @@ export interface operations {
             };
         };
     };
+    route_list_generations_api_generations_get: {
+        parameters: {
+            query: {
+                feature: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Generation"][];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+            /** @description Server Error */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+        };
+    };
+    route_create_audio_to_video_api_generations_audio_to_video_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateAudioToVideoRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Generation"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+            /** @description Server Error */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+        };
+    };
+    route_preflight_edit_api_generations_edit_preflight_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EditPreflightRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EditPreflightResponse"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+            /** @description Server Error */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+        };
+    };
+    route_create_extend_api_generations_extend_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateExtendRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Generation"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+            /** @description Server Error */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+        };
+    };
+    route_create_ic_lora_recipe_api_generations_ic_lora_recipes__recipe_id__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                recipe_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateIcLoraRecipeRequest"] | components["schemas"]["CreateIcLoraSheetRequest"] | components["schemas"]["CreateIcLoraTrackRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Generation"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+            /** @description Server Error */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+        };
+    };
+    route_create_image_to_video_api_generations_image_to_video_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateImageToVideoRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Generation"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+            /** @description Server Error */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+        };
+    };
+    route_list_recent_features_api_generations_recent_features_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string[];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+            /** @description Server Error */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+        };
+    };
+    route_create_lora_recipe_api_generations_recipes__recipe_id__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                recipe_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateLoraRecipeRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Generation"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+            /** @description Server Error */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+        };
+    };
+    route_create_retake_api_generations_retake_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateRetakeRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Generation"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+            /** @description Server Error */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+        };
+    };
+    route_create_text_to_video_api_generations_text_to_video_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTextToVideoRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Generation"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+            /** @description Server Error */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+        };
+    };
+    route_get_generation_api_generations__generation_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                generation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Generation"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+            /** @description Server Error */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+        };
+    };
+    route_delete_generation_api_generations__generation_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                generation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StatusResponse"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+            /** @description Server Error */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+        };
+    };
+    route_cancel_generation_api_generations__generation_id__cancel_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                generation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Generation"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+            /** @description Server Error */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+        };
+    };
+    route_retry_generation_api_generations__generation_id__retry_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                generation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Generation"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+            /** @description Server Error */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+        };
+    };
     route_gpu_info_api_gpu_info_get: {
         parameters: {
             query?: never;
@@ -1600,6 +7943,44 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GpuInfoResponse"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+            /** @description Server Error */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+        };
+    };
+    route_mps_memory_api_gpu_info_mps_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MpsMemoryResponse"];
                 };
             };
             /** @description Client Error */
@@ -1706,6 +8087,534 @@ export interface operations {
             };
         };
     };
+    route_ic_lora_preflight_api_ic_lora_preflight_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IcLoraPreflightRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IcLoraPreflightResponse"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+            /** @description Server Error */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+        };
+    };
+    route_list_ic_loras_api_ic_loras_get: {
+        parameters: {
+            query?: {
+                fresh?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IcLoraListResponse"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+            /** @description Server Error */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+        };
+    };
+    route_ic_lora_download_api_ic_loras_download_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IcLoraDownloadRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CatalogDownloadStartResponse"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+            /** @description Server Error */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+        };
+    };
+    route_ic_lora_download_active_api_ic_loras_download_active_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActiveIcLoraDownloadResponse"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+            /** @description Server Error */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+        };
+    };
+    route_ic_lora_download_progress_api_ic_loras_download_progress_get: {
+        parameters: {
+            query: {
+                sessionId: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IcLoraDownloadProgressResponse"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+            /** @description Server Error */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+        };
+    };
+    route_delete_ic_lora_installation_api_ic_loras_installation_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IcLoraDeleteRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StatusResponse"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+            /** @description Server Error */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+        };
+    };
+    route_list_loras_api_loras_get: {
+        parameters: {
+            query?: {
+                fresh?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LoraListResponse"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+            /** @description Server Error */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+        };
+    };
+    route_lora_download_api_loras_download_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LoraDownloadRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CatalogDownloadStartResponse"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+            /** @description Server Error */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+        };
+    };
+    route_lora_download_active_api_loras_download_active_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActiveLoraDownloadResponse"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+            /** @description Server Error */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+        };
+    };
+    route_lora_download_progress_api_loras_download_progress_get: {
+        parameters: {
+            query: {
+                sessionId: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LoraDownloadProgressResponse"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+            /** @description Server Error */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+        };
+    };
+    route_delete_lora_installation_api_loras_installation_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LoraDeleteRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StatusResponse"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+            /** @description Server Error */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+        };
+    };
+    route_list_models_api_models_get: {
+        parameters: {
+            query?: {
+                type?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InstalledModelsResponse"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+            /** @description Server Error */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+        };
+    };
+    route_set_active_ltx_model_api_models_active_ltx_model_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetActiveLtxModelRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StatusResponse"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+            /** @description Server Error */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+        };
+    };
     route_check_model_access_api_models_check_access_post: {
         parameters: {
             query?: never;
@@ -1790,6 +8699,48 @@ export interface operations {
             };
         };
     };
+    route_describe_checkpoints_api_models_describe_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DescribeCheckpointsRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DescribeCheckpointsResponse"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+            /** @description Server Error */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+        };
+    };
     route_model_download_api_models_download_post: {
         parameters: {
             query?: never;
@@ -1810,6 +8761,44 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ModelDownloadStartResponse"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+            /** @description Server Error */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+        };
+    };
+    route_active_download_api_models_download_active_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActiveDownloadResponse"];
                 };
             };
             /** @description Client Error */
@@ -1874,7 +8863,9 @@ export interface operations {
     };
     route_img_gen_recommendation_api_models_img_gen_recommendation_get: {
         parameters: {
-            query?: never;
+            query?: {
+                fresh?: boolean;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -1950,7 +8941,11 @@ export interface operations {
     };
     route_ltx_recommendation_api_models_ltx_recommendation_get: {
         parameters: {
-            query?: never;
+            query?: {
+                fresh?: boolean;
+                /** @description Full checkpoint sets for the model the live recommendation would download, including files already on disk. Does not switch to the latest model. Ignored when fresh is set. */
+                include_installed?: boolean;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -1964,6 +8959,44 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["LtxDownloadRecommendationResponse"] | components["schemas"]["LtxUpgradeRecommendationResponse"] | components["schemas"]["LtxOkRecommendationResponse"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+            /** @description Server Error */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+        };
+    };
+    route_ltx_versions_api_models_ltx_versions_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LtxModelVersionsResponse"];
                 };
             };
             /** @description Client Error */
@@ -2002,6 +9035,160 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TextEncoderRecommendationResponse"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+            /** @description Server Error */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+        };
+    };
+    route_prompt_enhancer_api_prompt_enhancer_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PromptEnhancerStatusResponse"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+            /** @description Server Error */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+        };
+    };
+    route_list_remote_devices_api_remote_devices_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PairedDevicePublic"][];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+            /** @description Server Error */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+        };
+    };
+    route_revoke_remote_device_api_remote_devices__device_id__revoke_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                device_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StatusResponse"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+            /** @description Server Error */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+        };
+    };
+    route_remote_status_api_remote_status_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RemoteStatusResponse"];
                 };
             };
             /** @description Client Error */
@@ -2162,6 +9349,165 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["StatusResponse"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+            /** @description Server Error */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+        };
+    };
+    route_list_gemini_models_api_settings_gemini_models_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GeminiModelsResponsePayload"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+            /** @description Server Error */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+        };
+    };
+    route_get_dashboard_selection_api_stats_activity_dashboard_selections_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DashboardSelection"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+            /** @description Server Error */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+        };
+    };
+    route_post_dashboard_selection_api_stats_activity_dashboard_selections_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DashboardSelection"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DashboardSelection"];
+                };
+            };
+            /** @description Client Error */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+            /** @description Server Error */
+            "5XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPErrorResponse"];
+                };
+            };
+        };
+    };
+    route_dashboard_api_stats_dashboard_get: {
+        parameters: {
+            query: {
+                tz: string;
+                range: "7d" | "30d" | "all";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DashboardSnapshot"];
                 };
             };
             /** @description Client Error */

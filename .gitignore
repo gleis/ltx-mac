@@ -13,6 +13,7 @@ node_modules/
 # Build outputs
 dist/
 dist-electron/
+dist-remote/
 .vite/
 release/
 *.tsbuildinfo
@@ -43,6 +44,8 @@ backend/**/__pycache__/
 .vscode/*
 !.vscode/launch.json
 !.vscode/tasks.json
+!.vscode/settings.json
+!.vscode/extensions.json
 *.swp
 *.swo
 *~
@@ -97,3 +100,9 @@ python-embed/
 
 # Downloaded during CI for Windows NSIS installer
 resources/vc_redist.x64.exe
+
+# Local-only measurement media (mp4s untracked from docs/measurements/)
+measurements-media/
+# Archived measurement evidence lives on the internal hw-measurements branch;
+# keep it out of the working tree (force-add + re-export per its README).
+docs/measurements/

@@ -3,13 +3,22 @@
 from __future__ import annotations
 
 from collections.abc import Iterator
-from typing import cast
+from typing import TYPE_CHECKING
 
 import torch
 
 from api_types import ImageConditioningInput
-from services.ltx_pipeline_common import default_tiling_config, encode_video_output, video_chunks_number
+from services.fast_video_pipeline.windowed_run import encode_result, measured_windows, plan_windows
+from services.ic_lora_pipeline.ic_lora_inference import InferenceResult
+from services.ltx_pipeline_common import (
+    build_model_paths,
+    resolve_tiling_config,
+)
 from services.services_utils import AudioOrNone, TilingConfigType, device_supports_fp8
+
+if TYPE_CHECKING:
+    from ltx_pipelines.chunks import ChunkConfig
+    from ltx_pipelines.utils.types import OffloadMode
 
 
 class LTXa2vPipeline:
@@ -20,6 +29,12 @@ class LTXa2vPipeline:
         upsampler_path: str,
         device: torch.device,
         streaming_prefetch_count: int | None,
+        loras: list[tuple[str, float]] | None = None,
+        *,
+        offload_mode: OffloadMode,
+        video_vae_path: str | None = None,
+        audio_vae_path: str | None = None,
+        duration_head_path: str | None = None,
     ) -> "LTXa2vPipeline":
         return LTXa2vPipeline(
             checkpoint_path=checkpoint_path,
@@ -27,6 +42,11 @@ class LTXa2vPipeline:
             upsampler_path=upsampler_path,
             device=device,
             streaming_prefetch_count=streaming_prefetch_count,
+            loras=loras or [],
+            offload_mode=offload_mode,
+            video_vae_path=video_vae_path,
+            audio_vae_path=audio_vae_path,
+            duration_head_path=duration_head_path,
         )
 
     def __init__(
@@ -36,18 +56,38 @@ class LTXa2vPipeline:
         upsampler_path: str,
         device: torch.device,
         streaming_prefetch_count: int | None,
+        loras: list[tuple[str, float]] | None = None,
+        *,
+        offload_mode: OffloadMode,
+        video_vae_path: str | None = None,
+        audio_vae_path: str | None = None,
+        duration_head_path: str | None = None,
     ) -> None:
-        from ltx_core.quantization import QuantizationPolicy
+        from ltx_core.loader.primitives import LoraPathStrengthAndSDOps
+        from ltx_core.loader.sd_ops import LTXV_LORA_COMFY_RENAMING_MAP
+        from ltx_core.quantization.fp8_cast import build_policy as build_fp8_cast_policy
 
         from services.a2v_pipeline.distilled_a2v_pipeline import DistilledA2VPipeline
 
-        self._streaming_prefetch_count = streaming_prefetch_count
+        lora_entries = [
+            LoraPathStrengthAndSDOps(path=path, strength=scale, sd_ops=LTXV_LORA_COMFY_RENAMING_MAP)
+            for path, scale in (loras or [])
+        ]
+
         self.pipeline = DistilledA2VPipeline(
-            distilled_checkpoint_path=checkpoint_path,
-            gemma_root=cast(str, gemma_root),
+            model_paths=build_model_paths(
+                checkpoint_path,
+                gemma_root,
+                video_vae_path=video_vae_path,
+                audio_vae_path=audio_vae_path,
+                duration_head_path=duration_head_path,
+            ),
             spatial_upsampler_path=upsampler_path,
+            loras=lora_entries,
             device=device,
-            quantization=QuantizationPolicy.fp8_cast() if device_supports_fp8(device) else None,
+            quantization=build_fp8_cast_policy(checkpoint_path) if device_supports_fp8(device) else None,
+            streaming_prefetch_count=streaming_prefetch_count,
+            offload_mode=offload_mode,
         )
 
     def _run_inference(
@@ -78,8 +118,43 @@ class LTXa2vPipeline:
             audio_start_time=audio_start_time,
             audio_max_duration=audio_max_duration,
             tiling_config=tiling_config,
-            streaming_prefetch_count=self._streaming_prefetch_count,
         )
+
+    def _stream_windows(
+        self,
+        *,
+        prompt: str,
+        seed: int,
+        height: int,
+        width: int,
+        num_frames: int,
+        frame_rate: float,
+        images: list[ImageConditioningInput],
+        audio_path: str,
+        audio_start_time: float,
+        audio_max_duration: float | None,
+        tiling_config: TilingConfigType,
+        chunk_config: ChunkConfig,
+    ) -> InferenceResult:
+        from ltx_pipelines.chunks import split_decoded_chunks
+
+        chunks = self.pipeline.stream_chunks(
+            prompt=prompt,
+            seed=seed,
+            height=height,
+            width=width,
+            num_frames=num_frames,
+            frame_rate=frame_rate,
+            images=[(img.path, img.frame_idx, img.strength) for img in images],
+            audio_path=audio_path,
+            chunk_config=chunk_config,
+            audio_start_time=audio_start_time,
+            audio_max_duration=audio_max_duration,
+            tiling_config=tiling_config,
+        )
+        video, audio, audio_sampling_rate = split_decoded_chunks(chunks)
+        streams = (video, chunks) if audio is None else (video, audio, chunks)
+        return InferenceResult(video, audio, num_frames, tiling_config, audio_sampling_rate, streams)
 
     @torch.inference_mode()
     def generate(
@@ -97,22 +172,56 @@ class LTXa2vPipeline:
         audio_start_time: float,
         audio_max_duration: float | None,
         output_path: str,
+        chunk_pixel_frames: int | None = None,
     ) -> None:
-        tiling_config = default_tiling_config()
-        video, audio = self._run_inference(
-            prompt=prompt,
-            negative_prompt=negative_prompt,
-            seed=seed,
+        from services.denoising_progress import distilled_total_steps, track_denoising
+
+        chunk_config, chunk_count = plan_windows(
+            chunk_pixel_frames, width=width, height=height, num_frames=num_frames, frame_rate=frame_rate
+        )
+        # Decode tiles are sized for one window, which is what the decoder sees at a time.
+        tiling_config = resolve_tiling_config(
+            self.pipeline.video_decoder.checkpoint_path,
             height=height,
             width=width,
-            num_frames=num_frames,
-            frame_rate=frame_rate,
-            num_inference_steps=num_inference_steps,
-            images=images,
-            audio_path=audio_path,
-            audio_start_time=audio_start_time,
-            audio_max_duration=audio_max_duration,
-            tiling_config=tiling_config,
+            num_frames=num_frames if chunk_config is None else min(num_frames, chunk_config.chunk_pixel_frames),
+            device=self.pipeline.device,
         )
-        chunks = video_chunks_number(num_frames, tiling_config)
-        encode_video_output(video=video, audio=audio, fps=int(frame_rate), output_path=output_path, video_chunks_number_value=chunks)
+        measured = measured_windows(
+            chunk_config, width=width, height=height, window_count=chunk_count,
+            num_frames=num_frames, frame_rate=frame_rate, device=self.pipeline.device,
+        )
+        with track_denoising(distilled_total_steps() * chunk_count), measured:
+            if chunk_config is None:
+                video, audio = self._run_inference(
+                    prompt=prompt,
+                    negative_prompt=negative_prompt,
+                    seed=seed,
+                    height=height,
+                    width=width,
+                    num_frames=num_frames,
+                    frame_rate=frame_rate,
+                    num_inference_steps=num_inference_steps,
+                    images=images,
+                    audio_path=audio_path,
+                    audio_start_time=audio_start_time,
+                    audio_max_duration=audio_max_duration,
+                    tiling_config=tiling_config,
+                )
+                result = InferenceResult(video, audio, num_frames, tiling_config)
+            else:
+                result = self._stream_windows(
+                    prompt=prompt,
+                    seed=seed,
+                    height=height,
+                    width=width,
+                    num_frames=num_frames,
+                    frame_rate=frame_rate,
+                    images=images,
+                    audio_path=audio_path,
+                    audio_start_time=audio_start_time,
+                    audio_max_duration=audio_max_duration,
+                    tiling_config=tiling_config,
+                    chunk_config=chunk_config,
+                )
+            encode_result(result, fps=int(frame_rate), output_path=output_path, streamed=chunk_config is not None)

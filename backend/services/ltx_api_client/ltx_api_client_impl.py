@@ -3,15 +3,80 @@
 from __future__ import annotations
 
 import json
+import logging
 import mimetypes
+import time
 from pathlib import Path
 from typing import Any, Literal, cast
 
-from api_types import RetakeMode, VideoCameraMotion
+from api_types import ExtendMode, RetakeMode, VideoCameraMotion
 from pydantic import BaseModel, ConfigDict, ValidationError
-from services.ltx_api_client.ltx_api_client import LTXAPIClientError, LTXRetakeResult
-from services.http_client.http_client import HTTPClient
+from services.ltx_api_client.ltx_api_client import (
+    CONTENT_FILTERED_ERROR_TYPE,
+    INSUFFICIENT_FUNDS_ERROR_TYPE,
+    LTXAPIClientError,
+    LTXRetakeResult,
+    PAYMENT_DECLINED_ERROR_TYPE,
+)
+from services.http_client.http_client import HTTPClient, HttpResponseLike, HttpTransportError
 from services.services_utils import JSONValue
+
+logger = logging.getLogger(__name__)
+
+# Payload fields that are large and/or sensitive (signed URLs, base64 data, the user's
+# prompt) — logged as "<set>"/"<unset>" instead of their value so request logs stay
+# readable and don't leak private content.
+_REDACTED_PAYLOAD_KEYS = frozenset(
+    {"video_uri", "image_uri", "audio_uri", "last_frame_uri", "prompt"}
+)
+
+# A transient transport blip on a single poll/download shouldn't discard a minutes-long
+# async job; retry the individual GET a few times before surfacing the failure.
+_GET_RETRIES = 3
+# Non-terminal async job statuses. Anything else that isn't "completed" (failed, error,
+# canceled, rejected, or an unknown string) is treated as terminal failure and surfaced,
+# rather than polled until the timeout hides the real cause behind a 504.
+_IN_PROGRESS_STATUSES = frozenset(
+    {"queued", "pending", "processing", "running", "in_progress", "starting", "started"}
+)
+
+_JOB_ERROR_TYPE_TO_STATUS = {
+    INSUFFICIENT_FUNDS_ERROR_TYPE: 402,
+    PAYMENT_DECLINED_ERROR_TYPE: 402,
+    CONTENT_FILTERED_ERROR_TYPE: 422,
+}
+
+
+def _terminal_job_error(
+    *, status: _AsyncJobStatusPayload, label: str, rid: str
+) -> LTXAPIClientError:
+    """Error for a terminal (non-completed, non-in-progress) job status."""
+    error_type = status.error.type if status.error is not None else None
+    provider_message = status.error.message if status.error is not None else None
+    http_status = (
+        _JOB_ERROR_TYPE_TO_STATUS.get(error_type, 500)
+        if error_type is not None
+        else 500
+    )
+    if error_type == CONTENT_FILTERED_ERROR_TYPE:
+        detail = f"Content rejected by safety filters{rid}"
+    elif provider_message:
+        detail = f"{provider_message}{rid}"
+    else:
+        detail = f"{label} job ended with status '{status.status}'{rid}"
+    return LTXAPIClientError(
+        http_status,
+        detail,
+        provider_error_type=error_type,
+        provider_message=provider_message,
+    )
+
+
+def _loggable_payload(payload: dict[str, JSONValue]) -> dict[str, object]:
+    return {
+        key: ("<set>" if value else "<unset>") if key in _REDACTED_PAYLOAD_KEYS else value
+        for key, value in payload.items()
+    }
 
 LTXCameraMotion = Literal[
     "dolly_in",
@@ -37,21 +102,6 @@ _CAMERA_MOTION_TO_LTX: dict[VideoCameraMotion, LTXCameraMotion | None] = {
 }
 
 
-class _RetakeNestedPayload(BaseModel):
-    model_config = ConfigDict(extra="ignore")
-    video_url: str | None = None
-
-
-class _RetakeResponsePayload(BaseModel):
-    model_config = ConfigDict(extra="allow")
-    video_url: str | None = None
-    output_video: str | None = None
-    result: _RetakeNestedPayload | None = None
-
-    def extract_video_url(self) -> str | None:
-        return self.video_url or self.output_video or (self.result.video_url if self.result is not None else None)
-
-
 class _LTXErrorDetailPayload(BaseModel):
     model_config = ConfigDict(extra="ignore")
     type: str | None = None
@@ -66,10 +116,75 @@ class _LTXErrorPayload(BaseModel):
     detail: str | None = None
 
 
+class _AsyncSubmitPayload(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str | None = None
+
+
+class _AsyncJobErrorPayload(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    type: str | None = None
+    message: str | None = None
+
+
+class _AsyncJobResultPayload(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    video_url: str | None = None
+
+
+class _AsyncJobStatusPayload(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    status: str
+    result: _AsyncJobResultPayload | None = None
+    error: _AsyncJobErrorPayload | None = None
+
+
 class LTXAPIClientImpl:
-    def __init__(self, http: HTTPClient, ltx_api_base_url: str) -> None:
+    def __init__(
+        self,
+        http: HTTPClient,
+        ltx_api_base_url: str,
+        *,
+        poll_interval_s: float = 3.0,
+        async_max_wait_s: float = 1200.0,
+    ) -> None:
         self._http = http
         self._base_url = ltx_api_base_url.rstrip("/")
+        # Async (v2) polling cadence/ceiling; small values injected in tests. Ceiling
+        # for long Pro clips, which can take up to ~20 minutes.
+        self._poll_interval_s = poll_interval_s
+        self._async_max_wait_s = async_max_wait_s
+
+    def _post_json(
+        self,
+        endpoint: str,
+        *,
+        api_key: str,
+        payload: dict[str, JSONValue],
+        timeout: int,
+    ) -> HttpResponseLike:
+        """POST JSON to an LTX endpoint, logging the request (safe fields), the response
+        (status + request id + elapsed), and transport failures."""
+        logger.info("LTXV → POST %s %s (timeout=%ss)", endpoint, _loggable_payload(payload), timeout)
+        started = time.monotonic()
+        try:
+            response = self._http.post(
+                f"{self._base_url}{endpoint}",
+                headers=self._json_headers(api_key),
+                json_payload=payload,
+                timeout=timeout,
+            )
+        except HttpTransportError:
+            logger.warning("LTXV ✗ POST %s failed (transport) after %.1fs", endpoint, time.monotonic() - started)
+            raise
+        logger.info(
+            "LTXV ← POST %s %s in %.1fs%s",
+            endpoint,
+            response.status_code,
+            time.monotonic() - started,
+            self._fmt_request_id(response),
+        )
+        return response
 
     def generate_text_to_video(
         self,
@@ -78,10 +193,11 @@ class LTXAPIClientImpl:
         prompt: str,
         model: str,
         resolution: str,
-        duration: float,
+        duration: float | None,
         fps: float,
         generate_audio: bool,
         camera_motion: VideoCameraMotion = "none",
+        enhance_prompt: bool = True,
     ) -> bytes:
         payload: dict[str, JSONValue] = {
             "prompt": prompt,
@@ -90,17 +206,14 @@ class LTXAPIClientImpl:
             "duration": duration,
             "fps": fps,
             "generate_audio": generate_audio,
+            "enhance_prompt": enhance_prompt,
         }
         mapped_camera_motion = self._map_camera_motion(camera_motion)
         if mapped_camera_motion is not None:
             payload["camera_motion"] = mapped_camera_motion
-        response = self._http.post(
-            f"{self._base_url}/v1/text-to-video",
-            headers=self._json_headers(api_key),
-            json_payload=payload,
-            timeout=1200,
+        return self._run_async_job(
+            api_key=api_key, endpoint="/v2/text-to-video", payload=payload, label="Text-to-video"
         )
-        return self._extract_video_bytes(response, api_key)
 
     def generate_image_to_video(
         self,
@@ -110,10 +223,12 @@ class LTXAPIClientImpl:
         image_uri: str,
         model: str,
         resolution: str,
-        duration: float,
+        duration: float | None,
         fps: float,
         generate_audio: bool,
         camera_motion: VideoCameraMotion = "none",
+        last_frame_uri: str | None = None,
+        enhance_prompt: bool = True,
     ) -> bytes:
         payload: dict[str, JSONValue] = {
             "prompt": prompt,
@@ -123,17 +238,16 @@ class LTXAPIClientImpl:
             "duration": duration,
             "fps": fps,
             "generate_audio": generate_audio,
+            "enhance_prompt": enhance_prompt,
         }
         mapped_camera_motion = self._map_camera_motion(camera_motion)
         if mapped_camera_motion is not None:
             payload["camera_motion"] = mapped_camera_motion
-        response = self._http.post(
-            f"{self._base_url}/v1/image-to-video",
-            headers=self._json_headers(api_key),
-            json_payload=payload,
-            timeout=1200,
+        if last_frame_uri is not None:
+            payload["last_frame_uri"] = last_frame_uri
+        return self._run_async_job(
+            api_key=api_key, endpoint="/v2/image-to-video", payload=payload, label="Image-to-video"
         )
-        return self._extract_video_bytes(response, api_key)
 
     def generate_audio_to_video(
         self,
@@ -144,22 +258,23 @@ class LTXAPIClientImpl:
         image_uri: str | None,
         model: str,
         resolution: str,
+        last_frame_uri: str | None = None,
+        enhance_prompt: bool = True,
     ) -> bytes:
         payload: dict[str, JSONValue] = {
             "prompt": prompt,
             "audio_uri": audio_uri,
             "model": model,
             "resolution": resolution,
+            "enhance_prompt": enhance_prompt,
         }
         if image_uri is not None:
             payload["image_uri"] = image_uri
-        response = self._http.post(
-            f"{self._base_url}/v1/audio-to-video",
-            headers=self._json_headers(api_key),
-            json_payload=payload,
-            timeout=1200,
+        if last_frame_uri is not None:
+            payload["last_frame_uri"] = last_frame_uri
+        return self._run_async_job(
+            api_key=api_key, endpoint="/v2/audio-to-video", payload=payload, label="Audio-to-video"
         )
-        return self._extract_video_bytes(response, api_key)
 
     def retake(
         self,
@@ -170,9 +285,53 @@ class LTXAPIClientImpl:
         duration: float,
         prompt: str,
         mode: RetakeMode,
+        model: str,
     ) -> LTXRetakeResult:
+        return self._run_async_video_edit(
+            api_key=api_key,
+            video_path=video_path,
+            endpoint="/v2/retake",
+            label="Retake",
+            edit_payload={
+                "start_time": float(start_time),
+                "duration": float(duration),
+                "mode": mode,
+                "model": model,
+            },
+            prompt=prompt,
+        )
+
+    def extend(
+        self,
+        *,
+        api_key: str,
+        video_path: str,
+        duration: float,
+        prompt: str,
+        mode: ExtendMode,
+        model: str,
+    ) -> LTXRetakeResult:
+        return self._run_async_video_edit(
+            api_key=api_key,
+            video_path=video_path,
+            endpoint="/v2/extend",
+            label="Extend",
+            edit_payload={
+                "duration": float(duration),
+                "mode": mode,
+                "model": model,
+            },
+            prompt=prompt,
+        )
+
+    def _upload_source_video(self, *, api_key: str, video_path: str, label: str) -> str:
+        """Upload the source clip, mapping upload-stage failures to friendly messages."""
         try:
-            storage_uri = self.upload_file(api_key=api_key, file_path=video_path)
+            return self.upload_file(api_key=api_key, file_path=video_path)
+        except HttpTransportError as exc:
+            # Connection failed/reset/timed out somewhere in the flow — surface as a clean
+            # retryable error instead of a raw 500.
+            raise LTXAPIClientError(504, f"{label} request to the LTX API failed; please retry.") from exc
         except LTXAPIClientError as exc:
             if exc.stage == "upload_init":
                 err_text = self._extract_error_detail(exc.detail)
@@ -184,59 +343,187 @@ class LTXAPIClientImpl:
                 raise LTXAPIClientError(500, f"Video upload failed: {err_text}") from exc
             raise
 
-        payload: dict[str, JSONValue] = {
-            "video_uri": storage_uri,
-            "start_time": float(start_time),
-            "duration": float(duration),
-            "mode": mode,
-        }
+    def _run_async_video_edit(
+        self,
+        *,
+        api_key: str,
+        video_path: str,
+        endpoint: str,
+        label: str,
+        edit_payload: dict[str, JSONValue],
+        prompt: str,
+    ) -> LTXRetakeResult:
+        """Async (v2) flow for retake/extend: upload the source clip, then submit → poll → download."""
+        storage_uri = self._upload_source_video(api_key=api_key, video_path=video_path, label=label)
+
+        payload: dict[str, JSONValue] = {"video_uri": storage_uri, **edit_payload}
         if prompt:
             payload["prompt"] = prompt
 
-        response = self._http.post(
-            f"{self._base_url}/v1/retake",
-            headers=self._json_headers(api_key),
-            json_payload=payload,
-            timeout=600,
-        )
+        video_bytes = self._run_async_job(api_key=api_key, endpoint=endpoint, payload=payload, label=label)
+        return LTXRetakeResult(video_bytes=video_bytes, result_payload=None)
 
-        rid = self._fmt_request_id(response)
-        if response.status_code == 200:
-            content_type = str(response.headers.get("Content-Type", "")).lower()
-            if "video" in content_type or "octet-stream" in content_type:
-                return LTXRetakeResult(video_bytes=response.content, result_payload=None)
+    def _run_async_job(
+        self,
+        *,
+        api_key: str,
+        endpoint: str,
+        payload: dict[str, JSONValue],
+        label: str,
+    ) -> bytes:
+        """Async (v2) flow: submit job → poll until done → download the result.
+
+        Shared by generation (t2v/i2v/a2v) and edits (retake/extend). The v2
+        endpoints respond immediately with a job id, so no connection is held open
+        for the whole (minutes-long) generation. ``endpoint`` is the submit path
+        (e.g. ``/v2/extend``); polling is ``GET {endpoint}/{id}``.
+        """
+        try:
+            submit = self._post_json(endpoint, api_key=api_key, payload=payload, timeout=120)
+            rid = self._fmt_request_id(submit)
+            if submit.status_code == 422:
+                provider_error_type, provider_message, _ = self._extract_generation_error(submit)
+                raise LTXAPIClientError(
+                    422,
+                    f"Content rejected by safety filters{rid}",
+                    provider_error_type=provider_error_type,
+                    provider_message=provider_message,
+                    request_id=self._request_id(submit),
+                )
+            if submit.status_code not in (200, 202):
+                provider_error_type, provider_message, error_text = self._extract_generation_error(submit)
+                raise LTXAPIClientError(
+                    submit.status_code,
+                    f"{label} API error: {error_text}{rid}",
+                    provider_error_type=provider_error_type,
+                    provider_message=provider_message,
+                    request_id=self._request_id(submit),
+                )
 
             try:
-                payload_obj = response.json()
-            except json.JSONDecodeError as exc:
-                raise LTXAPIClientError(500, f"Unexpected response format: {response.text[:200]}{rid}") from exc
+                job = _AsyncSubmitPayload.model_validate(submit.json())
+            except (json.JSONDecodeError, ValidationError) as exc:
+                raise LTXAPIClientError(
+                    500, f"Unexpected {label.lower()} submit response{rid}", request_id=self._request_id(submit)
+                ) from exc
+            if not job.id:
+                raise LTXAPIClientError(
+                    500, f"{label} API returned no job id{rid}", request_id=self._request_id(submit)
+                )
+            logger.info("LTXV %s job accepted: id=%s%s", label.lower(), job.id, rid)
 
+            video_url = self._poll_job(api_key=api_key, endpoint=endpoint, job_id=job.id, label=label)
+            logger.info("LTXV %s downloading result for job %s", label.lower(), job.id)
+            # video_url comes straight from the (trusted) LTX API; we fetch it whole with no
+            # scheme/host allowlist or size cap. Acceptable while we fully trust the API —
+            # revisit (allowlist + streamed cap) if that trust ever weakens.
+            dl_resp = self._get_with_retries(video_url, headers=None, timeout=300, label=label)
+            if dl_resp.status_code != 200:
+                raise LTXAPIClientError(500, f"Failed to download {label.lower()} video: {dl_resp.status_code}")
+            if not dl_resp.content:
+                raise LTXAPIClientError(500, f"Downloaded {label.lower()} video is empty")
+            content = dl_resp.content
+            logger.info("LTXV %s complete: %d bytes", label.lower(), len(content))
+            return content
+        except HttpTransportError as exc:
+            # Connection failed/reset/timed out somewhere in the flow — surface as a clean
+            # retryable error instead of a raw 500.
+            raise LTXAPIClientError(504, f"{label} request to the LTX API failed; please retry.") from exc
+
+    def _get_with_retries(
+        self, url: str, *, headers: dict[str, str] | None, timeout: int, label: str
+    ) -> HttpResponseLike:
+        """GET ``url``, retrying transport failures a few times so a single blip doesn't
+        discard the whole async job. Re-raises HttpTransportError once retries are spent."""
+        for attempt in range(1, _GET_RETRIES + 1):
             try:
-                parsed_payload = _RetakeResponsePayload.model_validate(payload_obj)
-            except ValidationError as exc:
-                raise LTXAPIClientError(500, f"Unexpected response format{rid}") from exc
+                return self._http.get(url, headers=headers, timeout=timeout)
+            except HttpTransportError:
+                if attempt == _GET_RETRIES:
+                    raise
+                logger.warning(
+                    "LTXV %s GET transport error (attempt %d/%d); retrying", label.lower(), attempt, _GET_RETRIES
+                )
+                time.sleep(self._poll_interval_s)
+        raise AssertionError("unreachable")  # the loop either returns or re-raises
 
-            video_url = parsed_payload.extract_video_url()
-            if video_url:
-                dl_resp = self._http.get(video_url, timeout=120)
-                if dl_resp.status_code == 200:
-                    return LTXRetakeResult(video_bytes=dl_resp.content, result_payload=None)
-                raise LTXAPIClientError(500, f"Failed to download retake video: {dl_resp.status_code}{rid}")
+    def _poll_job(self, *, api_key: str, endpoint: str, job_id: str, label: str) -> str:
+        """Poll ``GET {endpoint}/{job_id}`` until ``completed`` and return the video_url."""
+        started = time.monotonic()
+        deadline = started + self._async_max_wait_s
+        poll_url = f"{self._base_url}{endpoint}/{job_id}"
+        polls = 0
+        while time.monotonic() < deadline:
+            resp = self._get_with_retries(
+                poll_url, headers={"Authorization": f"Bearer {api_key}"}, timeout=60, label=label
+            )
+            rid = self._fmt_request_id(resp)
+            if resp.status_code != 200:
+                if resp.status_code == 422:
+                    provider_error_type, provider_message, _ = self._extract_generation_error(resp)
+                    raise LTXAPIClientError(
+                        422,
+                        f"Content rejected by safety filters{rid}",
+                        provider_error_type=provider_error_type,
+                        provider_message=provider_message,
+                        request_id=self._request_id(resp),
+                    )
+                provider_error_type, provider_message, error_text = self._extract_generation_error(resp)
+                raise LTXAPIClientError(
+                    resp.status_code,
+                    f"{label} status check failed: {error_text}{rid}",
+                    provider_error_type=provider_error_type,
+                    provider_message=provider_message,
+                    request_id=self._request_id(resp),
+                )
+            try:
+                status = _AsyncJobStatusPayload.model_validate(resp.json())
+            except (json.JSONDecodeError, ValidationError) as exc:
+                raise LTXAPIClientError(500, f"Unexpected {label.lower()} status response{rid}") from exc
 
-            response_payload = parsed_payload.model_dump(mode="python")
-            return LTXRetakeResult(video_bytes=None, result_payload=response_payload)
+            polls += 1
+            elapsed = time.monotonic() - started
+            logger.debug("LTXV %s job %s status=%s (poll %d, %.0fs)", label.lower(), job_id, status.status, polls, elapsed)
 
-        if response.status_code == 422:
-            raise LTXAPIClientError(422, f"Content rejected by safety filters{rid}")
+            if status.status == "completed":
+                video_url = status.result.video_url if status.result is not None else None
+                if not video_url:
+                    raise LTXAPIClientError(500, f"{label} job completed without a video_url{rid}")
+                logger.info("LTXV %s job %s completed after %.0fs (%d polls)", label.lower(), job_id, elapsed, polls)
+                return video_url
+            if status.status not in _IN_PROGRESS_STATUSES:
+                # failed / error / canceled / rejected / unknown — surface it instead of
+                # polling until the timeout masks the cause behind a 504.
+                err = _terminal_job_error(status=status, label=label, rid=rid)
+                logger.warning(
+                    "LTXV %s job %s ended status=%s after %.0fs: %s",
+                    label.lower(),
+                    job_id,
+                    status.status,
+                    elapsed,
+                    err.detail,
+                )
+                raise err
 
-        error_text = response.text[:500] if response.text else "Unknown error"
-        raise LTXAPIClientError(response.status_code, f"Retake API error: {error_text}{rid}")
+            time.sleep(self._poll_interval_s)
+
+        raise LTXAPIClientError(504, f"{label} job timed out after {int(self._async_max_wait_s)}s")
 
     def upload_file(self, *, file_path: str, api_key: str) -> str:
+        logger.info("LTXV → POST /v1/upload (requesting signed upload URL)")
+        started = time.monotonic()
+        # 60s (not 30): the signed-URL request has been observed to take >30s under API
+        # load, and a tight ceiling here fails the whole generation before it starts.
         upload_resp = self._http.post(
             f"{self._base_url}/v1/upload",
             headers={"Authorization": f"Bearer {api_key}"},
-            timeout=30,
+            timeout=60,
+        )
+        logger.info(
+            "LTXV ← POST /v1/upload %s in %.1fs%s",
+            upload_resp.status_code,
+            time.monotonic() - started,
+            self._fmt_request_id(upload_resp),
         )
         if upload_resp.status_code != 200:
             err = upload_resp.text[:500]
@@ -258,6 +545,7 @@ class LTXAPIClientImpl:
 
         path_obj = Path(file_path)
         mime = mimetypes.guess_type(path_obj.name)[0] or "application/octet-stream"
+        put_started = time.monotonic()
         with open(path_obj, "rb") as media_file:
             put_resp = self._http.put(
                 upload_url,
@@ -270,57 +558,16 @@ class LTXAPIClientImpl:
             rid = self._fmt_request_id(upload_resp)
             raise LTXAPIClientError(500, f"LTX upload failed ({put_resp.status_code}): {err}{rid}", stage="upload_put")
 
+        logger.info("LTXV source video uploaded in %.1fs", time.monotonic() - put_started)
         return storage_uri
 
-    def _extract_video_bytes(self, response: Any, api_key: str) -> bytes:
-        rid = self._fmt_request_id(response)
-        if response.status_code != 200:
-            provider_error_type, provider_message, err = self._extract_generation_error(response)
-            raise LTXAPIClientError(
-                response.status_code,
-                f"LTX API generation failed ({response.status_code}): {err}{rid}",
-                stage="generation",
-                provider_error_type=provider_error_type,
-                provider_message=provider_message,
-                request_id=self._request_id(response),
-            )
-
-        content_type = str(response.headers.get("Content-Type", "")).lower()
-        if "video" in content_type or "octet-stream" in content_type:
-            if not response.content:
-                raise LTXAPIClientError(500, f"LTX API returned empty video body{rid}", stage="generation")
-            return response.content
-
-        try:
-            payload = cast(dict[str, Any], response.json())
-        except Exception as exc:
-            raise LTXAPIClientError(500, f"Unexpected LTX API response format{rid}", stage="generation") from exc
-
-        video_url = self._extract_video_url(payload)
-        if video_url is not None:
-            dl_resp = self._http.get(
-                video_url,
-                headers={"Authorization": f"Bearer {api_key}"},
-                timeout=120,
-            )
-            if dl_resp.status_code != 200:
-                raise LTXAPIClientError(500, f"Failed to download generated video ({dl_resp.status_code}){rid}", stage="generation")
-            if not dl_resp.content:
-                raise LTXAPIClientError(500, f"Downloaded generated video is empty{rid}", stage="generation")
-            return dl_resp.content
-
-        error_text = payload.get("error") or payload.get("message") or payload.get("detail")
-        if isinstance(error_text, str) and error_text:
-            raise LTXAPIClientError(500, f"LTX API returned an error payload: {error_text}{rid}", stage="generation")
-        raise LTXAPIClientError(500, f"LTX API response did not include a video payload{rid}", stage="generation")
-
     @staticmethod
-    def _request_id(response: Any) -> str | None:
+    def _request_id(response: HttpResponseLike) -> str | None:
         rid = response.headers.get("x-request-id")
         return str(rid) if rid else None
 
     @staticmethod
-    def _fmt_request_id(response: Any) -> str:
+    def _fmt_request_id(response: HttpResponseLike) -> str:
         rid = response.headers.get("x-request-id")
         return f" [request_id={rid}]" if rid else ""
 
@@ -331,7 +578,7 @@ class LTXAPIClientImpl:
         return detail.split(":", 1)[1].strip()
 
     @staticmethod
-    def _extract_generation_error(response: Any) -> tuple[str | None, str | None, str]:
+    def _extract_generation_error(response: HttpResponseLike) -> tuple[str | None, str | None, str]:
         if response.text:
             error_text = response.text[:500]
         else:
@@ -355,23 +602,6 @@ class LTXAPIClientImpl:
             elif provider_message:
                 error_text = provider_message
         return provider_error_type, provider_message, error_text
-
-    @staticmethod
-    def _extract_video_url(payload: dict[str, Any]) -> str | None:
-        direct_keys = ("video_url", "output_video", "output_video_url", "output_url", "url")
-        for key in direct_keys:
-            value = payload.get(key)
-            if isinstance(value, str) and value:
-                return value
-
-        nested = payload.get("result")
-        if isinstance(nested, dict):
-            nested_payload = cast(dict[str, Any], nested)
-            for key in direct_keys:
-                value = nested_payload.get(key)
-                if isinstance(value, str) and value:
-                    return value
-        return None
 
     @staticmethod
     def _json_headers(api_key: str) -> dict[str, str]:

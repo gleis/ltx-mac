@@ -8,7 +8,8 @@ from fastapi import APIRouter, Depends, Request
 
 from _routes._admin_guard import guard_admin_permission
 from state.app_settings import SettingsResponse, UpdateSettingsRequest, to_settings_response
-from api_types import StatusResponse
+from api_types import GeminiModelsResponsePayload, StatusResponse
+from remote.controller import remote_controller_from_app
 from state import get_state_service
 from app_handler import AppHandler
 
@@ -42,4 +43,24 @@ def route_post_settings(
         ", ".join(sorted(changed_roots)) if changed_roots else "none",
     )
 
+    if "use_conv_vae" in changed_roots:
+        handler.pipelines.unload_gpu_pipeline()
+
+    if "models_dir" in changed_roots:
+        handler.generation_queue.set_checkpoint_drive_type(
+            handler.settings.refresh_checkpoint_drive_type()
+        )
+
+    if "remote_exposure" in changed_roots:
+        controller = remote_controller_from_app(request.app)
+        if controller is not None:
+            controller.sync()
+
     return StatusResponse(status="ok")
+
+
+@router.get("/settings/gemini-models", response_model=GeminiModelsResponsePayload)
+def route_list_gemini_models(
+    handler: AppHandler = Depends(get_state_service),
+) -> GeminiModelsResponsePayload:
+    return handler.settings.list_gemini_models()

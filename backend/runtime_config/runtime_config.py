@@ -4,10 +4,16 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import torch
 
 from runtime_config.runtime_policy import LocalGenerationMode
+
+if TYPE_CHECKING:
+    # Runtime import would cycle: api_types initializes through this module
+    # (runtime_config/__init__) while services/__init__ needs api_types.
+    from services.storage_info.storage_info import DriveType
 
 
 @dataclass
@@ -25,7 +31,30 @@ class RuntimeConfig:
     dev_mode: bool
     backend_port: int
     hf_oauth_client_id: str = ""
-    hf_gating_enabled: bool = False
+    lora_catalog_source: str = ""
+    # Bundled catalog used as a fallback when lora_catalog_source is a URL that fails to fetch.
+    lora_catalog_fallback_path: str = ""
+    # Discrete GPU VRAM (CUDA). On Darwin this is total unified memory (SKU).
+    vram_gb: int | None = None
+    # Darwin: available (free) RAM at process start, used for per-job sizing.
+    available_ram_gb: int | None = None
+    # MPS unified-memory machines never load full; tests leave this False to simulate CUDA.
+    darwin_unified_memory: bool = False
+    # Actual OS family from platform.system() ("Windows", "Linux", "Darwin", ...).
+    system: str = ""
+    # Exact CUDA device total VRAM in bytes. None if CUDA is unavailable or the query failed.
+    vram_bytes: int | None = None
+    # Exact total system RAM in bytes. None if the query failed.
+    total_ram_bytes: int | None = None
+    # Drive class of the checkpoint volume, probed once at startup. None when unknown.
+    checkpoint_drive_type: DriveType | None = None
+    # CUDA device name (torch.cuda.get_device_name), probed once at startup.
+    # None off-CUDA or when the query failed. Powers hardware-class gates.
+    gpu_device_name: str | None = None
+    # Native fp8 (compute capability >= 8.9), probed once at startup. Gates the
+    # measured budget route: pre-Ada streaming runs bf16, which the fp8-fit
+    # laws never saw. Default True preserves current routing where unprobed.
+    fp8_capable: bool = True
 
     @property
     def force_api_generations(self) -> bool:

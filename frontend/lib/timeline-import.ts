@@ -9,6 +9,8 @@
  * Users should export as XML from their NLE instead.
  */
 
+import { isRemoteFilePath } from '../../shared/remote-file-path'
+
 // Intermediate representation of a parsed timeline
 export interface ParsedMediaRef {
   id: string
@@ -83,6 +85,9 @@ function decodePathUrl(pathUrl: string): string {
   if (typeof navigator !== 'undefined' && navigator.platform?.startsWith('Win')) {
     decoded = decoded.replace(/\//g, '\\')
   }
+
+  // Reject network paths. An empty path counts as missing media.
+  if (isRemoteFilePath(decoded)) return ''
   
   return decoded
 }

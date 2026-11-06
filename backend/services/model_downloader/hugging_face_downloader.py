@@ -87,10 +87,13 @@ class HuggingFaceDownloader:
         local_dir: str,
         token: str | None,
         on_progress: Callable[[int], None] | None = None,
+        revision: str | None = None,
     ) -> Path:
         ctx = _patch_download_progress(on_progress) if on_progress is not None else contextlib.nullcontext()
         with ctx:
-            path: str = hf_hub_download(repo_id=repo_id, filename=filename, local_dir=local_dir, token=token)
+            path: str = hf_hub_download(
+                repo_id=repo_id, filename=filename, local_dir=local_dir, token=token, revision=revision
+            )
         return Path(path)
 
     def download_snapshot(
@@ -100,13 +103,14 @@ class HuggingFaceDownloader:
         token: str | None,
         on_progress: Callable[[int], None] | None = None,
         allow_patterns: tuple[str, ...] | None = None,
+        revision: str | None = None,
     ) -> Path:
         ctx = _patch_download_progress(on_progress) if on_progress is not None else contextlib.nullcontext()
         with ctx:
             path: str = snapshot_download(
                 repo_id=repo_id,
                 local_dir=local_dir,
-                token=token,
+                token=token, revision=revision,
                 allow_patterns=list(allow_patterns) if allow_patterns is not None else None,
             )
         return Path(path)

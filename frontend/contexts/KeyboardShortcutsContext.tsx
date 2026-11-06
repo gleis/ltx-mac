@@ -5,6 +5,7 @@ import {
   BUILT_IN_PRESETS,
   LTX_DEFAULT_LAYOUT,
   cloneLayout,
+  isReservedCombo,
   ActionId,
 } from '../lib/keyboard-shortcuts'
 
@@ -86,7 +87,7 @@ export function KeyboardShortcutsProvider({ children }: { children: React.ReactN
     // Always read the LATEST layout from the ref to avoid stale closure issues
     setCustomLayout(prev => {
       const base = prev || cloneLayout(activeLayoutRef.current)
-      const updated = { ...base, [actionId]: combos }
+      const updated = { ...base, [actionId]: combos?.filter((combo) => !isReservedCombo(combo)) }
       return updated
     })
   }, []) // No deps needed — reads from ref

@@ -10,6 +10,7 @@ import torch
 
 from app_factory import create_app
 from app_handler import ServiceBundle
+from api_types import AudioToVideoParams, GenerateVideoCompleteResponse, GenerateVideoRequest
 from runtime_config.model_download_specs import (
     DEPTH_PROCESSOR_CP_ID,
     IMG_GEN_MODEL_CP_ID,
@@ -22,7 +23,13 @@ from runtime_config.port_constant import PORT
 from state import RuntimeConfig, build_initial_state, set_state_service_for_tests
 from state.app_settings import AppSettings
 from state.app_state_types import HfAuthenticated
+from services.features.ic_lora_recipes import queued_ic_lora_recipes
+from services.features.lora_recipes import queued_lora_recipes
+from services.features.video import AudioToVideoExecutor
+from services.gemini_text_client import clear_gemini_models_cache
+from services.sqlite_store import SqliteStore
 from tests.fake_camera_motion_prompts import FAKE_CAMERA_MOTION_PROMPTS
+from tests.fakes.generation import FakeGenerationExecutor
 from tests.fakes.services import FakeServices
 
 DEFAULT_NEGATIVE_PROMPT = (
@@ -30,7 +37,57 @@ DEFAULT_NEGATIVE_PROMPT = (
     "excessive noise, grainy texture"
 )
 
-DEFAULT_APP_SETTINGS = AppSettings()
+# The app defaults to reckless, but these suites assert the standard refusals the
+# budget layer still implements. Tests that need reckless set it explicitly.
+DEFAULT_APP_SETTINGS = AppSettings(budget_mode="standard")
+
+
+class _UnusedReservedVideoGenerator:
+    @property
+    def models_dir(self) -> Path:
+        return Path("/unused-reserved-video-generator")
+
+    def validate_local_a2v_request(
+        self, params: AudioToVideoParams, audio_duration_ms: int
+    ) -> None:
+        del params, audio_duration_ms
+
+    def generate_local_reserved(
+        self,
+        req: GenerateVideoRequest,
+        *,
+        generation_id: str,
+        output_path: Path | None = None,
+        prompt_wrap=None,
+        a2v_num_frames: int | None = None,
+        a2v_audio_duration_seconds: float | None = None,
+        local_model_id=None,
+        risk_allowance: bool | None = None,
+        unmeasured_bet: bool = False,
+    ) -> GenerateVideoCompleteResponse:
+        del req, generation_id, prompt_wrap, a2v_num_frames, a2v_audio_duration_seconds, local_model_id, risk_allowance, unmeasured_bet
+        return GenerateVideoCompleteResponse(
+            status="complete",
+            video_path=str(output_path) if output_path is not None else "",
+        )
+
+
+@pytest.fixture(autouse=True)
+def _reset_generation_interrupt() -> None:
+    from services.generation_interrupt import clear
+
+    clear()
+    yield
+    clear()
+
+
+@pytest.fixture(autouse=True)
+def _reset_denoising_progress() -> None:
+    from services.denoising_progress import reset
+
+    reset()
+    yield
+    reset()
 
 
 @pytest.fixture
@@ -41,6 +98,7 @@ def fake_services() -> FakeServices:
 @pytest.fixture(autouse=True)
 def test_state(tmp_path: Path, fake_services: FakeServices):
     """Provide a fresh AppHandler per test and register it in DI."""
+    clear_gemini_models_cache()
     app_data = tmp_path / "app_data"
     default_models_dir = app_data / "models"
     outputs_dir = tmp_path / "outputs"
@@ -56,6 +114,7 @@ def test_state(tmp_path: Path, fake_services: FakeServices):
         settings_file=app_data / "settings.json",
         ltx_api_base_url="https://api.ltx.video",
         local_generations_mode="full_models_loading",
+        vram_gb=31,
         use_sage_attention=False,
         camera_motion_prompts=FAKE_CAMERA_MOTION_PROMPTS,
         default_negative_prompt=DEFAULT_NEGATIVE_PROMPT,
@@ -64,10 +123,14 @@ def test_state(tmp_path: Path, fake_services: FakeServices):
         backend_port=PORT,
     )
 
+    store = SqliteStore(config.app_data_dir)
     bundle = ServiceBundle(
+        assistant_provider=fake_services.assistant_provider,
+        assistant_models=fake_services.assistant_models,
         http=fake_services.http,
         gpu_cleaner=fake_services.gpu_cleaner,
         model_downloader=fake_services.model_downloader,
+        lora_catalog_provider=fake_services.lora_catalog_provider,
         gpu_info=fake_services.gpu_info,
         video_processor=fake_services.video_processor,
         text_encoder=fake_services.text_encoder,
@@ -81,6 +144,28 @@ def test_state(tmp_path: Path, fake_services: FakeServices):
         pose_processor_pipeline_class=type(fake_services.pose_processor_pipeline),
         a2v_pipeline_class=type(fake_services.a2v_pipeline),
         retake_pipeline_class=type(fake_services.retake_pipeline),
+        prompt_enhancer_pipeline_class=type(fake_services.prompt_enhancer_pipeline),
+        store=store,
+        generation_executors={
+            "text-to-video": FakeGenerationExecutor(),
+            "image-to-video": FakeGenerationExecutor(),
+            # Injecting generation_executors skips AppHandler's real per-recipe
+            # registration loop, so mirror it from the recipe table — a new recipe
+            # then can't 422 at validate_params for a missing executor.
+            **{
+                recipe.recipe_id: FakeGenerationExecutor()
+                for recipe in queued_lora_recipes()
+            },
+            **{
+                recipe.recipe_id: FakeGenerationExecutor(feature=recipe.recipe_id)
+                for recipe in queued_ic_lora_recipes()
+            },
+            "audio-to-video": AudioToVideoExecutor(
+                _UnusedReservedVideoGenerator(), store
+            ),
+            "retake": FakeGenerationExecutor(feature="retake"),
+            "extend": FakeGenerationExecutor(feature="extend"),
+        },
     )
 
     handler = build_initial_state(
@@ -119,18 +204,45 @@ def _test_model_path(test_state, cp_id: str) -> Path:
 
 @pytest.fixture
 def create_fake_model_files(test_state):
-    def _create(include_zit: bool = False):
-        ltx_spec = get_ltx_model_spec(get_latest_ltx_model_id())
+    def _create(
+        include_zit: bool = False,
+        model_id: str | None = None,
+        include_prompt_enhancer: bool = False,
+    ):
+        from runtime_config.model_download_specs import get_model_cp_spec
 
-        for cp_id in (ltx_spec.model_cp, ltx_spec.upscale_cp):
+        ltx_spec = get_ltx_model_spec(model_id or get_latest_ltx_model_id())
+
+        for cp_id in (
+            ltx_spec.model_cp,
+            ltx_spec.upscale_cp,
+            ltx_spec.video_vae_cp,
+            ltx_spec.video_vae_conv_cp,
+            ltx_spec.audio_vae_cp,
+            ltx_spec.duration_head_cp,
+        ):
+            if cp_id is None:
+                continue
             path = _test_model_path(test_state, cp_id)
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_bytes(b"\x00" * 1024)
 
-        te_dir = _test_model_path(test_state, ltx_spec.text_encoder_cp)
-        te_dir.mkdir(parents=True, exist_ok=True)
-        (te_dir / "model.safetensors").write_bytes(b"\x00" * 1024)
-        (te_dir / "tokenizer.model").write_bytes(b"\x00" * 1024)
+        def _write_cp(cp_id: str) -> None:
+            path = _test_model_path(test_state, cp_id)
+            if get_model_cp_spec(cp_id).is_folder:
+                path.mkdir(parents=True, exist_ok=True)
+                (path / "model.safetensors").write_bytes(b"\x00" * 1024)
+                (path / "tokenizer.model").write_bytes(b"\x00" * 1024)
+            else:
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(b"\x00" * 1024)
+
+        _write_cp(ltx_spec.text_encoder_cp)
+
+        # Left out by default: it's an optional extra download, so tests opt in to the state
+        # where local Enhance is available for models that need it (2.5).
+        if include_prompt_enhancer and ltx_spec.prompt_enhancer_cp is not None:
+            _write_cp(ltx_spec.prompt_enhancer_cp)
 
         if include_zit:
             zit_dir = _test_model_path(test_state, IMG_GEN_MODEL_CP_ID)
@@ -141,9 +253,30 @@ def create_fake_model_files(test_state):
 
 
 @pytest.fixture
+def create_fake_lora(test_state):
+    """Write a fake LoRA file under the models dir and return its resolved path.
+
+    Refs are now contained to models_dir + must exist (resolve_lora_ref), so tests
+    that forward LoRAs need a real on-disk file rather than an arbitrary path.
+    """
+    def _create(name: str = "style.safetensors") -> str:
+        loras_dir = test_state.config.default_models_dir / "loras"
+        loras_dir.mkdir(parents=True, exist_ok=True)
+        path = loras_dir / name
+        path.write_bytes(b"\x00" * 1024)
+        return str(path.resolve())
+
+    return _create
+
+
+# Union Control filenames come from the 2.3 spec; 2.5 reuses the same adapter on disk.
+_IC_LORA_MODEL_ID = "ltx-2.3-22b-distilled-1.1"
+
+
+@pytest.fixture
 def create_fake_ic_lora_files(test_state):
     def _create(include_depth: bool = True):
-        ltx_spec = get_ltx_model_spec(get_latest_ltx_model_id())
+        ltx_spec = get_ltx_model_spec(_IC_LORA_MODEL_ID)
         for cp_id in get_ic_loras_cp_ids(ltx_spec.ic_loras_spec):
             path = _test_model_path(test_state, cp_id)
             path.parent.mkdir(parents=True, exist_ok=True)

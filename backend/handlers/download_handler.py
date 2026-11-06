@@ -6,6 +6,7 @@ import logging
 import shutil
 import time
 from collections.abc import Callable, Iterable
+from pathlib import Path
 from threading import RLock
 from typing import TYPE_CHECKING
 from uuid import uuid4
@@ -14,6 +15,7 @@ import requests as http_requests
 
 from _routes._errors import HTTPError
 from api_types import (
+    ActiveDownloadResponse,
     CheckModelAccessResponse,
     DownloadProgressCompleteResponse,
     DownloadProgressErrorResponse,
@@ -23,15 +25,13 @@ from api_types import (
     ModelCheckpointID,
 )
 from handlers.base import StateHandlerBase, with_state_lock
-from handlers.hf_auth_utils import require_hf_token
+from handlers.checkpoint_files import commit_staged_checkpoint, stage_checkpoint
+from handlers.hf_auth_utils import optional_hf_token, require_hf_token
 from handlers.models_handler import ModelsHandler
 from runtime_config.model_download_specs import (
     ALL_MODEL_CP_IDS,
     get_model_cp_spec,
-    is_cp_downloaded,
     resolve_downloading_dir,
-    resolve_downloading_path,
-    resolve_downloading_target_path,
     resolve_model_path,
 )
 from services.interfaces import ModelDownloader, TaskRunner
@@ -48,6 +48,13 @@ if TYPE_CHECKING:
     from runtime_config.runtime_config import RuntimeConfig
 
 logger = logging.getLogger(__name__)
+
+
+def _canonical_download_cp_id(cp_id: ModelCheckpointID) -> ModelCheckpointID:
+    # HF removed ltx-2.3-spatial-upscaler-x2-1.0.safetensors; fetch 1.1 onto the 1.1 path.
+    if cp_id == "ltx-2.3-spatial-upscaler-x2-1.0":
+        return "ltx-2.3-spatial-upscaler-x2-1.1"
+    return cp_id
 
 
 class DownloadHandler(StateHandlerBase):
@@ -72,6 +79,15 @@ class DownloadHandler(StateHandlerBase):
     @with_state_lock
     def is_download_running(self) -> bool:
         return self.state.downloading_session is not None
+
+    def get_active_download(self) -> ActiveDownloadResponse:
+        session = self.state.downloading_session
+        if session is None:
+            return ActiveDownloadResponse(session_id=None, cp_ids=[])
+        return ActiveDownloadResponse(
+            session_id=str(session.id),
+            cp_ids=sorted(session.files_to_download),
+        )
 
     @with_state_lock
     def start_download(self, cp_ids: set[ModelCheckpointID]) -> DownloadSessionId:
@@ -197,58 +213,23 @@ class DownloadHandler(StateHandlerBase):
 
         raise ValueError(f"Unknown download session: {session_id}")
 
+    @property
+    def _staging_dir(self) -> Path:
+        return resolve_downloading_dir(self.models_dir)
+
     def cleanup_downloading_dir(self) -> None:
-        downloading_dir = resolve_downloading_dir(self.models_dir)
-        if downloading_dir.exists():
-            shutil.rmtree(downloading_dir)
+        if self._staging_dir.exists():
+            shutil.rmtree(self._staging_dir)
 
     def _download_to_staging(self, cp_id: ModelCheckpointID, hf_token: str | None) -> None:
-        spec = get_model_cp_spec(cp_id)
-        self.start_file(cp_id, spec.name)
-        progress_cb = self._make_progress_callback(cp_id)
-
-        resolve_downloading_dir(self.models_dir).mkdir(parents=True, exist_ok=True)
-
-        if spec.is_folder:
-            self._model_downloader.download_snapshot(
-                repo_id=spec.repo_id,
-                local_dir=str(resolve_downloading_path(self.models_dir, cp_id)),
-                on_progress=progress_cb,
-                token=hf_token,
-                allow_patterns=spec.snapshot_allow_patterns,
-            )
-        else:
-            self._model_downloader.download_file(
-                repo_id=spec.repo_id,
-                filename=spec.name,
-                local_dir=str(resolve_downloading_path(self.models_dir, cp_id)),
-                on_progress=progress_cb,
-                token=hf_token,
-            )
-
-    def _commit_staged_checkpoint(self, cp_id: ModelCheckpointID) -> bool:
-        src = resolve_downloading_target_path(self.models_dir, cp_id)
-        dst = resolve_model_path(self.models_dir, cp_id)
-        spec = get_model_cp_spec(cp_id)
-
-        if is_cp_downloaded(self.models_dir, cp_id):
-            if src.exists():
-                if spec.is_folder:
-                    shutil.rmtree(src)
-                else:
-                    src.unlink(missing_ok=True)
-            return False
-
-        dst.parent.mkdir(parents=True, exist_ok=True)
-        if spec.is_folder:
-            if dst.exists():
-                shutil.rmtree(dst)
-            src.rename(dst)
-        else:
-            if dst.exists():
-                dst.unlink()
-            src.rename(dst)
-        return True
+        self.start_file(cp_id, get_model_cp_spec(cp_id).name)
+        stage_checkpoint(
+            self._model_downloader,
+            self._staging_dir,
+            cp_id,
+            hf_token,
+            self._make_progress_callback(cp_id),
+        )
 
     def _rollback_committed_checkpoints(self, cp_ids: Iterable[ModelCheckpointID]) -> None:
         for cp_id in cp_ids:
@@ -260,19 +241,26 @@ class DownloadHandler(StateHandlerBase):
             else:
                 path.unlink(missing_ok=True)
 
+    def _canonical_download_cp_ids(
+        self, cp_ids: Iterable[ModelCheckpointID]
+    ) -> tuple[ModelCheckpointID, ...]:
+        return self._ordered_cp_ids({_canonical_download_cp_id(cp_id) for cp_id in cp_ids})
+
     def _discover_download_cp_ids(self, requested_cp_ids: set[ModelCheckpointID]) -> tuple[ModelCheckpointID, ...]:
-        missing: set[ModelCheckpointID] = set()
-        for cp_id in requested_cp_ids:
-            if not self._models_handler.is_cp_downloaded(cp_id):
-                missing.add(cp_id)
-        return self._ordered_cp_ids(missing)
+        return tuple(
+            cp_id
+            for cp_id in self._canonical_download_cp_ids(requested_cp_ids)
+            if not self._models_handler.is_cp_downloaded(cp_id)
+        )
 
     def _download_worker(self, cp_ids: tuple[ModelCheckpointID, ...], *, atomic_commit: bool) -> None:
         if not cp_ids:
             self.finish_download()
             return
 
-        hf_token = require_hf_token(self.state, self._lock) if self.config.hf_gating_enabled else None
+        # Most bundled checkpoints are public and download anonymously; attach the in-app token
+        # when signed in. Gated specs (LTX 2.5) are rejected up front in start_model_download.
+        hf_token = optional_hf_token(self.state, self._lock)
 
         try:
             if atomic_commit:
@@ -283,7 +271,7 @@ class DownloadHandler(StateHandlerBase):
                 committed_cp_ids: list[ModelCheckpointID] = []
                 try:
                     for cp_id in cp_ids:
-                        if self._commit_staged_checkpoint(cp_id):
+                        if commit_staged_checkpoint(self.models_dir, self._staging_dir, cp_id):
                             committed_cp_ids.append(cp_id)
                 except Exception:
                     self._rollback_committed_checkpoints(committed_cp_ids)
@@ -292,7 +280,7 @@ class DownloadHandler(StateHandlerBase):
                 for cp_id in cp_ids:
                     logger.info("Downloading %s from %s", cp_id, get_model_cp_spec(cp_id).repo_id)
                     self._download_to_staging(cp_id, hf_token)
-                    self._commit_staged_checkpoint(cp_id)
+                    commit_staged_checkpoint(self.models_dir, self._staging_dir, cp_id)
         except Exception:
             self.cleanup_downloading_dir()
             raise
@@ -304,23 +292,27 @@ class DownloadHandler(StateHandlerBase):
         if self.config.force_api_generations:
             raise HTTPError(409, "LOCAL_MODEL_DOWNLOADS_DISABLED_IN_FORCE_API_MODE")
 
-        with self._lock:
-            if self.state.downloading_session is not None:
-                raise HTTPError(409, "DOWNLOAD_ALREADY_RUNNING")
-
+        # Resolve what to download (may raise) before touching the lock.
         if download_type == "upgrade":
             resolved_upgrade = self._models_handler.resolve_upgrade_download(cp_ids)
-            cp_ids_to_download = set(resolved_upgrade.cp_ids)
-            ordered_cp_ids = resolved_upgrade.cp_ids
+            ordered_cp_ids = self._canonical_download_cp_ids(resolved_upgrade.cp_ids)
             atomic_commit = True
         elif download_type == "download":
-            cp_ids_to_download = set(cp_ids)
-            ordered_cp_ids = self._discover_download_cp_ids(cp_ids_to_download)
+            ordered_cp_ids = self._discover_download_cp_ids(set(cp_ids))
             atomic_commit = False
         else:
             raise HTTPError(400, "INVALID_DOWNLOAD_REQUEST")
 
-        session_id = self.start_download(set(ordered_cp_ids))
+        if any(get_model_cp_spec(cp_id).gated for cp_id in ordered_cp_ids):
+            require_hf_token(self.state, self._lock)
+
+        # Check-and-set in one lock acquisition (RLock is reentrant, so start_download's own
+        # lock nests fine) — otherwise two concurrent calls both pass the guard and the second
+        # clobbers the first's session, racing on the same staging dir.
+        with self._lock:
+            if self.state.downloading_session is not None:
+                raise HTTPError(409, "DOWNLOAD_ALREADY_RUNNING")
+            session_id = self.start_download(set(ordered_cp_ids))
         self._task_runner.run_background(
             lambda: self._download_worker(ordered_cp_ids, atomic_commit=atomic_commit),
             task_name="model-download",
@@ -330,12 +322,21 @@ class DownloadHandler(StateHandlerBase):
         return session_id
 
     def check_model_access(self, cp_ids: set[ModelCheckpointID]) -> CheckModelAccessResponse:
+        gated_repo_ids = {
+            spec.repo_id for spec in map(get_model_cp_spec, cp_ids) if spec.gated
+        }
         repo_ids = {get_model_cp_spec(cp_id).repo_id for cp_id in cp_ids}
 
-        if not self.config.hf_gating_enabled:
-            return CheckModelAccessResponse(access={repo_id: "authorized" for repo_id in repo_ids})
-
-        hf_token = require_hf_token(self.state, self._lock)
+        # Signed out there is no token to verify with: public repos download fine, gated ones
+        # would 401 mid-transfer, so report them up front rather than letting the download start.
+        hf_token = optional_hf_token(self.state, self._lock)
+        if hf_token is None:
+            return CheckModelAccessResponse(
+                access={
+                    repo_id: "not_authorized" if repo_id in gated_repo_ids else "authorized"
+                    for repo_id in repo_ids
+                }
+            )
 
         access: dict[str, ModelAccessStatus] = {}
         for repo_id in sorted(repo_ids):

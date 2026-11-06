@@ -20,6 +20,7 @@ from state import RuntimeConfig, build_initial_state
 from state.app_settings import AppSettings
 from tests.fake_camera_motion_prompts import FAKE_CAMERA_MOTION_PROMPTS
 from tests.fakes.services import FakeServices
+from services.sqlite_store import SqliteStore
 import torch
 
 DEFAULT_NEGATIVE_PROMPT = "openapi-export"
@@ -56,6 +57,7 @@ def _build_schema() -> dict[str, object]:
             http=cast(Any, fake.http),
             gpu_cleaner=cast(Any, fake.gpu_cleaner),
             model_downloader=cast(Any, fake.model_downloader),
+            lora_catalog_provider=cast(Any, fake.lora_catalog_provider),
             gpu_info=cast(Any, fake.gpu_info),
             video_processor=cast(Any, fake.video_processor),
             text_encoder=cast(Any, fake.text_encoder),
@@ -69,6 +71,8 @@ def _build_schema() -> dict[str, object]:
             pose_processor_pipeline_class=cast(Any, type(fake.pose_processor_pipeline)),
             a2v_pipeline_class=cast(Any, type(fake.a2v_pipeline)),
             retake_pipeline_class=cast(Any, type(fake.retake_pipeline)),
+            prompt_enhancer_pipeline_class=cast(Any, type(fake.prompt_enhancer_pipeline)),
+        store=SqliteStore(config.app_data_dir),
         )
 
         handler = build_initial_state(config, AppSettings(), service_bundle=bundle)

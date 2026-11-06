@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
+
 from services.interfaces import GpuTelemetryPayload
 
 
@@ -11,7 +13,18 @@ class FakeGpuInfo:
         self.mps_available = False
         self.gpu_name: str | None = None
         self.vram_gb: int | None = None
+        self.vram_bytes: int | None = None
+        self.available_ram_gb: int | None = None
+        self.total_ram_bytes: int | None = None
         self.gpu_info: GpuTelemetryPayload = {"name": "Unknown", "vram": 0, "vramUsed": 0}
+        self.free_vram_bytes: int | None = None
+        self.live_allocated_bytes: int | None = None
+        self.reserved_bytes: int | None = None
+        self.mps_pool_bytes: int | None = None
+        # Dynamic overrides for mid-call flips (evict-retry re-samples inside
+        # one gate call, so a static field cannot model the freed memory).
+        self.free_vram_bytes_fn: Callable[[], int | None] | None = None
+        self.live_allocated_bytes_fn: Callable[[], int | None] | None = None
 
     def get_gpu_info(self) -> GpuTelemetryPayload:
         return self.gpu_info
@@ -30,3 +43,28 @@ class FakeGpuInfo:
 
     def get_vram_total_gb(self) -> int | None:
         return self.vram_gb
+
+    def get_cuda_total_vram_bytes(self) -> int | None:
+        return self.vram_bytes
+
+    def get_available_ram_gb(self) -> int | None:
+        return self.available_ram_gb
+
+    def get_total_ram_bytes(self) -> int | None:
+        return self.total_ram_bytes
+
+    def get_free_cuda_vram_bytes(self) -> int | None:
+        if self.free_vram_bytes_fn is not None:
+            return self.free_vram_bytes_fn()
+        return self.free_vram_bytes
+
+    def get_cuda_live_allocated_bytes(self) -> int | None:
+        if self.live_allocated_bytes_fn is not None:
+            return self.live_allocated_bytes_fn()
+        return self.live_allocated_bytes
+
+    def get_cuda_reserved_bytes(self) -> int | None:
+        return self.reserved_bytes
+
+    def get_mps_pool_bytes(self) -> int | None:
+        return self.mps_pool_bytes

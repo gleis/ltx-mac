@@ -1,14 +1,29 @@
-import { dialog } from 'electron'
+import { app, dialog } from 'electron'
 import path from 'path'
 import fs from 'fs'
-import { getAllowedRoots } from '../config'
+import os from 'os'
+import { randomUUID } from 'crypto'
+import { getAllowedRoots, getCurrentDir } from '../config'
+import { resolveExploreAudioToVideoSeedPaths } from '../explore-a2v-seed'
+import { resolveExploreLoraRecipeSeedPath } from '../explore-dolly-in-seed'
+import {
+  packagedSeedMissingMessage,
+  resolvePackagedSeedPath,
+} from '../explore-seed'
 import { logger } from '../logger'
 import { getMainWindow } from '../window'
-import { validatePath, approvePath } from '../path-validation'
+import {
+  validatePath,
+  approvePath,
+  resolvePathWithinDirectory,
+  validateTempRecordingInput,
+} from '../path-validation'
 import { getProjectAssetsPath, setProjectAssetsPath } from '../app-state'
 import { extractVideoFrameToFile, getVideoDimensions } from '../export/ffmpeg-utils'
 import { createDownsampledThumbnail, getImageDimensions, getThumbnailPaths } from './image-utils'
 import { handle } from './typed-handle'
+import { isAllowedExternalUrl } from '../allowed-external-url'
+import { isRemoteFilePath } from '../../shared/remote-file-path'
 
 const MIME_TYPES: Record<string, string> = {
   '.png': 'image/png',
@@ -177,6 +192,17 @@ export function registerFileHandlers(): void {
     return true
   })
 
+  handle('openExternalUrl', async ({ url }) => {
+    const { shell } = await import('electron')
+    // https anywhere; http only to loopback / RFC1918 so LAN pairing can open.
+    // Never file://, javascript:, or arbitrary public http.
+    if (!isAllowedExternalUrl(url)) {
+      throw new Error('Only https URLs, or http URLs on this computer / this Wi-Fi, may be opened')
+    }
+    await shell.openExternal(url)
+    return true
+  })
+
   const HF_AUTHORIZE_URL = 'https://huggingface.co/oauth/authorize'
 
   handle('openHuggingFaceAuth', async (params) => {
@@ -258,6 +284,21 @@ export function registerFileHandlers(): void {
       return { success: true, path: filePath }
     } catch (error) {
       logger.error( `Error saving binary file: ${error}`)
+      return { success: false, error: String(error) }
+    }
+  })
+
+  handle('writeTempFile', async ({ suffix, data }) => {
+    try {
+      validateTempRecordingInput(suffix, data)
+      const dir = path.resolve(os.tmpdir(), 'ltx-desktop-recordings')
+      fs.mkdirSync(dir, { recursive: true })
+      const filePath = resolvePathWithinDirectory(dir, `${randomUUID()}${suffix}`)
+      fs.writeFileSync(filePath, Buffer.from(data))
+      approvePath(filePath)
+      return { success: true, path: filePath }
+    } catch (error) {
+      logger.error(`Error writing temp file: ${error}`)
       return { success: false, error: String(error) }
     }
   })
@@ -368,12 +409,53 @@ export function registerFileHandlers(): void {
     const results: Record<string, boolean> = {}
     for (const p of filePaths) {
       try {
-        results[p] = fs.existsSync(p)
+        // Never touch a network path. Windows would send credentials to the remote host.
+        results[p] = !isRemoteFilePath(p) && fs.existsSync(p)
       } catch {
         results[p] = false
       }
     }
     return results
+  })
+
+  handle('getPackagedSeedPath', ({ kind }) => {
+    const seedPath = resolvePackagedSeedPath({
+      kind,
+      isPackaged: app.isPackaged,
+      projectRoot: getCurrentDir(),
+      resourcesPath: process.resourcesPath,
+    })
+    if (!fs.existsSync(seedPath) || !fs.statSync(seedPath).isFile()) {
+      throw new Error(packagedSeedMissingMessage(kind))
+    }
+    return seedPath
+  })
+
+  handle('getExploreLoraRecipeSeedPath', (input) => {
+    const seedPath = resolveExploreLoraRecipeSeedPath({
+      seedId: input.seedId,
+      isPackaged: app.isPackaged,
+      projectRoot: getCurrentDir(),
+      resourcesPath: process.resourcesPath,
+    })
+    if (!fs.existsSync(seedPath) || !fs.statSync(seedPath).isFile()) {
+      throw new Error(`LoRA recipe seed "${input.seedId}" is missing`)
+    }
+    return seedPath
+  })
+
+  handle('getExploreAudioToVideoSeedPaths', () => {
+    const seedPaths = resolveExploreAudioToVideoSeedPaths({
+      isPackaged: app.isPackaged,
+      projectRoot: getCurrentDir(),
+      resourcesPath: process.resourcesPath,
+    })
+    for (const seedPath of Object.values(seedPaths)) {
+      if (!fs.existsSync(seedPath) || !fs.statSync(seedPath).isFile()) {
+        throw new Error('Explore audio-to-video seed is missing')
+      }
+    }
+    return seedPaths
   })
 
   handle('showOpenFileDialog', async ({ title, filters, properties }) => {

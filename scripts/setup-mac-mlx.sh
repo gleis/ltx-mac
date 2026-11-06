@@ -28,6 +28,12 @@ if [[ "$(uname -s)" != "Darwin" || "$(uname -m)" != "arm64" ]]; then
   echo "This setup is for Apple Silicon Macs only." >&2
   exit 1
 fi
+# MLX 0.32.4 publishes its Apple Silicon wheels for macOS 26 or later.
+macos_major="$(sw_vers -productVersion | cut -d. -f1)"
+if (( macos_major < 26 )); then
+  echo "The pinned MLX runtime requires macOS 26 or later. Update macOS before setup." >&2
+  exit 1
+fi
 
 mkdir -p "$APP_DATA_DIR" "$MODELS_DIR" "$UV_CACHE_DIR" "$HF_HOME" "$XDG_CACHE_HOME"
 
@@ -60,12 +66,7 @@ PYBUILD
 "$UV_BIN" pip check --python env/bin/python
 env/bin/python "$ROOT/backend/services/fast_video_pipeline/prepare_mlx_runtime.py"
 
-PATCH_SCRIPT="$ROOT/backend/services/fast_video_pipeline/patch_ltx_codec.py"
-if [[ -f "$PATCH_SCRIPT" ]]; then
-  if ! env/bin/python "$PATCH_SCRIPT"; then
-    echo "Warning: optional MLX codec/memory patch failed; continuing with the stock ltx-2-mlx runtime." >&2
-  fi
-fi
+
 
 export HF_HUB_ENABLE_HF_TRANSFER=1
 

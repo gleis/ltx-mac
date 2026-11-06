@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 from typing import cast
 
+from server_utils.oriented_image import open_oriented_rgb
 from services.depth_processor_pipeline.depth_processor_pipeline import DepthProcessorPipeline
 from services.pose_processor_pipeline.pose_processor_pipeline import PoseProcessorPipeline
 from services.video_processor.video_processor import VideoInfoPayload
@@ -40,6 +41,17 @@ class VideoProcessorImpl:
         if not ret:
             return None
         return cast(FrameArray, frame)
+
+    def read_image(self, path: str) -> FrameArray:
+        import cv2
+        import numpy as np
+        from PIL import UnidentifiedImageError
+
+        try:
+            rgb = np.asarray(open_oriented_rgb(path))
+        except (UnidentifiedImageError, OSError) as exc:
+            raise ValueError(f"Could not read image: {path}") from exc
+        return cast(FrameArray, cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR))
 
     def apply_canny(self, frame: FrameArray) -> FrameArray:
         import cv2
@@ -84,6 +96,8 @@ class VideoProcessorImpl:
 
         code = cv2.VideoWriter.fourcc(*fourcc)
         writer = cv2.VideoWriter(path, code, fps, size)
+        # cv2.VideoWriter doesn't raise on a bad codec/dims/unwritable path — it returns a
+        # no-op writer that silently produces a 0-byte file. Fail loudly here instead.
         if not writer.isOpened():
             raise ValueError(f"Could not open video writer for {path} (codec={fourcc}, size={size})")
         return cast(VideoWriterLike, writer)

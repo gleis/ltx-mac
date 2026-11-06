@@ -16,5 +16,9 @@ class TorchCleaner:
         self._device = device
 
     def cleanup(self) -> None:
-        empty_device_cache(self._device)
+        # gc first: unreachable tensors must release their storage back to
+        # the caching allocator before empty_cache can return it to the
+        # driver. Reversed, freed blocks stay cached and mem_get_info counts
+        # them as used — an evict-retry re-sample would see no freed VRAM.
         gc.collect()
+        empty_device_cache(self._device)

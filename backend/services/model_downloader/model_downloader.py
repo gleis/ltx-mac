@@ -15,6 +15,7 @@ class ModelDownloader(Protocol):
         local_dir: str,
         token: str | None,
         on_progress: Callable[[int], None] | None = None,
+        revision: str | None = None,
     ) -> Path: ...
 
     def download_snapshot(
@@ -24,4 +25,5 @@ class ModelDownloader(Protocol):
         token: str | None,
         on_progress: Callable[[int], None] | None = None,
         allow_patterns: tuple[str, ...] | None = None,
+        revision: str | None = None,
     ) -> Path: ...

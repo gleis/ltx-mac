@@ -5,9 +5,11 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Protocol
 
 from api_types import ImageConditioningInput
+from runtime_config.ic_lora_tiling import IcLoraTiling
 
 if TYPE_CHECKING:
     import torch
+    from ltx_pipelines.utils.types import OffloadMode
 
 
 class IcLoraPipeline(Protocol):
@@ -19,6 +21,14 @@ class IcLoraPipeline(Protocol):
         lora_path: str,
         device: torch.device,
         streaming_prefetch_count: int | None,
+        lora_strength: float = 1.0,
+        *,
+        offload_mode: OffloadMode,
+        video_vae_path: str | None = None,
+        audio_vae_path: str | None = None,
+        duration_head_path: str | None = None,
+        stage_2_ic_lora: bool = False,
+        tiling: IcLoraTiling | None = None,
     ) -> "IcLoraPipeline":
         ...
 
@@ -33,5 +43,12 @@ class IcLoraPipeline(Protocol):
         images: list[ImageConditioningInput],
         video_conditioning: list[tuple[str, float]],
         output_path: str,
+        skip_stage_2: bool = False,
+        use_lora_in_stage_2: bool = False,
+        resolution_factor: float = 2.0,
+        source_audio_path: str | None = None,
+        mute_audio: bool = False,
+        conditioning_mask_path: str | None = None,
+        chunk_pixel_frames: int | None = None,
     ) -> None:
         ...

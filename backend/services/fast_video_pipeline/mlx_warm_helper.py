@@ -109,36 +109,15 @@ def install_ic_lora_skip_stage2_load_patch(pipe):
 
     pipe.load = MethodType(load_without_upsampler, pipe)
 
-# Y1.037 — VAE temporal-streaming decision.
-#
-# Y1.035 patched the upstream `decode_and_stream` to actually stream temporal
-# tiles (it had been pretending to). That fixed the "frozen final step" bug
-# on long / 720p clips, but adds ~30 s of overlap-tile compute on a 5-second
-# Standard render where the old full-volume decode fit in memory just fine
-# (M-Max 64 GB measured: 459 s pre-Y1.035 → 493 s on Y1.035, +7.4%).
-#
-# This module captures whatever LTX_VAE_STREAMING was at process start. If the
-# user explicitly set it (any value), we respect it. Otherwise the per-job
-# helper code flips the env var per-render based on num_frames vs the
-# threshold (default 200 frames ≈ 8 s @ 24 fps), letting the patched decoder's
-# auto-pick the streaming or full-decode path. Power users can set
-# LTX_VAE_STREAMING_THRESHOLD=N to override the cutoff.
+# Full-volume decoding exhausted Metal memory on the 36 GB validation Mac.
+# Stream temporal tiles by default, including short clips. Explicit overrides
+# remain available for users who have measured their own memory envelope.
 _USER_VAE_STREAMING_OVERRIDE = os.environ.get("LTX_VAE_STREAMING")
 
 
 def _apply_vae_streaming_decision(num_frames: int) -> None:
-    """Set/unset os.environ['LTX_VAE_STREAMING'] for the upcoming decode.
-    No-op if the user pinned a value at helper start time. Threshold reads
-    LTX_VAE_STREAMING_AUTO_MAX_FRAMES (default 121, matching the patched
-    decoder's auto-mode cutoff in patch_ltx_codec.py)."""
-    if _USER_VAE_STREAMING_OVERRIDE is not None:
-        return  # respect explicit override
-    threshold = int(os.environ.get("LTX_VAE_STREAMING_AUTO_MAX_FRAMES", "121"))
-    if num_frames <= threshold:
-        os.environ["LTX_VAE_STREAMING"] = "0"
-    else:
-        # Long clip: let the patched decoder default ("auto") pick streaming.
-        os.environ.pop("LTX_VAE_STREAMING", None)
+    from mlx_decode_policy import apply_decode_policy
+    apply_decode_policy(os.environ, num_frames, _USER_VAE_STREAMING_OVERRIDE)
 
 _real_stdout = sys.stdout
 _emit_lock = threading.Lock()

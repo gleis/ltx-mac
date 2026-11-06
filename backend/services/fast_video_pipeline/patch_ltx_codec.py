@@ -34,6 +34,7 @@ Safe to re-run — each patch checks for its marker before touching anything.
 from __future__ import annotations
 
 import sys
+import sysconfig
 from pathlib import Path
 
 DEFAULT_MLX_ROOTS = [
@@ -56,6 +57,9 @@ def _candidate_roots() -> list[Path]:
 
 def _find(rel: str) -> Path | None:
     """Resolve a package-relative path under the first MLX runtime root that contains it."""
+    installed = Path(sysconfig.get_paths()["purelib"]) / rel
+    if installed.exists():
+        return installed
     subroots = [
         f"env/lib/python{sys.version_info.major}.{sys.version_info.minor}/site-packages",
         f".venv/lib/python{sys.version_info.major}.{sys.version_info.minor}/site-packages",
