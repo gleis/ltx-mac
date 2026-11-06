@@ -37,23 +37,31 @@ fi
 
 cd "$MLX_ROOT"
 git fetch --tags origin
-git checkout v0.14.0
+# Immutable source revision; v0.14 API compatibility is maintained until the
+# v0.18 pipeline migration and real image-to-video validation are complete.
+git checkout --detach b35254a9288e838afc574e8002432815a04f16f4
 
-if [[ ! -x env/bin/python3.11 ]]; then
-  rm -rf env
-  "$UV_BIN" venv --python 3.11 --seed env
-fi
-
-"$UV_BIN" pip install --python env/bin/python \
-  'mlx==0.31.1' 'mlx-lm==0.31.1' 'mlx-metal==0.31.1'
-"$UV_BIN" pip install --python env/bin/python \
-  --reinstall ./packages/ltx-core-mlx ./packages/ltx-pipelines-mlx ./packages/ltx-trainer
-"$UV_BIN" pip install --python env/bin/python \
-  pyyaml pydantic tqdm rich pillow numpy 'huggingface-hub>=1.5.0,<2.0' 'hf_transfer>=0.1.6'
+# Use the same interpreter version as the backend and hashed third-party graph.
+PYTHON_VERSION="$(tr -d '[:space:]' < "$ROOT/backend/.python-version")"
+"$UV_BIN" venv --python "$PYTHON_VERSION" --allow-existing env
+"$UV_BIN" pip sync --python env/bin/python --require-hashes "$ROOT/requirements/mlx.lock"
+# Hatchling requires readmes inside each package. Keep the pinned source code
+# unchanged and copy only its shared readme into the package build roots.
+env/bin/python - <<'PYBUILD'
+from pathlib import Path
+root = Path.cwd()
+for name in ("ltx-core-mlx", "ltx-pipelines-mlx", "ltx-trainer"):
+    project = root / "packages" / name / "pyproject.toml"
+    project.write_text(project.read_text().replace('readme = "../../README.md"', 'readme = "README.md"'))
+    (project.parent / "README.md").write_bytes((root / "README.md").read_bytes())
+PYBUILD
+"$UV_BIN" pip install --python env/bin/python --no-deps --no-build-isolation \
+  ./packages/ltx-core-mlx ./packages/ltx-pipelines-mlx ./packages/ltx-trainer
+"$UV_BIN" pip check --python env/bin/python
 
 PATCH_SCRIPT="$ROOT/backend/services/fast_video_pipeline/patch_ltx_codec.py"
 if [[ -f "$PATCH_SCRIPT" ]]; then
-  if ! env/bin/python3.11 "$PATCH_SCRIPT"; then
+  if ! env/bin/python "$PATCH_SCRIPT"; then
     echo "Warning: optional MLX codec/memory patch failed; continuing with the stock ltx-2-mlx runtime." >&2
   fi
 fi

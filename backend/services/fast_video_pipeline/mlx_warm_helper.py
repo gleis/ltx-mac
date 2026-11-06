@@ -1,4 +1,4 @@
-#!/usr/bin/env python3.11
+#!/usr/bin/env python3
 """LTX warm helper — long-lived process holding MLX pipelines in memory.
 
 Reads JSON-line jobs from stdin, emits JSON-line events to stdout.

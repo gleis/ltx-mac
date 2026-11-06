@@ -69,8 +69,8 @@ class MLXFastVideoPipeline:
             candidates.append(Path(env_python))
         candidates.extend(
             [
-                mlx_root / "env" / "bin" / "python3.11",
-                mlx_root / ".venv" / "bin" / "python3.11",
+                mlx_root / "env" / "bin" / "python",
+                mlx_root / ".venv" / "bin" / "python",
                 Path(sys.executable),
             ]
         )
@@ -78,7 +78,7 @@ class MLXFastVideoPipeline:
             if candidate.exists():
                 return candidate
         raise RuntimeError(
-            "Could not find a Python 3.11 environment for ltx-2-mlx. "
+            "Could not find a Python environment for ltx-2-mlx. "
             "Run scripts/setup-mac-mlx.sh before local Mac generation."
         )
 

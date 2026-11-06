@@ -57,8 +57,8 @@ def _candidate_roots() -> list[Path]:
 def _find(rel: str) -> Path | None:
     """Resolve a package-relative path under the first MLX runtime root that contains it."""
     subroots = [
-        "env/lib/python3.11/site-packages",
-        ".venv/lib/python3.11/site-packages",
+        f"env/lib/python{sys.version_info.major}.{sys.version_info.minor}/site-packages",
+        f".venv/lib/python{sys.version_info.major}.{sys.version_info.minor}/site-packages",
         "packages/ltx-core-mlx/src",
         "packages/ltx-pipelines-mlx/src",
     ]
