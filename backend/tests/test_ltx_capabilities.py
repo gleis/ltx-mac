@@ -206,11 +206,11 @@ def test_a2v_pixels_for_rejects_a_resolution_the_offering_does_not_list():
         a2v_pixels_for(api_caps("fast"), "270p", "16:9")
 
 
-def test_ic_lora_flag_is_on_for_every_local_model():
+def test_mlx_does_not_advertise_torch_ic_lora_support():
     from runtime_config.model_download_specs import ALL_LTX_LOCAL_MODEL_IDS
 
     for model_id in ALL_LTX_LOCAL_MODEL_IDS:
-        assert supports(local_caps(model_id), "ic_lora") is True
+        assert supports(local_caps(model_id), "ic_lora") is (model_id != "ltx-2.3-mlx-q4")
 
 
 @pytest.mark.parametrize("pipeline", ["fast", "fast-2.5", "pro", "pro-2.5"])

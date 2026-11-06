@@ -138,7 +138,9 @@ class ModelsHandler(StateHandlerBase):
         return [cp_id for cp_id in ALL_MODEL_CP_IDS if cp_id in cp_ids]
 
     def _latest_ltx_model_id(self) -> LTXLocalModelId:
-        return get_latest_ltx_model_id(self.config.local_generations_mode)
+        if self.config.local_generations_mode == "mac_mlx_q4":
+            return get_latest_ltx_model_id("mac_mlx_q4")
+        return get_latest_ltx_model_id()
 
     def _ensure_local_model_mode(self) -> None:
         if self.config.force_api_generations:
@@ -358,11 +360,11 @@ class ModelsHandler(StateHandlerBase):
             # does not apply here — fresh always means latest, even if an older bundle
             # is what Setup would repair.
             return self._ltx_download_bundle(
-                get_latest_ltx_model_id(self.config.local_generations_mode), has_api_key=False, only_missing=False
+                self._latest_ltx_model_id(), has_api_key=False, only_missing=False
             )
 
         current_model_id = self._current_downloaded_ltx_model_id()
-        latest_model_id = get_latest_ltx_model_id(self.config.local_generations_mode)
+        latest_model_id = self._latest_ltx_model_id()
         has_api_key = self._has_api_key()
 
         if current_model_id is None:
@@ -579,11 +581,11 @@ class ModelsHandler(StateHandlerBase):
 
     def list_ltx_versions(self) -> LtxModelVersionsResponse:
         self._ensure_local_model_mode()
-        latest = get_latest_ltx_model_id(self.config.local_generations_mode)
+        latest = self._latest_ltx_model_id()
         active = self._active_ltx_model_id_for_versions_list()
         items: list[LtxModelVersionItem] = []
         for model_id in ALL_LTX_LOCAL_MODEL_IDS:
-            if self.config.local_generations_mode == "mac_mlx_q4" and model_id != "ltx-2.3-mlx-q4":
+            if (self.config.local_generations_mode == "mac_mlx_q4") != (model_id == "ltx-2.3-mlx-q4"):
                 continue
             spec = get_ltx_model_spec(model_id)
             missing = self._get_missing_cp_ids(self._get_required_ltx_cp_ids(model_id))

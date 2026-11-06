@@ -1697,7 +1697,7 @@ export function LegacyMacGenSpace() {
 
   useEffect(() => {
     if (retakeError) {
-      setLocalError(createLocalGenerationError(retakeError.error.message))
+      setLocalError(createLocalGenerationError(retakeError.message))
     }
   }, [retakeError])
 

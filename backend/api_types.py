@@ -89,10 +89,10 @@ ModelCheckpointID = Literal[
     "z-image-turbo",
 ]
 LTXLocalModelId = Literal[
-    "ltx-2.3-mlx-q4",
     "ltx-2.5-22b-distilled",
     "ltx-2.3-22b-distilled-1.1",
     "ltx-2.3-22b-distilled",
+    "ltx-2.3-mlx-q4",
 ]
 # T2V/I2V/A2V/LoRA create-body `params.model`. Not a GenSpace pipeline (`fast`)
 # and not a checkpoint id. Future API rows (`ltx-2.5-pro`, …) join this union.

@@ -165,10 +165,10 @@
             "anyOf": [
               {
                 "enum": [
-                  "ltx-2.3-mlx-q4",
                   "ltx-2.5-22b-distilled",
                   "ltx-2.3-22b-distilled-1.1",
-                  "ltx-2.3-22b-distilled"
+                  "ltx-2.3-22b-distilled",
+                  "ltx-2.3-mlx-q4"
                 ],
                 "type": "string"
               },
@@ -8465,10 +8465,10 @@
           },
           "model_id": {
             "enum": [
-              "ltx-2.3-mlx-q4",
               "ltx-2.5-22b-distilled",
               "ltx-2.3-22b-distilled-1.1",
-              "ltx-2.3-22b-distilled"
+              "ltx-2.3-22b-distilled",
+              "ltx-2.3-mlx-q4"
             ],
             "title": "Model Id",
             "type": "string"
@@ -8588,10 +8588,10 @@
           },
           "ltx_model_id": {
             "enum": [
-              "ltx-2.3-mlx-q4",
               "ltx-2.5-22b-distilled",
               "ltx-2.3-22b-distilled-1.1",
-              "ltx-2.3-22b-distilled"
+              "ltx-2.3-22b-distilled",
+              "ltx-2.3-mlx-q4"
             ],
             "title": "Ltx Model Id",
             "type": "string"
@@ -9709,10 +9709,10 @@
         "properties": {
           "model_id": {
             "enum": [
-              "ltx-2.3-mlx-q4",
               "ltx-2.5-22b-distilled",
               "ltx-2.3-22b-distilled-1.1",
-              "ltx-2.3-22b-distilled"
+              "ltx-2.3-22b-distilled",
+              "ltx-2.3-mlx-q4"
             ],
             "title": "Model Id",
             "type": "string"
@@ -9730,10 +9730,10 @@
             "anyOf": [
               {
                 "enum": [
-                  "ltx-2.3-mlx-q4",
                   "ltx-2.5-22b-distilled",
                   "ltx-2.3-22b-distilled-1.1",
-                  "ltx-2.3-22b-distilled"
+                  "ltx-2.3-22b-distilled",
+                  "ltx-2.3-mlx-q4"
                 ],
                 "type": "string"
               },

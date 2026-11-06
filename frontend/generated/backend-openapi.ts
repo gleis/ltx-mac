@@ -1705,7 +1705,7 @@ export interface components {
         /** AppSettingsPatch */
         AppSettingsPatch: {
             /** Activeltxmodelid */
-            activeLtxModelId?: ("ltx-2.3-mlx-q4" | "ltx-2.5-22b-distilled" | "ltx-2.3-22b-distilled-1.1" | "ltx-2.3-22b-distilled") | null;
+            activeLtxModelId?: ("ltx-2.5-22b-distilled" | "ltx-2.3-22b-distilled-1.1" | "ltx-2.3-22b-distilled" | "ltx-2.3-mlx-q4") | null;
             activityDashboardSelections?: components["schemas"]["DashboardSelectionPatch"] | null;
             /** Assistantlocalmodel */
             assistantLocalModel?: "qwen3.5:9b" | null;
@@ -4506,7 +4506,7 @@ export interface components {
              * Model Id
              * @enum {string}
              */
-            model_id: "ltx-2.3-mlx-q4" | "ltx-2.5-22b-distilled" | "ltx-2.3-22b-distilled-1.1" | "ltx-2.3-22b-distilled";
+            model_id: "ltx-2.5-22b-distilled" | "ltx-2.3-22b-distilled-1.1" | "ltx-2.3-22b-distilled" | "ltx-2.3-mlx-q4";
             /** Size Bytes */
             size_bytes: number;
         };
@@ -4538,7 +4538,7 @@ export interface components {
              * Ltx Model Id
              * @enum {string}
              */
-            ltx_model_id: "ltx-2.3-mlx-q4" | "ltx-2.5-22b-distilled" | "ltx-2.3-22b-distilled-1.1" | "ltx-2.3-22b-distilled";
+            ltx_model_id: "ltx-2.5-22b-distilled" | "ltx-2.3-22b-distilled-1.1" | "ltx-2.3-22b-distilled" | "ltx-2.3-mlx-q4";
             /**
              * Recommended Quality Cp Ids
              * @default []
@@ -4948,12 +4948,12 @@ export interface components {
              * Model Id
              * @enum {string}
              */
-            model_id: "ltx-2.3-mlx-q4" | "ltx-2.5-22b-distilled" | "ltx-2.3-22b-distilled-1.1" | "ltx-2.3-22b-distilled";
+            model_id: "ltx-2.5-22b-distilled" | "ltx-2.3-22b-distilled-1.1" | "ltx-2.3-22b-distilled" | "ltx-2.3-mlx-q4";
         };
         /** SettingsResponse */
         SettingsResponse: {
             /** Activeltxmodelid */
-            activeLtxModelId?: ("ltx-2.3-mlx-q4" | "ltx-2.5-22b-distilled" | "ltx-2.3-22b-distilled-1.1" | "ltx-2.3-22b-distilled") | null;
+            activeLtxModelId?: ("ltx-2.5-22b-distilled" | "ltx-2.3-22b-distilled-1.1" | "ltx-2.3-22b-distilled" | "ltx-2.3-mlx-q4") | null;
             activityDashboardSelections?: components["schemas"]["DashboardSelection"];
             /**
              * Assistantlocalmodel

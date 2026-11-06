@@ -435,11 +435,13 @@ class FakeModelDownloader:
         token: str | None,
         on_progress: Callable[[int], None] | None = None,
         revision: str | None = None,
+        allow_patterns: tuple[str, ...] | None = None,
     ) -> Path:
         self._raise_if_needed()
         self.calls.append(
             {
                 "kind": "snapshot",
+                "allow_patterns": allow_patterns,
                 "repo_id": repo_id,
                 "local_dir": local_dir,
                 "on_progress": on_progress,
