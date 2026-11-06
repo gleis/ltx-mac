@@ -112,3 +112,14 @@ jobs:
       - run: uv python install 3.13.12
       - name: Audit locked MLX dependencies
         run: uvx pip-audit -r requirements/mlx.lock --disable-pip --no-deps
+      - name: Export and audit locked backend dependencies
+        working-directory: backend
+        run: |
+          uv export --frozen --all-extras --no-emit-project --no-emit-package ltx-core --no-emit-package ltx-pipelines -o backend-audit.txt
+          uvx pip-audit -r backend-audit.txt --disable-pip --no-deps
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Audit locked Node dependencies
+        run: pnpm audit --audit-level low
