@@ -48,7 +48,7 @@ The setup script creates this layout:
 ```text
 .ltx-data/
   ltx-2-mlx/
-    env/                         # Python 3.11 MLX runtime env
+    env/                         # Python 3.13.18 MLX runtime env
   models/
     ltx-2.3-mlx-q4/
     gemma-3-12b-it-4bit/
@@ -91,7 +91,7 @@ The script:
 1. Creates `.ltx-data/`.
 2. Clones `dgrauet/ltx-2-mlx`.
 3. Checks out `v0.14.0`.
-4. Creates the MLX Python 3.11 environment.
+4. Creates the MLX Python 3.13.18 environment.
 5. Installs pinned MLX packages.
 6. Applies the local codec/memory patch when available.
 7. Downloads the MLX Q4 LTX model.
@@ -213,9 +213,10 @@ Things that may hurt quality:
 
 - Pushing 1080p beyond 5 seconds.
 - Using `Turbo` for final output.
-- Local Mac image-to-video uses a deterministic still-motion fallback. It avoids
-  the MLX Q4 distilled I2V tiled-artifact failure, but it is not true generative
-  motion. Use the LTX API path for generative image-to-video.
+- Local Mac single-image-to-video uses the dev Q4 model with guided one-stage
+  denoising and 30 steps. It requires `transformer-dev.safetensors`; rerun setup
+  to download it. Boost/Turbo apply to text-to-video only. A 512×288, 17-frame
+  diagnostic passed on the 36 GB M4 Max; 720p/1080p acceptance is still pending.
 - Raising duration before the prompt/camera motion is stable.
 
 ## Environment Variables
@@ -287,7 +288,7 @@ pnpm dev
 The backend should resolve the helper Python at:
 
 ```text
-.ltx-data/ltx-2-mlx/env/bin/python3.11
+.ltx-data/ltx-2-mlx/env/bin/python
 ```
 
 ### App still uses the main drive
@@ -329,7 +330,7 @@ boost patches when `ltx-2-mlx` changes shape. The important project-local setup
 checks are:
 
 - `.ltx-data/ltx-2-mlx` exists.
-- `.ltx-data/ltx-2-mlx/env/bin/python3.11` exists.
+- `.ltx-data/ltx-2-mlx/env/bin/python` exists.
 - The codec patch and VAE temporal streaming patch apply successfully.
 
 If generation fails with missing `LTX_MLX_PATH`, rerun with the explicit

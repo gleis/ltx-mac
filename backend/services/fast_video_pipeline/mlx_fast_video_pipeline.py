@@ -5,7 +5,8 @@ from __future__ import annotations
 import json
 import logging
 import os
-import select
+import queue
+import threading
 import signal
 import subprocess
 import sys
@@ -42,6 +43,7 @@ class MLXFastVideoPipeline:
         self._gemma_dir = gemma_dir
         self._proc: subprocess.Popen[str] | None = None
         self._ready_info: dict[str, Any] = {}
+        self._lines: queue.Queue[str | None] = queue.Queue()
 
     def _resolve_mlx_root(self) -> Path:
         env_root = os.environ.get("LTX_MLX_PATH")
@@ -128,16 +130,8 @@ class MLXFastVideoPipeline:
         env.setdefault("LTX_LOW_MEMORY", "true")
         env.setdefault("LTX_IDLE_TIMEOUT", "1800")
         env.setdefault("LTX_ENABLE_MODEL_UPSCALE", "0")
-        package_paths = [
-            mlx_root / "packages" / "ltx-core-mlx" / "src",
-            mlx_root / "packages" / "ltx-pipelines-mlx" / "src",
-            mlx_root / "packages" / "ltx-trainer" / "src",
-        ]
-        existing_pythonpath = env.get("PYTHONPATH")
-        env["PYTHONPATH"] = os.pathsep.join(
-            [str(path) for path in package_paths if path.exists()]
-            + ([existing_pythonpath] if existing_pythonpath else [])
-        )
+        # Import the installed pinned wheels. Injecting checkout source paths
+        # shadows the prepared codec compatibility fixes in site-packages.
         ffmpeg_bin_dir = self._ffmpeg_bin_dir()
         if ffmpeg_bin_dir is not None:
             env["PATH"] = f"{ffmpeg_bin_dir}:{env.get('PATH', '')}"
@@ -153,12 +147,30 @@ class MLXFastVideoPipeline:
             bufsize=1,
             start_new_session=True,
         )
+        self._start_output_reader(self._proc)
         ready = self._read_until({"ready", "error", "exit"}, timeout=180)
         if ready is None or ready.get("event") != "ready":
             self._kill()
             raise RuntimeError(f"MLX helper failed to start: {ready}")
         self._ready_info = ready
         logger.info("MLX helper ready: %s", {k: ready.get(k) for k in ("model", "gemma", "low_memory", "ltx_version")})
+
+    def _start_output_reader(self, proc: subprocess.Popen[str]) -> None:
+        # TextIOWrapper can buffer several lines after one OS read. Selecting
+        # its underlying descriptor then misses already-buffered done events.
+        # A reader thread drains complete lines into a portable queue instead.
+        lines: queue.Queue[str | None] = queue.Queue()
+        self._lines = lines
+
+        def read_output() -> None:
+            assert proc.stdout is not None
+            try:
+                for line in proc.stdout:
+                    lines.put(line)
+            finally:
+                lines.put(None)
+
+        threading.Thread(target=read_output, daemon=True, name="mlx-helper-output").start()
 
     def _read_until(self, target_events: set[str], timeout: float | None = None) -> dict[str, Any] | None:
         proc = self._proc
@@ -169,11 +181,11 @@ class MLXFastVideoPipeline:
             if deadline is not None and time.time() > deadline:
                 return None
             wait = 0.5
-            rlist, _, _ = select.select([proc.stdout], [], [], wait)
-            if not rlist:
+            try:
+                line = self._lines.get(timeout=wait)
+            except queue.Empty:
                 continue
-            line = proc.stdout.readline()
-            if not line:
+            if line is None:
                 return None
             line = line.strip()
             if not line:
@@ -216,11 +228,11 @@ class MLXFastVideoPipeline:
                         "watchdog_forced_exit": True,
                     }
 
-            rlist, _, _ = select.select([proc.stdout], [], [], 0.5)
-            if not rlist:
+            try:
+                line = self._lines.get(timeout=0.5)
+            except queue.Empty:
                 continue
-            line = proc.stdout.readline()
-            if not line:
+            if line is None:
                 return None
             line = line.strip()
             if not line:
@@ -283,11 +295,17 @@ class MLXFastVideoPipeline:
         if proc is None or proc.poll() is not None:
             return
         try:
-            os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
+            if sys.platform == "win32":
+                proc.terminate()
+            else:
+                os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
             proc.wait(timeout=3)
         except Exception:
             try:
-                os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
+                if sys.platform == "win32":
+                    proc.kill()
+                else:
+                    os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
             except Exception:
                 pass
 
@@ -304,7 +322,8 @@ class MLXFastVideoPipeline:
         speed_mode: Literal["quality", "boost", "turbo"] = "quality",
     ) -> None:
         image_path = images[0].path if images else None
-        accel = "off" if speed_mode == "quality" else speed_mode
+        # Dev I2V uses guided denoising; distilled acceleration is inapplicable.
+        accel = "off" if image_path or speed_mode == "quality" else speed_mode
         job: dict[str, Any] = {
             "action": "generate",
             "id": uuid.uuid4().hex[:8],
@@ -318,7 +337,7 @@ class MLXFastVideoPipeline:
                 "frames": int(num_frames),
                 "frame_rate": float(frame_rate),
                 "seed": int(seed),
-                "steps": 8,
+                "steps": 30 if image_path else 8,
                 "accel": accel,
                 "upscale": "off",
                 "upscale_method": "lanczos",

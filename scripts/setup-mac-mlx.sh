@@ -58,6 +58,7 @@ PYBUILD
 "$UV_BIN" pip install --python env/bin/python --no-deps --no-build-isolation \
   ./packages/ltx-core-mlx ./packages/ltx-pipelines-mlx ./packages/ltx-trainer
 "$UV_BIN" pip check --python env/bin/python
+env/bin/python "$ROOT/backend/services/fast_video_pipeline/prepare_mlx_runtime.py"
 
 PATCH_SCRIPT="$ROOT/backend/services/fast_video_pipeline/patch_ltx_codec.py"
 if [[ -f "$PATCH_SCRIPT" ]]; then
@@ -72,6 +73,7 @@ env/bin/hf download dgrauet/ltx-2.3-mlx-q4 \
   --local-dir "$MODELS_DIR/ltx-2.3-mlx-q4" \
   --include '*.json' \
   --include transformer-distilled.safetensors \
+  --include transformer-dev.safetensors \
   --include connector.safetensors \
   --include vae_decoder.safetensors \
   --include vae_encoder.safetensors \

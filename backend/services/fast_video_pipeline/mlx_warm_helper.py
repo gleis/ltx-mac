@@ -851,31 +851,12 @@ def get_pipe(kind: str, loras: list[dict] | None = None,
         from ltx_core_mlx.utils.memory import aggressive_cleanup as _ac
     except Exception:
         _ac = lambda: None
-    # Upstream refactor 2026-05-09 (commits d6cc3d1, 493aec2) renamed +
-    # removed several pipeline classes. Past intermediate commits had a
-    # mix of old + new names. Three import strategies in priority order:
-    #
-    #   1. ALL old names present (pre-refactor) — best, motion-friendly
-    #      single-stage I2V via `ImageToVideoPipeline.generate_from_image`.
-    #   2. Only `ImageToVideoPipeline` present (intermediate state, e.g.
-    #      32280b9 before 493aec2 removed it) — KEEP it for I2V motion;
-    #      alias the others.
-    #   3. None present (post-refactor) — alias all to new classes;
-    #      I2V goes through DistilledPipeline.generate_two_stage which
-    #      lacks CFG and locks frame 0 → no motion. Last resort.
+    # Preserve T2V/extend compatibility; I2V uses dev + CFG explicitly below.
     try:
-        from ltx_pipelines_mlx import TextToVideoPipeline, ImageToVideoPipeline, ExtendPipeline
+        from ltx_pipelines_mlx import TextToVideoPipeline, ExtendPipeline
     except ImportError:
-        # Try partial — preserve real ImageToVideoPipeline if it exists.
-        try:
-            from ltx_pipelines_mlx import ImageToVideoPipeline  # motion-friendly
-            _has_real_i2v = True
-        except ImportError:
-            _has_real_i2v = False
         from ltx_pipelines_mlx import DistilledPipeline, RetakePipeline
         TextToVideoPipeline = DistilledPipeline
-        if not _has_real_i2v:
-            ImageToVideoPipeline = DistilledPipeline  # last-resort alias
         ExtendPipeline = RetakePipeline
 
     # Repair the subclass-override-skips-fusion bug before any pipe is built.
@@ -898,8 +879,15 @@ def get_pipe(kind: str, loras: list[dict] | None = None,
                     _ac()
                 emit({"event": "log",
                       "line": "Loading I2V pipeline (first job is the slow one)..."})
-                pipe = ImageToVideoPipeline(
-                    model_dir=MODEL_ID, gemma_model_id=GEMMA_PATH, low_memory=LOW_MEMORY,
+                # Dev + CFG produces actual I2V motion and requires no spatial
+                # upsampler. Distilled two-stage I2V previously used a missing
+                # upsampler and produced mosaic artifacts on this model pack.
+                from ltx_pipelines_mlx.ti2vid_one_stage import TI2VidOneStagePipeline
+                if not (Path(MODEL_ID) / "transformer-dev.safetensors").is_file():
+                    raise RuntimeError("Generative image-to-video requires transformer-dev.safetensors. Run scripts/setup-mac-mlx.sh.")
+                pipe = TI2VidOneStagePipeline(
+                    model_dir=MODEL_ID, gemma_model_id=GEMMA_PATH,
+                    low_memory=LOW_MEMORY, low_ram_streaming=True,
                 )
                 _attach_loras(pipe, loras)
                 _i2v_pipe = pipe
@@ -1218,6 +1206,13 @@ def _generate_latents(pipe, *, needs_image: bool, kwargs: dict):
     #   It accepts **_unused_kwargs so num_steps/frame_rate are absorbed
     #   silently rather than ValueError-ing.
     # Detect by method presence — no class import gymnastics needed.
+    if needs_image and hasattr(pipe, "generate_one_stage_dev"):
+        return pipe.generate_one_stage_dev(
+            prompt=kwargs["prompt"], image=kwargs.get("image"),
+            height=kwargs["height"], width=kwargs["width"],
+            num_frames=kwargs["num_frames"], seed=kwargs["seed"],
+            num_steps=kwargs["num_steps"], frame_rate=kwargs.get("frame_rate", 24.0),
+        )
     if needs_image and hasattr(pipe, "generate_from_image"):
         # Probe whether this version of the method accepts frame_rate (the
         # codec patch adds this kwarg post-install; rolled-back source may

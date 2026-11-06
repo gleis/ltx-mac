@@ -1431,7 +1431,7 @@ class TestEnhancePromptFlag:
 
         assert fake_services.fast_video_pipeline.generate_calls[0]["speed_mode"] == "boost"
 
-    def test_mac_mlx_i2v_uses_still_motion_fallback(
+    def test_mac_mlx_i2v_uses_model_generation(
         self, client, test_state, fake_services, create_fake_model_files, make_test_image, tmp_path
     ):
         create_fake_model_files()
@@ -1451,7 +1451,10 @@ class TestEnhancePromptFlag:
         data = r.json()
         assert data["status"] == "complete"
         assert Path(data["video_path"]).exists()
-        assert fake_services.fast_video_pipeline.generate_calls == []
+        calls = fake_services.fast_video_pipeline.generate_calls
+        assert len(calls) == 1
+        assert len(calls[0]["images"]) == 1
+        assert calls[0]["images"][0].frame_idx == 0
 
     def test_mac_mlx_multi_reference_i2v_uses_ic_lora_pipeline(
         self,

@@ -34,7 +34,7 @@ jobs:
           cache-dependency-glob: "backend/uv.lock"
 
       - name: Install pinned Python with uv
-        run: uv python install 3.13.12
+        run: uv python install 3.13.18
 
       - name: Install Python dev dependencies
         working-directory: backend
@@ -76,7 +76,7 @@ jobs:
           cache-dependency-glob: "backend/uv.lock"
 
       - name: Install pinned Python with uv
-        run: uv python install 3.13.12
+        run: uv python install 3.13.18
 
       - name: Install dependencies
         run: uv sync --frozen --extra test --extra dev
@@ -109,7 +109,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
-      - run: uv python install 3.13.12
+      - run: uv python install 3.13.18
       - name: Audit locked MLX dependencies
         run: uvx pip-audit -r requirements/mlx.lock --disable-pip --no-deps
       - name: Export and audit locked backend dependencies

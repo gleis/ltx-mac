@@ -19,7 +19,7 @@ set -euo pipefail
 # Configuration
 # ============================================================
 PYTHON_VERSION="${PYTHON_VERSION:-$(cat "$(dirname "$0")/../backend/.python-version" | tr -d '[:space:]')}"
-PBS_TAG="${PBS_TAG:-20260211}"
+PBS_TAG="${PBS_TAG:-20261026}"
 OUTPUT_DIR="python-embed"
 ARCH="${ARCH:-$(uname -m)}"
 

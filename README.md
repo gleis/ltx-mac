@@ -67,7 +67,7 @@ The setup script keeps its downloads under `.ltx-data/` by default:
 
 ```text
 .ltx-data/
-  ltx-2-mlx/              # MLX runtime checkout and Python 3.11 env
+  ltx-2-mlx/              # MLX runtime checkout and Python 3.13.12 env
   models/
     ltx-2.3-mlx-q4/
     gemma-3-12b-it-4bit/
@@ -238,12 +238,13 @@ Key fork files:
 
 ## Known Limitations
 
-- 1080p 10-second local Mac renders can complete, but the current usable output
-  quality is only trusted for 5 seconds.
+- The updated runtime has passed bounded 512×288 diagnostics. Full 720p/1080p
+  render quality, duration, and RAM acceptance remain pending.
 - `Boost` and `Turbo` are text-to-video performance/quality tradeoffs.
-- Local Mac image-to-video uses a deterministic still-motion fallback. It avoids
-  the MLX Q4 distilled I2V tiled-artifact failure, but it is not true generative
-  motion. Use the LTX API path for generative image-to-video.
+- Local Mac single-image-to-video uses the dev Q4 model with guided one-stage
+  denoising and 30 steps. It requires `transformer-dev.safetensors`; rerun setup
+  to download it. Boost/Turbo apply to text-to-video only. A 512×288, 17-frame
+  diagnostic passed on the 36 GB M4 Max; 720p/1080p acceptance is still pending.
 - The MLX path relies on a project-local `ltx-2-mlx` checkout at version
   `v0.14.0` prepared by `scripts/setup-mac-mlx.sh`; run with
   `LTX_MLX_PATH="$PWD/.ltx-data/ltx-2-mlx"` when starting from a shell.

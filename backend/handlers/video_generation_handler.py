@@ -169,17 +169,6 @@ class VideoGenerationHandler(StateHandlerBase):
                 self._generation.complete_generation(output_path)
                 return GenerateVideoCompleteResponse(status="complete", video_path=output_path)
 
-            if image is not None and self.config.local_generations_mode == "mac_mlx_q4":
-                output_path = self._generate_local_i2v_still_motion(
-                    image=image,
-                    width=width,
-                    height=height,
-                    num_frames=num_frames,
-                    fps=fps,
-                )
-                self._generation.complete_generation(output_path)
-                return GenerateVideoCompleteResponse(status="complete", video_path=output_path)
-
             output_path = self.generate_video(
                 prompt=req.prompt,
                 image=image,
@@ -239,7 +228,7 @@ class VideoGenerationHandler(StateHandlerBase):
         if self._generation.is_generation_cancelled():
             raise RuntimeError("Generation was cancelled")
 
-        total_steps = 8
+        total_steps = 30 if image is not None and self.config.local_generations_mode == "mac_mlx_q4" else 8
 
         self._generation.update_progress("loading_model", 5, 0, total_steps)
         t_load_start = time.perf_counter()
@@ -444,95 +433,6 @@ class VideoGenerationHandler(StateHandlerBase):
         top = (new_h - height) // 2
         return resized.crop((left, top, left + width, top + height))
 
-    def _generate_local_i2v_still_motion(
-        self,
-        *,
-        image: Image.Image,
-        width: int,
-        height: int,
-        num_frames: int,
-        fps: int,
-    ) -> str:
-        """Render a deterministic local I2V fallback while MLX Q4 I2V is unstable."""
-        self._generation.update_progress("inference", 15, 0, 1)
-        output_path = self._make_output_path()
-        logger.warning(
-            "Mac local MLX image-to-video uses still-motion fallback because distilled Q4 I2V collapses into tiled artifacts"
-        )
-
-        try:
-            import imageio_ffmpeg  # type: ignore[reportMissingTypeStubs]
-
-            ffmpeg = str(imageio_ffmpeg.get_ffmpeg_exe())
-        except Exception as exc:
-            raise HTTPError(500, "Bundled ffmpeg is required for local image-to-video fallback") from exc
-
-        cmd = [
-            ffmpeg,
-            "-y",
-            "-f",
-            "rawvideo",
-            "-pix_fmt",
-            "rgb24",
-            "-s",
-            f"{width}x{height}",
-            "-r",
-            str(fps),
-            "-i",
-            "pipe:0",
-            "-f",
-            "lavfi",
-            "-i",
-            "anullsrc=channel_layout=stereo:sample_rate=48000",
-            "-frames:v",
-            str(num_frames),
-            "-c:v",
-            "libx264",
-            "-preset",
-            "veryfast",
-            "-crf",
-            "18",
-            "-pix_fmt",
-            "yuv420p",
-            "-c:a",
-            "aac",
-            "-shortest",
-            str(output_path),
-        ]
-
-        proc = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
-        assert proc.stdin is not None
-        try:
-            total = max(num_frames - 1, 1)
-            for frame_idx in range(num_frames):
-                if self._generation.is_generation_cancelled():
-                    raise RuntimeError("Generation was cancelled")
-                t = frame_idx / total
-                zoom = 1.0 + 0.035 * t
-                crop_w = max(1, int(width / zoom))
-                crop_h = max(1, int(height / zoom))
-                # Tiny diagonal drift keeps the shot alive without inventing content.
-                x_bias = int((width - crop_w) * (0.5 + 0.12 * t))
-                y_bias = int((height - crop_h) * (0.5 - 0.08 * t))
-                left = min(max(x_bias, 0), width - crop_w)
-                top = min(max(y_bias, 0), height - crop_h)
-                frame = image.crop((left, top, left + crop_w, top + crop_h)).resize((width, height), Image.Resampling.LANCZOS)
-                proc.stdin.write(frame.tobytes())
-                if frame_idx % max(fps, 1) == 0:
-                    progress = 15 + int(80 * frame_idx / total)
-                    self._generation.update_progress("inference", progress, frame_idx, num_frames)
-            proc.stdin.close()
-            return_code = proc.wait(timeout=120)
-            stderr = proc.stderr.read().decode("utf-8", errors="replace") if proc.stderr else ""
-        finally:
-            if proc.stdin and not proc.stdin.closed:
-                proc.stdin.close()
-
-        if return_code != 0:
-            raise HTTPError(500, f"Local image-to-video fallback failed: {stderr.strip()}")
-        self._generation.update_progress("complete", 100, num_frames, num_frames)
-        return str(output_path)
-
     def _generate_local_reference_i2v(
         self,
         *,
@@ -687,54 +587,63 @@ class VideoGenerationHandler(StateHandlerBase):
             "yuv420p",
             output_path,
         ]
-        proc = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
-        assert proc.stdin is not None
-        try:
-            total = max(num_frames - 1, 1)
-            role_weights: dict[ReferenceImageRole, float] = {
-                "character": 0.85,
-                "location": 0.65,
-                "style": 0.35,
-                "keyframe": 1.0,
-            }
-            edge_references: list[tuple[Any, ReferenceImageRole]] = []
-            for image, role in prepared_references:
-                rgb = np.asarray(image.resize((width, height), Image.Resampling.LANCZOS))
-                gray = cv2.cvtColor(rgb, cv2.COLOR_RGB2GRAY)
-                edges = cv2.Canny(gray, 100, 200)
-                edge_references.append((edges, role))
-            persistent_edges: list[tuple[Any, ReferenceImageRole]] = [
-                (edges, role)
-                for edges, role in edge_references
-                if role != "keyframe"
-            ]
-            for frame_idx in range(num_frames):
-                if self._generation.is_generation_cancelled():
-                    raise RuntimeError("Generation was cancelled")
-                if persistent_edges:
-                    combined = np.zeros((height, width), dtype=np.uint8)
-                    for edges, role in persistent_edges:
-                        weighted = np.clip(
-                            edges.astype(np.float32) * role_weights[role],
-                            0,
-                            255,
-                        ).astype(np.uint8)
-                        combined = np.maximum(combined, weighted)
-                    edges = combined
-                else:
-                    ref_index = round((len(edge_references) - 1) * frame_idx / total)
-                    edges = edge_references[ref_index][0]
-                edge_rgb = cv2.cvtColor(edges, cv2.COLOR_GRAY2RGB)
-                proc.stdin.write(edge_rgb.tobytes())
-                if frame_idx % max(fps, 1) == 0:
-                    progress = 14 + int(1 * frame_idx / total)
-                    self._generation.update_progress("preparing_references", progress, frame_idx, num_frames)
-            proc.stdin.close()
-            return_code = proc.wait(timeout=120)
-            stderr = proc.stderr.read().decode("utf-8", errors="replace") if proc.stderr else ""
-        finally:
-            if proc.stdin and not proc.stdin.closed:
+        # A file avoids stderr pipe backpressure while raw frames stream on stdin.
+        with tempfile.TemporaryFile() as errors:
+            proc = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=errors)
+            assert proc.stdin is not None
+            try:
+                total = max(num_frames - 1, 1)
+                role_weights: dict[ReferenceImageRole, float] = {
+                    "character": 0.85,
+                    "location": 0.65,
+                    "style": 0.35,
+                    "keyframe": 1.0,
+                }
+                edge_references: list[tuple[Any, ReferenceImageRole]] = []
+                for image, role in prepared_references:
+                    rgb = np.asarray(image.resize((width, height), Image.Resampling.LANCZOS))
+                    gray = cv2.cvtColor(rgb, cv2.COLOR_RGB2GRAY)
+                    edges = cv2.Canny(gray, 100, 200)
+                    edge_references.append((edges, role))
+                persistent_edges: list[tuple[Any, ReferenceImageRole]] = [
+                    (edges, role)
+                    for edges, role in edge_references
+                    if role != "keyframe"
+                ]
+                for frame_idx in range(num_frames):
+                    if self._generation.is_generation_cancelled():
+                        raise RuntimeError("Generation was cancelled")
+                    if persistent_edges:
+                        combined = np.zeros((height, width), dtype=np.uint8)
+                        for edges, role in persistent_edges:
+                            weighted = np.clip(
+                                edges.astype(np.float32) * role_weights[role],
+                                0,
+                                255,
+                            ).astype(np.uint8)
+                            combined = np.maximum(combined, weighted)
+                        edges = combined
+                    else:
+                        ref_index = round((len(edge_references) - 1) * frame_idx / total)
+                        edges = edge_references[ref_index][0]
+                    edge_rgb = cv2.cvtColor(edges, cv2.COLOR_GRAY2RGB)
+                    proc.stdin.write(edge_rgb.tobytes())
+                    if frame_idx % max(fps, 1) == 0:
+                        progress = 14 + int(1 * frame_idx / total)
+                        self._generation.update_progress("preparing_references", progress, frame_idx, num_frames)
                 proc.stdin.close()
+                return_code = proc.wait(timeout=120)
+                errors.seek(0)
+                stderr = errors.read().decode("utf-8", errors="replace")
+            finally:
+                if proc.poll() is None:
+                    proc.kill()
+                    proc.wait(timeout=3)
+                if proc.stdin and not proc.stdin.closed:
+                    try:
+                        proc.stdin.close()
+                    except BrokenPipeError:
+                        pass
 
         if return_code != 0:
             Path(output_path).unlink(missing_ok=True)
