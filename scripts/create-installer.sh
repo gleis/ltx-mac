@@ -59,6 +59,18 @@ RELEASE_DIR="$PROJECT_DIR/release"
 
 cd "$PROJECT_DIR"
 
+# The installer config ships this dependency-graph identifier. Generate it for
+# local builds too; it is not an archive-integrity checksum.
+node --input-type=module - <<'NODE'
+import { createHash } from 'node:crypto'
+import { readFileSync, writeFileSync } from 'node:fs'
+const hash = createHash('sha256')
+for (const file of ['backend/.python-version', 'backend/pyproject.toml', 'backend/uv.lock']) {
+  hash.update(file).update('\0').update(readFileSync(file)).update('\0')
+}
+writeFileSync('python-deps-hash.txt', hash.digest('hex') + '\n')
+NODE
+
 # ============================================================
 # Verify prerequisites
 # ============================================================
@@ -76,6 +88,10 @@ fi
 # Build with electron-builder
 # ============================================================
 BUILDER_ARGS=""
+if [ "$PLATFORM" = mac ] && [ ! -x "$PROJECT_DIR/mlx-runtime/python/bin/python3" ]; then
+  echo "ERROR: MLX runtime missing. Run scripts/prepare-mlx-bundle.sh first." >&2
+  exit 1
+fi
 case "$PLATFORM" in
   mac)   BUILDER_ARGS="--mac" ;;
   win)   BUILDER_ARGS="--win" ;;

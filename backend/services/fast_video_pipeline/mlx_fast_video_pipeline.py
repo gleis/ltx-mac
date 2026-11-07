@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import logging
 import os
 import queue
@@ -112,7 +113,9 @@ class MLXFastVideoPipeline:
         if ffmpeg_exe.name == "ffmpeg":
             return ffmpeg_exe.parent
 
-        shim_dir = Path(tempfile.gettempdir()) / "ltx-desktop-ffmpeg"
+        # A relocated/new app must not reuse a shim pointing at an old bundle.
+        prefix_key = hashlib.sha256(str(ffmpeg_exe.resolve()).encode()).hexdigest()[:16]
+        shim_dir = Path(tempfile.gettempdir()) / "ltx-desktop-ffmpeg" / prefix_key
         shim_dir.mkdir(parents=True, exist_ok=True)
         shim_path = shim_dir / "ffmpeg"
         if not shim_path.exists():
@@ -138,6 +141,9 @@ class MLXFastVideoPipeline:
         helper_script = self._helper_script()
 
         env = os.environ.copy()
+        # Electron's backend PYTHONHOME belongs to its separate dependency prefix.
+        # Let the selected MLX interpreter locate its own standalone/venv prefix.
+        env.pop("PYTHONHOME", None)
         env["LTX_MODEL"] = str(self._model_dir)
         env["LTX_GEMMA"] = str(self._gemma_dir)
         env.setdefault("LTX_LOW_MEMORY", "true")

@@ -81,7 +81,7 @@ The setup script keeps its downloads under `.ltx-data/` by default:
 
 ```text
 .ltx-data/
-  ltx-2-mlx/              # MLX runtime checkout and Python 3.13.12 env
+  ltx-2-mlx/              # MLX runtime checkout and Python 3.13.18 env
   models/
     ltx-2.3-mlx-q4/
     gemma-3-12b-it-4bit/

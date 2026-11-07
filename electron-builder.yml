@@ -104,6 +104,12 @@ mac:
     # (only its .so is dlopen'd); skip signing it — codesign rejects relocatable .o.
     - "/python/mps-ext-prebuilt/.*\\.o$"
   extraResources:
+    - from: mlx-runtime
+      to: mlx-runtime
+      filter:
+        - "**/*"
+        - "!**/__pycache__/**"
+        - "!**/*.pyc"
     # python-embed includes the prebuilt mps-sdpa mpsgraph_zc extension under
     # mps-ext-prebuilt/ (prepare-python.sh Step 6.5), so it's bundled to
     # resources/python/mps-ext-prebuilt — where LTX_MPS_EXT_PREBUILT_DIR points.
@@ -158,5 +164,5 @@ deb:
 
 publish:
   provider: github
-  owner: Lightricks
-  repo: ltx-desktop
+  owner: gleis
+  repo: ltx-mac

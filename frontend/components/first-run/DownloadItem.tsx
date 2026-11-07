@@ -53,7 +53,9 @@ export function DownloadItem({ item, optIn, showCheckbox = true }: DownloadItemP
             {item.name}
           </Text>
         )}
-        <Info content={CP_INFO_BY_ROLE[item.role]} side="top" maxWidth={280} />
+        <Info content={item.cp_id === 'gemma-3-12b-it-4bit'
+          ? 'Required local text encoder for MLX video generation. An API key cannot replace it.'
+          : CP_INFO_BY_ROLE[item.role]} side="top" maxWidth={280} />
       </span>
       <Text
         as="span"

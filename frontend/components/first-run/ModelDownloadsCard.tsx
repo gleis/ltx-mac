@@ -95,7 +95,7 @@ export function ModelDownloadsCard({
           </div>
           {modelPackItems.length > 0 && (
             <DownloadGroup
-              title="LTX 2.5"
+              title={modelPackItems.find((item) => item.role === 'base')?.name ?? 'LTX video model'}
               checked
               checkboxDisabled
               meta={
@@ -116,7 +116,7 @@ export function ModelDownloadsCard({
           {encoderItem && (
             <DownloadItem
               item={encoderItem}
-              optIn={{
+              optIn={encoderItem.cp_id === 'gemma-3-12b-it-4bit' ? undefined : {
                 checked: encoderSelected,
                 onToggle: onToggleEncoder,
                 skippedLabel: 'Use API key',

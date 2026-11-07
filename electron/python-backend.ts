@@ -418,6 +418,10 @@ export async function startPythonBackend(): Promise<void> {
         LTX_ADMIN_TOKEN: adminToken,
         LTX_LOG_FILE: getCurrentLogFilename(),
         LTX_APP_DATA_DIR: getAppDataDir(),
+        ...(!isDev && process.platform === 'darwin' ? {
+          LTX_MLX_PATH: process.env.LTX_MLX_PATH ?? path.join(process.resourcesPath, 'mlx-runtime'),
+          LTX_MLX_PYTHON: process.env.LTX_MLX_PYTHON ?? path.join(process.resourcesPath, 'mlx-runtime', 'python', 'bin', 'python3'),
+        } : {}),
         LTX_DEV_MODE: isDev ? '1' : '0',
         LTX_ANALYTICS_SINK_URL: sink?.url ?? '',
         LTX_ANALYTICS_TOKEN: sink?.token ?? '',

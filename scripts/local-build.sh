@@ -118,6 +118,9 @@ if [ ! -d "$PYTHON_EMBED_DIR" ]; then
   echo "Run without --skip-python to create it."
   exit 1
 fi
+if [ "$PLATFORM" = mac ] && { [ "$SKIP_PYTHON" = false ] || [ ! -x "$PROJECT_DIR/mlx-runtime/python/bin/python3" ]; }; then
+  bash "$SCRIPT_DIR/prepare-mlx-bundle.sh"
+fi
 echo ""
 
 # ============================================================

@@ -1,5 +1,7 @@
 # Dependencies
 node_modules/
+mlx-runtime/
+python-deps-hash.txt
 
 # Repo-local dependency caches
 .local/

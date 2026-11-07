@@ -78,7 +78,7 @@ export function LaunchGate({ onComplete }: LaunchGateProps) {
   const [loraItems, setLoraItems] = useState<FirstRunLoraItem[]>([])
   const [selectedLoraKeys, setSelectedLoraKeys] = useState<string[]>([])
   const [downloadTextEncoder, setDownloadTextEncoder] = useState(true)
-  const [downloadImageModel, setDownloadImageModel] = useState(true)
+  const [downloadImageModel, setDownloadImageModel] = useState(window.electronAPI.platform !== 'darwin')
   const [ltxApiKey, setLtxApiKey] = useState('')
   const [hasSavedLtxApiKey, setHasSavedLtxApiKey] = useState(false)
   const [apiKeyError, setApiKeyError] = useState<string | null>(null)
@@ -119,7 +119,7 @@ export function LaunchGate({ onComplete }: LaunchGateProps) {
     [downloadItems, optionalItems],
   )
   const encoderOnDisk = Boolean(encoderItem?.downloaded)
-  const encoderSelected = encoderOnDisk || downloadTextEncoder
+  const encoderSelected = encoderItem?.cp_id === 'gemma-3-12b-it-4bit' || encoderOnDisk || downloadTextEncoder
   const showApiKeyCard = Boolean(encoderItem) && !encoderSelected
   const [apiKeyMotionReady, setApiKeyMotionReady] = useState(false)
 
@@ -250,7 +250,8 @@ export function LaunchGate({ onComplete }: LaunchGateProps) {
 
     setInstallPath(settingsResult.data.modelsDir ?? '')
     setHasSavedLtxApiKey(Boolean(settingsResult.data.hasLtxApiKey))
-    const nextLoraItems = [
+    const isMlxRecommendation = 'ltx_model_id' in ltxResult.data && ltxResult.data.ltx_model_id === 'ltx-2.3-mlx-q4'
+    const nextLoraItems = isMlxRecommendation ? [] : [
       ...(loraResult.ok
         ? loraResult.data.loras.map((entry) => firstRunLoraFromCatalog('lora', entry.lora, entry.downloaded))
         : []),
