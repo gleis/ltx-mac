@@ -92,6 +92,19 @@ if [ "$PLATFORM" = mac ] && [ ! -x "$PROJECT_DIR/mlx-runtime/python/bin/python3"
   echo "ERROR: MLX runtime missing. Run scripts/prepare-mlx-bundle.sh first." >&2
   exit 1
 fi
+if [ "$PLATFORM" = mac ]; then
+  "$PROJECT_DIR/python-embed/bin/python3" - "$PROJECT_DIR/python-embed/mps-ext-prebuilt/mps_sdpa_zc_ext/mps_sdpa_zc_ext.so" <<'PYMIN'
+import re, subprocess, sys
+from pathlib import Path
+extension = Path(sys.argv[1])
+if not extension.is_file():
+    raise SystemExit('Prebuilt Metal attention extension is missing')
+build = subprocess.check_output(['otool', '-l', str(extension)], text=True)
+minimums = re.findall(r'\bminos\s+(\d+)(?:\.(\d+))?', build)
+if not minimums or any(int(major) > 26 for major, _ in minimums):
+    raise SystemExit(f'Prebuilt extension exceeds supported macOS 26: {minimums}; rebuild Python')
+PYMIN
+fi
 case "$PLATFORM" in
   mac)   BUILDER_ARGS="--mac" ;;
   win)   BUILDER_ARGS="--win" ;;

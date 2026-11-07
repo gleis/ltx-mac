@@ -14,8 +14,8 @@
 # bundled torch/python/arch exactly. Run AFTER prepare-python.sh, on a macOS
 # Apple-Silicon build machine WITH Xcode Command Line Tools.
 #
-# macOS version: no MACOSX_DEPLOYMENT_TARGET is set, so the .so's minimum macOS
-# (minos) equals the build machine's macOS (26.0 on CI). dyld refuses to load it
+# macOS version: compile and link explicitly for macOS 26.0 even on newer build
+# hosts. dyld refuses to load a library whose minimum exceeds the user's OS.
 # on an older macOS. The backend therefore gates local generation to macOS 26+
 # (DARWIN_MIN_MACOS_MAJOR in backend/runtime_config/runtime_policy.py). See
 # "macOS version requirement" in docs/mps-attention-memory-leak.md before changing it.
@@ -53,12 +53,27 @@ export TORCH_EXTENSIONS_DIR="$OUTPUT_DIR"
 echo "prebuild-mps-sdpa-ext: python=$PYTHON out=$OUTPUT_DIR"
 "$PYTHON" - <<'PY'
 import os, sys
+import torch.utils.cpp_extension as cpp_extension
+
+# cpp_extension does not automatically propagate MACOSX_DEPLOYMENT_TARGET into
+# its ninja command. Apply the minimum at both compilation and linking.
+original_load = cpp_extension.load
+def load_for_macos_26(*args, **kwargs):
+    for key in ('extra_cflags', 'extra_ldflags'):
+        kwargs[key] = [*(kwargs.get(key) or []), '-mmacosx-version-min=26.0']
+    return original_load(*args, **kwargs)
+cpp_extension.load = load_for_macos_26
 from mps_sdpa._cpp import get_ext, load_error
 ext = get_ext()
 so = os.path.join(os.environ["TORCH_EXTENSIONS_DIR"], "mps_sdpa_zc_ext", "mps_sdpa_zc_ext.so")
 if ext is None or not os.path.exists(so):
     print("BUILD FAILED:", load_error(), file=sys.stderr); sys.exit(1)
 print("OK: prebuilt", so)
+import re, subprocess
+build = subprocess.check_output(['otool', '-l', so], text=True)
+minimums = re.findall(r'\bminos\s+(\d+)(?:\.(\d+))?', build)
+if not minimums or any(int(major) > 26 for major, _ in minimums):
+    raise RuntimeError(f'Prebuilt extension exceeds macOS 26 target: {minimums}')
 PY
 
 echo "prebuild-mps-sdpa-ext: cache at $OUTPUT_DIR/mps_sdpa_zc_ext (bundled with python-embed)"
