@@ -250,7 +250,8 @@ export function LaunchGate({ onComplete }: LaunchGateProps) {
 
     setInstallPath(settingsResult.data.modelsDir ?? '')
     setHasSavedLtxApiKey(Boolean(settingsResult.data.hasLtxApiKey))
-    const isMlxRecommendation = 'ltx_model_id' in ltxResult.data && ltxResult.data.ltx_model_id === 'ltx-2.3-mlx-q4'
+    const isMlxRecommendation = ('ltx_model_id' in ltxResult.data && ltxResult.data.ltx_model_id === 'ltx-2.3-mlx-q4')
+      || ('cps_to_download' in ltxResult.data && ltxResult.data.cps_to_download.includes('ltx-2.3-mlx-q4'))
     const nextLoraItems = isMlxRecommendation ? [] : [
       ...(loraResult.ok
         ? loraResult.data.loras.map((entry) => firstRunLoraFromCatalog('lora', entry.lora, entry.downloaded))
