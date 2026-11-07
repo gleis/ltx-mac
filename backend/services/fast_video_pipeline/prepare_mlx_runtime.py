@@ -23,9 +23,30 @@ def pad_audio_mux(path: Path) -> None:
     path.write_text(source.replace(_ORIGINAL, _PADDED))
 
 
+def bound_ffmpeg_diagnostics(path: Path) -> None:
+    source = path.read_text()
+    if '# LTX23MLX: bounded FFmpeg diagnostic capture' in source:
+        return
+    old_start = '        proc = subprocess.Popen(cmd, stdin=subprocess.PIPE, stderr=subprocess.PIPE)'
+    old_end = '            proc.wait()\n            aggressive_cleanup()'
+    if source.count(old_start) != 1 or source.count(old_end) != 1:
+        raise RuntimeError('Unexpected MLX FFmpeg process boundary')
+    new_start = '        # LTX23MLX: bounded FFmpeg diagnostic capture; never leave a pipe unread.\n        import tempfile as _tempfile\n        import sys as _sys\n        _ffmpeg_errors = _tempfile.TemporaryFile()\n        try:\n            proc = subprocess.Popen(cmd, stdin=subprocess.PIPE, stderr=_ffmpeg_errors)\n        except Exception:\n            _ffmpeg_errors.close()\n            raise'
+    new_end = '            _return_code = proc.wait()\n            _ffmpeg_errors.seek(0)\n            _diagnostics = _ffmpeg_errors.read().decode("utf-8", errors="replace")\n            _ffmpeg_errors.close()\n            aggressive_cleanup()\n            if _return_code != 0 and _sys.exc_info()[0] is None:\n                raise RuntimeError(f"FFmpeg failed ({_return_code}): {_diagnostics[-8192:]}")'
+    path.write_text(source.replace(old_start, new_start).replace(old_end, new_end))
+
+
 def prepare_codec(path: Path) -> None:
     pad_audio_mux(path)
+    bound_ffmpeg_diagnostics(path)
     source = path.read_text()
+    # Upgrade installed copies of the earlier temporal-only decoder patch.
+    if 'PATCHED (LTX23MLX): temporal streaming decode' in source:
+        source = source.replace('from ltx_core_mlx.model.video_vae.tiling import TilingConfig, TemporalTilingConfig\n',
+                                'from ltx_core_mlx.model.video_vae.tiling import TilingConfig, TemporalTilingConfig, SpatialTilingConfig\n')
+        source = source.replace('                    spatial_config=None,',
+                                '                    spatial_config=SpatialTilingConfig(tile_size_in_pixels=512, tile_overlap_in_pixels=128),')
+        path.write_text(source)
     anchor = "                weights = _add_at(weights, chunk_coords, mask_slice)"
     evaluated = anchor + "\n                # Bound the lazy graph to one decoded tile.\n                mx.eval(buffer, weights)"
     if evaluated not in source:

@@ -104,6 +104,12 @@ main() {
     checked_files=$((checked_files + 1))
     local file_size
     file_size=$(stat -c%s "$file" 2>/dev/null || stat -f%z "$file")
+    # Preserve the exact upstream v1.3.1 performance fixture. A changed fixture
+    # must pass the normal audio limit; this is not a directory-wide exemption.
+    if [[ "$file" == backend/performance_runner/test_assets/reference_audio.wav ]] &&
+       [[ "$(git hash-object "$file")" == f0ee27ac2f850364a014523e54ccf259f77b627b ]]; then
+      continue
+    fi
     if ((file_size > size_limit)); then
       violations+=(
         "$file: $(human_readable_size "$file_size") $(get_file_type "$file"), limit $(human_readable_size "$size_limit")"

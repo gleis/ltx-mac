@@ -236,7 +236,7 @@ PATCH_VAE_STREAM_NEW = '''        try:
                 _streaming_enabled = _frames_est > _auto_max
 
             if _streaming_enabled:
-                from ltx_core_mlx.model.video_vae.tiling import TilingConfig, TemporalTilingConfig
+                from ltx_core_mlx.model.video_vae.tiling import TilingConfig, TemporalTilingConfig, SpatialTilingConfig
 
                 _tile_frames = int(_os.environ.get("LTX_VAE_TILE_FRAMES", "64"))
                 _overlap_frames = int(_os.environ.get("LTX_VAE_TILE_OVERLAP_FRAMES", "24"))
@@ -245,7 +245,7 @@ PATCH_VAE_STREAM_NEW = '''        try:
                 if _overlap_frames >= _tile_frames:
                     _overlap_frames = max(0, _tile_frames - 8)
                 _tiling = TilingConfig(
-                    spatial_config=None,
+                    spatial_config=SpatialTilingConfig(tile_size_in_pixels=512, tile_overlap_in_pixels=128),
                     temporal_config=TemporalTilingConfig(
                         tile_size_in_frames=_tile_frames,
                         tile_overlap_in_frames=_overlap_frames,
@@ -353,7 +353,7 @@ def _atomic_write(target: Path, text: str) -> None:
         raise
 
 
-def apply_patch(target: Path, old: str, new: str, marker: str, label: str,
+def apply_patch(target: Path | None, old: str, new: str, marker: str, label: str,
                 upgrade_marker: str | None = None) -> str:
     """Idempotently apply old→new replacement on `target`. Returns one of
     OUTCOME_APPLIED / OUTCOME_ALREADY / OUTCOME_MISSING / OUTCOME_DRIFT —
