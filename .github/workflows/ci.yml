@@ -39,7 +39,7 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5.4.2
+      - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
         with:
           version: "0.13.7"
           enable-cache: true
@@ -82,7 +82,7 @@ jobs:
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
 
       - &setup-uv
-        uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5.4.2
+        uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
         with:
           version: "0.13.7"
           enable-cache: true
@@ -158,7 +158,7 @@ jobs:
     runs-on: macos-26
     steps:
       - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v5
+      - uses: astral-sh/setup-uv@v7
       - run: uv python install 3.13.18
       - name: Audit locked MLX dependencies
         run: uvx pip-audit -r requirements/mlx.lock --disable-pip --no-deps
@@ -183,7 +183,7 @@ jobs:
         working-directory: backend
     steps:
       - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v5
+      - uses: astral-sh/setup-uv@v7
         with:
           version: "0.13.7"
       - run: uv python install 3.13.18
