@@ -72,7 +72,7 @@ print("OK: prebuilt", so)
 import re, subprocess
 build = subprocess.check_output(['otool', '-l', so], text=True)
 minimums = re.findall(r'\bminos\s+(\d+)(?:\.(\d+))?', build)
-if not minimums or any(int(major) > 26 for major, _ in minimums):
+if not minimums or any((int(major), int(minor or 0)) > (26, 0) for major, minor in minimums):
     raise RuntimeError(f'Prebuilt extension exceeds macOS 26 target: {minimums}')
 PY
 

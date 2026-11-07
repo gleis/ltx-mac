@@ -101,7 +101,7 @@ if not extension.is_file():
     raise SystemExit('Prebuilt Metal attention extension is missing')
 build = subprocess.check_output(['otool', '-l', str(extension)], text=True)
 minimums = re.findall(r'\bminos\s+(\d+)(?:\.(\d+))?', build)
-if not minimums or any(int(major) > 26 for major, _ in minimums):
+if not minimums or any((int(major), int(minor or 0)) > (26, 0) for major, minor in minimums):
     raise SystemExit(f'Prebuilt extension exceeds supported macOS 26: {minimums}; rebuild Python')
 PYMIN
 fi

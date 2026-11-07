@@ -5,11 +5,11 @@ adds a first working Apple Silicon local-generation path using MLX and the
 compact Q4 LTX 2.3 model. It is intended to run locally on a Mac with about
 36 GB of unified memory while keeping the original LTX API mode available.
 
-> Status: working first milestone. Text-to-video runs locally through the MLX Q4
-> path, with 720p 10-second generation confirmed working on the 36 GB target Mac.
-> Local image-to-video uses a deterministic still-motion fallback because the
-> current MLX Q4 distilled I2V path collapses into tiled artifacts after the
-> first frame. The LTX API path remains available for true generative I2V.
+> Status: preview. The updated MLX Q4 runtime completed five-second text-to-video
+> renders at 1280×704 and 1920×1088 on a 36 GB M4 Max. True local image-to-video
+> passed a smaller 512×288 diagnostic; full-resolution I2V remains unvalidated.
+> The Apple Silicon installer includes both Python runtimes; model weights are
+> downloaded separately. See the measured limits below.
 
 <img width="1394" height="896" alt="Screenshot 2026-06-10 at 8 12 44 PM" src="https://github.com/user-attachments/assets/f797cfca-11a3-4f37-be76-5c11a93f312e" />
 
@@ -45,16 +45,21 @@ LTX Desktop is an open-source desktop app for AI video generation with LTX model
 
 ## Supported Local Mac Envelope
 
-Validated target machine: Apple Silicon Mac with 36 GB unified memory.
+Validated machine: M4 Max, 36 GB unified memory, macOS 27.2. Minimum supported
+local Mac OS is 26.0; 32 GB is the configured minimum, but was not tested on
+physical 32 GB hardware.
 
-| Resolution | Local MLX Q4 durations exposed in UI | Current recommendation |
+| Resolution | UI durations | Measured on the updated runtime |
 | --- | --- | --- |
-| 540p | 5-20 seconds at 24 fps | Good for longer tests |
-| 720p | 5-20 seconds at 24 fps | Best default; 10-second clips are confirmed usable on the target Mac |
-| 1080p | 5 seconds at 24 fps | 10 seconds can complete, but extended quality still needs more validation |
+| 540p | 5–20 seconds | Smaller 512×288, 17-frame I2V diagnostic passed |
+| 720p | 5–20 seconds | 1280×704, 121 frames at 24 fps; 902.88 seconds wall time |
+| 1080p | 5 seconds | 1920×1088, 121 frames at 24 fps; 2999.58 seconds wall time |
 
-The app may be able to render beyond these limits if edited manually, but this
-fork treats actual viewable quality as the release gate.
+These are individual five-second text-to-video runs, not a broad quality or
+memory guarantee. Longer durations and full-resolution I2V need separate
+validation. The decoder now streams temporal and spatial tiles to bound memory;
+close other GPU-heavy apps before rendering. Older 10-second results from the
+previous runtime do not establish acceptance for this version.
 
 ## Quick Start On Apple Silicon
 
@@ -62,7 +67,7 @@ Prerequisites:
 
 - macOS 26 or later on Apple Silicon (`arm64`), with at least 32 GB unified memory
 - Git
-- Node.js and Corepack
+- Node.js 24 and Corepack
 - `pnpm`
 - `uv`
 - Plenty of free space on the project drive. The local data folder can exceed
@@ -247,7 +252,7 @@ These are the requirements for local generation. They match the [LTX Desktop pag
 | --- | --- |
 | **Windows 10/11** (64-bit) | NVIDIA GPU with CUDA and **24 GB or more VRAM** (32 GB recommended). 32 GB RAM. |
 | **Linux** (Ubuntu 22.04+ or similar, x64 or arm64) | NVIDIA GPU with CUDA and **24 GB or more VRAM** (32 GB recommended), NVIDIA driver installed. 32 GB RAM. |
-| **macOS 26+** (Tahoe) | Apple Silicon (M1 or later) with **48 GB or more** for full local generation. Apple Silicon with 32 GB is limited to 540p and 5 s. Apple Silicon with less than 24 GB, and Intel Macs, use the Gen Space API only. |
+| **macOS 26+** (Tahoe) | Apple Silicon with **32 GB or more** for this fork’s MLX Q4 path; measured on 36 GB hardware. Intel Macs and smaller-memory Macs use the API path. See the measured local envelope above. |
 
 The app itself needs **macOS 14 or later**. On macOS 14 and 15, local generation is not available and the app shows the **Coming soon to your device** notice. macOS 13 and earlier cannot run the app.
 
@@ -317,7 +322,7 @@ LTX Desktop collects minimal, anonymous usage analytics to help prioritize devel
 
 ## Development (quickstart)
 
-Prerequisites: Node.js, `pnpm`, `uv`, Python 3.12+, and Git.
+Prerequisites: Node.js 24, `pnpm`, `uv`, Python 3.13.18, and Git.
 
 ```bash
 pnpm setup:dev   # one-time setup
@@ -384,13 +389,13 @@ Key fork files:
 
 ## Known Limitations
 
-- The updated runtime has passed bounded 512×288 diagnostics. Full 720p/1080p
-  render quality, duration, and RAM acceptance remain pending.
+- Five-second 720/1080-class text-to-video runs completed on the 36 GB M4 Max.
+  Longer durations, broad prompt quality, and physical 32 GB hardware remain unvalidated.
 - `Boost` and `Turbo` are text-to-video performance/quality tradeoffs.
 - Local Mac single-image-to-video uses the dev Q4 model with guided one-stage
   denoising and 30 steps. It requires `transformer-dev.safetensors`; rerun setup
   to download it. Boost/Turbo apply to text-to-video only. A 512×288, 17-frame
-  diagnostic passed on the 36 GB M4 Max; 720p/1080p acceptance is still pending.
+  diagnostic passed on the 36 GB M4 Max; full-resolution I2V acceptance remains pending.
 - The MLX path relies on a project-local `ltx-2-mlx` checkout at version
   `v0.14.0` prepared by `scripts/setup-mac-mlx.sh`; run with
   `LTX_MLX_PATH="$PWD/.ltx-data/ltx-2-mlx"` when starting from a shell.

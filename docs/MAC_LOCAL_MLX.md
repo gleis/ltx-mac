@@ -147,14 +147,15 @@ produce tiled conditioning artifacts.
 
 | Resolution | Duration | Notes |
 | --- | --- | --- |
-| 540p | 5-20 seconds | Good for longer experiments and prompt iteration |
-| 720p | 5-20 seconds | Best practical default; 10-second output is confirmed usable on the 36 GB target |
-| 1080p | 5 seconds | Current conservative quality gate for local Mac output |
+| 540p | 5–20 seconds | Iterate at smaller sizes; longer durations need validation |
+| 720p | 5–20 seconds | Updated runtime: 1280×704, 121 frames/24 fps, 902.88 s wall time |
+| 1080p | 5 seconds | Updated runtime: 1920×1088, 121 frames/24 fps, 2999.58 s wall time |
 
-A 720p 10-second text-to-video render has been confirmed to complete and produce
-a decent usable result on the target 36 GB Mac. 1080p 10-second generation has
-also completed, but extended quality still needs more validation before treating
-it as a default recommendation.
+Both measured text-to-video runs completed on a 36 GB M4 Max running macOS 27.2.
+These are individual runs. Physical 32 GB hardware, longer durations, and broad
+prompt quality have not been validated. Earlier 10-second results belonged to
+the previous runtime. True I2V passed a 512×288, 17-frame diagnostic; full-size
+I2V remains unvalidated. The release bundles a spatial/temporal streaming decoder.
 
 ## Prompt Enhancement
 
@@ -216,7 +217,7 @@ Things that may hurt quality:
 - Local Mac single-image-to-video uses the dev Q4 model with guided one-stage
   denoising and 30 steps. It requires `transformer-dev.safetensors`; rerun setup
   to download it. Boost/Turbo apply to text-to-video only. A 512×288, 17-frame
-  diagnostic passed on the 36 GB M4 Max; 720p/1080p acceptance is still pending.
+  diagnostic passed on the 36 GB M4 Max; full-resolution I2V acceptance remains pending.
 - Raising duration before the prompt/camera motion is stable.
 
 ## Environment Variables
@@ -310,15 +311,15 @@ unless `LTX_APP_DATA_DIR` is set before launch.
 
 ### Longer clips look bad after a few seconds
 
-Use 720p for 10-second local text-to-video clips first; this is the confirmed
-working milestone on the 36 GB target Mac. Keep 1080p at 5 seconds until the
-longer 1080p path has more validation.
+Start with five-second 720p text-to-video clips. Five-second 1080-class output
+also completed on the 36 GB target Mac, but takes about 50 minutes for the
+measured prompt. Longer clips on the updated runtime still need validation.
 
 ### Generation is slow
 
 That is expected for local MLX video generation. Try:
 
-- `720p`, `5` or `10` seconds while iterating.
+- `720p`, `5` seconds while iterating.
 - `Boost` speed mode for text-to-video. Image-to-video remains on `Quality`.
 - Closing GPU-heavy apps.
 - Keeping the project data folder on a fast external SSD.

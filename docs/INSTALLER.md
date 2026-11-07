@@ -15,6 +15,9 @@ The installer includes:
   - LTX-2 inference packages
   - All other required libraries
 - **Backend Python code**
+- On Apple Silicon, an isolated Python 3.13.18 MLX runtime with the pinned
+  `ltx-2-mlx` source and required codec/memory patches. No developer checkout
+  is required on the destination Mac.
 
 **NOT bundled** (downloaded at runtime):
 - Model weights (downloaded on first run; can be large) from Hugging Face
@@ -26,7 +29,7 @@ The embedded Python is **fully isolated** from the target system's Python — it
 
 Before building, ensure you have:
 
-1. **Node.js 18+** - https://nodejs.org/
+1. **Node.js 24** - https://nodejs.org/
 2. **uv** - https://docs.astral.sh/uv/ (Python package manager)
 3. **git** - needed for git-based Python packages
 4. **Internet connection** (for downloading Python and packages)
