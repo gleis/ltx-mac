@@ -41,7 +41,7 @@ dependencies = [
     "protobuf>=3.20.0",
     # ltx-core 1.2 / Gemma 4 need transformers 5.8+; 5.15 makes Gemma 4
     # attention dims per-layer (AmbiguousGlobalPerLayerAttributeError).
-    "transformers>=5.14.1,<5.15",
+    "transformers>=5.14.1,<5.23",
     "sentencepiece>=0.1.99",
     "sageattention>=1.0.0; sys_platform == 'linux'",
     # Optional CUDA accelerators must be rebuilt for the patched Torch ABI.
