@@ -5,7 +5,7 @@ description = "LTX-2 Video Generation Backend"
 requires-python = ">=3.12"
 dependencies = [
     "pillow>=13.0.0",
-    "av>=16.1.0,<17",
+    "av>=16.1.0,<20",
     "torch>=2.13.0",
     # transformers' Gemma 4 processor imports torchvision.transforms.v2 at module scope, so
     # LTX 2.5's text encoder fails to build without it (ImportError on Gemma4UnifiedProcessor).
